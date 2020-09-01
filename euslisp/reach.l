@@ -68,3 +68,11 @@
 
 
   )
+
+(defun demo ()
+  
+  (snap 0 (/ pi 3) 0)
+  (snap 0 (/ -pi 3) 0)
+  (snap (/ pi 3) 0 0)
+  (snap (/ -pi 3) 0 0)  
+    )
