@@ -19,13 +19,20 @@
 (setq *rarm-end* (send *robot* :rarm :end-coords :copy-worldcoords))
 ;; (send *rarm-end* :translate (float-vector 140.0 0.0 60.0))
 ;; (send *rarm-end* :rotate (/ pi 4) :y)
-(send *rarm-end* :translate (float-vector 200.0 0.0 -20.0))
+(send *rarm-end* :translate (float-vector 200.0 0.0 20.0))
 (send *rarm-end* :rotate (/ pi 2) :y)
-
 (send *robot* :rarm :inverse-kinematics *rarm-end* :rotation-axis :z)
-(send *robot* :move-end-pos #f(40 0 0))
-(send *ri* :angle-vector (send *robot* :angle-vector) 3000)
-  (send *ri* :wait-interpolation)
+
+(send *ri* :angle-vector (send *robot* :angle-vector) 2000)
+(send *ri* :wait-interpolation)
+(send *robot* :rarm :move-end-pos #f(140 0 0))
+(send *ri* :angle-vector (send *robot* :angle-vector) 2000)
+(send *ri* :wait-interpolation)
+
+(send *ri* :start-grasp)
+
+(snap 0 (/ -pi 2) 0)
+
 (objects (list *robot* (send *robot* :rarm :end-coords :copy-worldcoords)))
 )
 
@@ -35,3 +42,29 @@
   (send *ri* :wait-interpolation)
 
     )
+
+(defun shake (x y z)
+  (send *robot* :rarm :move-end-pos (float-vector x y z))
+  (send *ri* :angle-vector (send *robot* :angle-vector) 2000)
+  (send *ri* :wait-interpolation)
+  )
+
+(defun snap (x y z)
+  (setq *rarm-end* (send *robot* :rarm :end-coords :copy-worldcoords))
+  (if x
+      (send *rarm-end* :rotate x :x)
+    )
+  (if y
+      (send *rarm-end* :rotate y :y)
+    )
+  (if z
+      (send *rarm-end* :rotate z :z)
+    )
+  
+  (send *robot* :rarm :inverse-kinematics *rarm-end* :rotation-axis :z)
+
+  (send *ri* :angle-vector (send *robot* :angle-vector) 2000)
+  (send *ri* :wait-interpolation)
+
+
+  )
