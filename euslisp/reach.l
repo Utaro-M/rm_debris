@@ -8,6 +8,11 @@
 (jaxon_red-init)
 (setq *robot* *jaxon_red*)
 
+
+;;plot
+(send *ri* :set-log-maxlength (* 30 500))
+(load "package://control_tools/play-hrpsysfile.l")
+
 ;; (setq target (instance arrow-object :init))
 ;; (send target :newcoords
 ;;         (make-coords :pos (float-vector 0 0 0) :rpy (list 0 0 0)))
@@ -72,7 +77,12 @@
 (defun demo ()
   
   (snap 0 (/ pi 3) 0)
-  (snap 0 (/ -pi 3) 0)
+  (snap 0 (/ -pi 3) 0)n
   (snap (/ pi 3) 0 0)
   (snap (/ -pi 3) 0 0)  
     )
+
+(defun log ()
+  
+  (save-log :fname "stick_contact")
+  )
