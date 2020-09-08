@@ -7,7 +7,7 @@
 (load "/home/utaro/catkin_ws/jaxon_tutorial/src/rtmros_tutorials/hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
 (jaxon_red-init)
 (setq *robot* *jaxon_red*)
-
+;; (send *ri* :srart-auto-balancer)
 
 ;;plot
 (send *ri* :set-log-maxlength (* 30 500))
@@ -76,13 +76,47 @@
 
 (defun demo ()
   
-  (snap 0 (/ pi 3) 0)
-  (snap 0 (/ -pi 3) 0)n
-  (snap (/ pi 3) 0 0)
-  (snap (/ -pi 3) 0 0)  
+  (snap 0 (/ (* 2 pi) 3) 0)
+  (snap 0 (/ (* -2 pi) 3) 0)
+  ;; (snap (/ pi 3) 0 0)
+  ;; (snap (/ -pi 3) 0 0)  
     )
 
 (defun log ()
   
   (save-log :fname "stick_contact")
+  )
+
+(defun series()
+  (init)
+  (grab)
+  
+  (send *ri* :start-log )
+  ;;(snap 0 (/ (* 1 pi) 3) 0)
+  (unix:usleep 3000)
+  (save-log :fname "stick_contact_i")
+  (unix:usleep 1000)
+  
+  (send *ri* :start-log )
+  (snap 0 (/ (* 1 pi) 2) 0)
+  (unix:usleep 3000)
+  (save-log :fname "stick_contact_f")
+  (unix:usleep 1000)
+  
+  (snap 0 (/ (* -1 pi) 2) 0)
+
+  (send *ri* :start-log )
+  (snap (/ (* -1 pi) 2) 0  0)
+  (unix:usleep 3000)
+  (save-log :fname "stick_contact_l")
+  (unix:usleep 1000)
+
+  (snap (/ (* 1 pi) 2) 0  0)  
+
+  (send *ri* :start-log )
+  (snap (/ (* 1 pi) 2) 0  0)
+  (unix:usleep 3000)
+  (save-log :fname "stick_contact_r")
+  (unix:usleep 1000)    
+  
   )
