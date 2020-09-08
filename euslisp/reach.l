@@ -50,21 +50,13 @@
 (defun init ()
   (send *robot* :reset-manip-pose)
 
-  (when (or force-move (y-or-n-p "Do you move real machine?"))
-    (send *ri* :angle-vector (send *robot* :angle-vector) 2000)
-    (send *ri* :wait-interpolation)
-    )
-  ;; (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
-  ;; (send *ri* :wait-interpolation)
+  (send-angle-vector 3000)
   (send *ri* :hand-reset)
     )
 
 ;;棒をつかむ
 (defun grab ()
   (send *ri* :start-grasp :rarm)
-
-;;  (snap 0 (/ -pi 2) 0)
-
   )
 
 (defun open ()
@@ -74,12 +66,11 @@
 ;;手先を平行移動
 (defun shake (x y z)
   (send *robot* :rarm :move-end-pos (float-vector x y z))
-  (send *ri* :angle-vector (send *robot* :angle-vector) 2000)
-  (send *ri* :wait-interpolation)
+  (send-angle-vector 3000)
   )
 
 ;;棒をふる
-(defun snap (x y z &key (force-move nil))
+(defun snap (x y z)
   (setq *rarm-end* (send *robot* :rarm :end-coords :copy-worldcoords))
   (if x
       (send *rarm-end* :rotate x :x)
@@ -92,12 +83,15 @@
     )
   
   (send *robot* :rarm :inverse-kinematics *rarm-end* :rotation-axis :z)
+  (send-angle-vector 3000)
+  )
+
+(defun send-angle-vector(time &key (force-move nil))
   (objects)
   (when (or force-move (y-or-n-p "Do you move real machine?"))
-    (send *ri* :angle-vector (send *robot* :angle-vector) 2000)
+    (send *ri* :angle-vector (send *robot* :angle-vector) time)
     (send *ri* :wait-interpolation)
     )
-
   )
 
 (defun demo ()
