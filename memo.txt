@@ -1,0 +1,19 @@
+
+棒が環境と接触するときには制御の切り替えなどができないので難しい，
+インピーダンス制御を入れるか,(send *ri* :start-impedance :rarm :d-r 5 :k-r 20)
+(send *ri* :stop-impedance :rarm )
+トルク制御を使うかの2択
+
+~/catkin_ws/jaxon_tutorial/src/rtmros_tutorials/hrpsys_ros_bridge_tutorials/src/hrpsys_ros_bridge_tutorials/urata_hrpsys_config.pyのファイルの中の，
+ arm_gains = {"support_pgain":[100,100,100,100,100,100,100,100], "support_dgain":[100,100,100,100,100,100,100,100],
+  |                     "landing_pgain":[100,100,100,100,100,100,100,100], "landing_dgain":[100,100,100,100,100,100,100,100]}
+でパーセンテージで位置制御とトルク制御の塩梅を指定している．（１００％だと位置制御のみ）
+supportは普通の時， landingは着地の瞬間
+インピウーダンス制御を使うときには，100にしておく必要がある，逆にトルク制御をする時は0に近づけるべき
+
+
+1,棒を持たせてみてデフォルトのインピーダンスのパラメタでものを叩いてみる
+２，調度良いパラメタを探す
+　　d-r k-r の値を少しずつ変えてみて，，いくつかのポーズをとらせてみて，振動しないか，位置指令に対して大きくずれてしまっていないかを確認していく
+
+

@@ -3,13 +3,11 @@
 
 
 (load "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
-;;(load "/home/utaro/catkin_ws/jaxon_tutorial/src/rtmros_tutorials/hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
 (unless (and (boundp '*robot*) (boundp '*ri*))
   (jaxon_red-init)
   (setq *robot* *jaxon_red*)
   )
 (objects (list *robot*))
-;; (send *ri* :srart-auto-balancer)
 
 ;;plot
 (send *ri* :set-log-maxlength (* 30 500))
@@ -30,11 +28,13 @@
 (send *rarm-end* :rotate (/ pi 2) :y)
 (send *robot* :rarm :inverse-kinematics *rarm-end* :rotation-axis :z)
 
-(send *ri* :angle-vector (send *robot* :angle-vector) 2000)
-(send *ri* :wait-interpolation)
+;; (send *ri* :angle-vector (send *robot* :angle-vector) 2000)
+;; (send *ri* :wait-interpolation)
+(send-angle-vector 3000)
 (send *robot* :rarm :move-end-pos #f(140 0 0))
-(send *ri* :angle-vector (send *robot* :angle-vector) 2000)
-(send *ri* :wait-interpolation)
+;; (send *ri* :angle-vector (send *robot* :angle-vector) 2000)
+;; (send *ri* :wait-interpolation)
+(send-angle-vector 3000)
 
 (send *ri* :start-grasp)
 
@@ -49,7 +49,7 @@
 ;;reset-pose
 (defun init ()
   (send *robot* :reset-manip-pose)
-
+;;  (send *ri* :start-impedance :rarm :d-r 5 :k-r 20) 
   (send-angle-vector 3000)
   (send *ri* :hand-reset)
     )
@@ -59,6 +59,7 @@
   (send *ri* :start-grasp :rarm)
   )
 
+;;手を開く
 (defun open ()
   (send *ri* :stop-grasp :rarm)
   )
@@ -69,24 +70,25 @@
   (send-angle-vector 3000)
   )
 
-;;棒をふる
+;;棒をふる(手首を回転）
 (defun snap (x y z)
   (setq *rarm-end* (send *robot* :rarm :end-coords :copy-worldcoords))
+
   (if x
-      (send *rarm-end* :rotate x :x)
+      (send *rarm-end* :rotate (deg2rad x) :x)
     )
   (if y
-      (send *rarm-end* :rotate y :y)
+      (send *rarm-end* :rotate (deg2rad y) :y)
     )
   (if z
-      (send *rarm-end* :rotate z :z)
+      (send *rarm-end* :rotate (deg2rad z) :z)
     )
   
   (send *robot* :rarm :inverse-kinematics *rarm-end* :rotation-axis :z)
   (send-angle-vector 3000)
   )
 
-(defun send-angle-vector(time &key (force-move nil))
+(defun send-angle-vector (time &key (force-move nil))
   (objects)
   (when (or force-move (y-or-n-p "Do you move real machine?"))
     (send *ri* :angle-vector (send *robot* :angle-vector) time)
@@ -103,7 +105,6 @@
 
 ;;logを取る
 (defun log ()
-  
   (save-log :fname "stick_contact")
   )
 
