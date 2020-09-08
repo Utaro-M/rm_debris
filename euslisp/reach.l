@@ -20,7 +20,7 @@
 
 ;; send *robot* :rarm :move-end-pos #f(100 0 0)
 
-(defun grab ()
+(defun grab_on_table ()
 (setq *rarm-end* (send *robot* :rarm :end-coords :copy-worldcoords))
 ;; (send *rarm-end* :translate (float-vector 140.0 0.0 60.0))
 ;; (send *rarm-end* :rotate (/ pi 4) :y)
@@ -41,6 +41,10 @@
 (objects (list *robot* (send *robot* :rarm :end-coords :copy-worldcoords)))
 )
 
+
+;;実機でも使える関数
+
+;;reset-pose
 (defun init ()
   (send *robot* :reset-manip-pose)
   (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
@@ -48,12 +52,22 @@
 
     )
 
+;;棒をつかむ
+(defun grab ()
+  (send *ri* :start-grasp)
+
+  (snap 0 (/ -pi 2) 0)
+
+  )
+
+;;手先を平行移動
 (defun shake (x y z)
   (send *robot* :rarm :move-end-pos (float-vector x y z))
   (send *ri* :angle-vector (send *robot* :angle-vector) 2000)
   (send *ri* :wait-interpolation)
   )
 
+;;棒をふる
 (defun snap (x y z)
   (setq *rarm-end* (send *robot* :rarm :end-coords :copy-worldcoords))
   (if x
@@ -75,13 +89,14 @@
   )
 
 (defun demo ()
-  
+p  
   (snap 0 (/ (* 2 pi) 3) 0)
   (snap 0 (/ (* -2 pi) 3) 0)
   ;; (snap (/ pi 3) 0 0)
   ;; (snap (/ -pi 3) 0 0)  
     )
 
+;;logを取る
 (defun log ()
   
   (save-log :fname "stick_contact")
@@ -120,3 +135,9 @@
   (unix:usleep 1000)    
   
   )
+
+(print "reset-pose init ")
+(print "grab stick grab")
+(print "translate end-effecter shake(x y z)")
+(print "snap hand snap(x y z) ")
+(print "save log log ")
