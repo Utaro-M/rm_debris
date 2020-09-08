@@ -2,11 +2,13 @@
 (require "models/arrow-object.l")
 
 
-
-;;(load "package://hrpsys_ros_bridge_wrs/euslisp/jaxon_red-interface.l")
-(load "/home/utaro/catkin_ws/jaxon_tutorial/src/rtmros_tutorials/hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
-(jaxon_red-init)
-(setq *robot* *jaxon_red*)
+(load "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
+;;(load "/home/utaro/catkin_ws/jaxon_tutorial/src/rtmros_tutorials/hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
+(unless (and (boundp '*robot*) (boundp '*ri*))
+  (jaxon_red-init)
+  (setq *robot* *jaxon_red*)
+  )
+(objects (list *robot*))
 ;; (send *ri* :srart-auto-balancer)
 
 ;;plot
@@ -47,17 +49,26 @@
 ;;reset-pose
 (defun init ()
   (send *robot* :reset-manip-pose)
-  (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
-  (send *ri* :wait-interpolation)
 
+  (when (or force-move (y-or-n-p "Do you move real machine?"))
+    (send *ri* :angle-vector (send *robot* :angle-vector) 2000)
+    (send *ri* :wait-interpolation)
+    )
+  ;; (send *ri* :angle-vector (send *robot* :angle-vector) 3000)
+  ;; (send *ri* :wait-interpolation)
+  (send *ri* :hand-reset)
     )
 
 ;;棒をつかむ
 (defun grab ()
-  (send *ri* :start-grasp)
+  (send *ri* :start-grasp :rarm)
 
-  (snap 0 (/ -pi 2) 0)
+;;  (snap 0 (/ -pi 2) 0)
 
+  )
+
+(defun open ()
+  (send *ri* :stop-grasp :rarm)
   )
 
 ;;手先を平行移動
@@ -68,7 +79,7 @@
   )
 
 ;;棒をふる
-(defun snap (x y z)
+(defun snap (x y z &key (force-move nil))
   (setq *rarm-end* (send *robot* :rarm :end-coords :copy-worldcoords))
   (if x
       (send *rarm-end* :rotate x :x)
@@ -81,15 +92,15 @@
     )
   
   (send *robot* :rarm :inverse-kinematics *rarm-end* :rotation-axis :z)
-
-  (send *ri* :angle-vector (send *robot* :angle-vector) 2000)
-  (send *ri* :wait-interpolation)
-
+  (objects)
+  (when (or force-move (y-or-n-p "Do you move real machine?"))
+    (send *ri* :angle-vector (send *robot* :angle-vector) 2000)
+    (send *ri* :wait-interpolation)
+    )
 
   )
 
 (defun demo ()
-p  
   (snap 0 (/ (* 2 pi) 3) 0)
   (snap 0 (/ (* -2 pi) 3) 0)
   ;; (snap (/ pi 3) 0 0)
