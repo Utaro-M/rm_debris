@@ -2,6 +2,7 @@
 
 # これはコメントです
 
+#./rh_plot.sh contact_70_JAXON_RED_2020_09-08_22-00_27のような感じで、引数としてファイルの名前を与える
 echo $1
 cd /home/utaro/matsuura@jsk.imi.i.u-tokyo.ac.jp/Documents/log/JAXON_RED
 cd $1
