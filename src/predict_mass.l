@@ -48,20 +48,31 @@
     ;;without low-pass filter
     ;; (setq state-free-smoothed state-free)
     ;; (setq state-hold-smoothed state-hold)
+
+    (setq force (v- (average state-hold-smoothed) (average state-free-smoothed)))
+    (print (format nil "force = ~A"  force))
+    (print force)
+    force
     
-    ;;diff 
-    (setq mass (- (ave state-hold-smoothed) (ave state-free-smoothed)))
-    ;;print to check
-    (print (format nil "free-start-index = ~A" free-start-index))
-    (print (format nil "free-end-index = ~A" free-end-index))
-    ;; (print (list-length (car state-data)))
-    ;; (print (list-length state-free))
-    ;; (print (list-length state-hold-smoothed))
-    (print (format nil "mass = ~A" mass))
-;;    state-free
+;;     ;;print to check
+;;     (print (format nil "free-start-index = ~A" free-start-index))
+;;     (print (format nil "free-end-index = ~A" free-end-index))
+;;     ;; (print (list-length (car state-data)))
+;;     ;; (print (list-length state-free))
+;;     ;; (print (list-length state-hold-smoothed))
+;;     (print (format nil "mass = ~A" mass))
+
     )
   )
 
+;;predict mass
+(defun predict-mass
+    (&key (g  9.8))
+  (setq mass (* (/ 1.0 g) (elt (predict-force) 2)))
+  (print (format nil "mass = ~A " mass))
+  mass
+
+  )
 ;;(predict-mass)
 
 
@@ -82,19 +93,51 @@
     )
   )
 
-;;z方向の平均
-(defun ave (lis)
+;;力の平均
+;;average lis :axis 2とするとz軸方向の力の平均値が出る
+;;average lis　だけだと力のベクトルがでる
+(defun average
+    (lis &key  (axis 10))
   (let* ((len (list-length lis))
-             (sum 0))
+         ;; (sum (list 0 0 0)))
+         (sum_x 0)
+         (sum_y 0)
+         (sum_z 0))
+         
+    ;; (dotimes (i len)
+    ;;   (setq (elt sum 0) (+ (elt sum 0) (elt (elt lis i) 0)))
+    ;;   (setq (elt sum 1) (+ (elt sum 1) (elt (elt lis i) 1)))
+    ;;   (setq (elt sum 2) (+ (elt sum 2) (elt (elt lis i) 2)))      
+    ;;   )
+
+;    (setq ave (list (/ (elt sum 0) (float len)) (/ (elt sum 1) (float len)) (/ (elt sum 2) (float len))))
     (dotimes (i len)
-      (setq sum (+ sum (elt (elt lis i) 2)))
+      (setq sum_x (+ sum_x (elt (elt lis i) 0)))
+      (setq sum_y (+ sum_y (elt (elt lis i) 1)))
+      (setq sum_z (+ sum_z (elt (elt lis i) 2)))      
       )
-    (setq ave (/ sum (float len)))
+        
+    (setq ave (float-vector (/ sum_x (float len)) (/ sum_y (float len)) (/ sum_z (float len))))
+
+    
+;;    (setq ave (/ sum (float len)))
     (print (format nil "ave = ~A" ave))
-    (/ ave 9.8)
+;;    (setq ave_ret (scale (/ 1.0 g) ave))
+    (setq ave_ret ave)    
+    (cond
+     ((equal axis 0)
+      (float (elt ave_ret 0)))
+     ((equal axis 1)
+      (elt ave_ret 1))
+     ((equal axis 2)
+      (float (elt ave_ret 2)))
+     (t ave_ret)
+     )
+
     )
   )
 ;;plot したい
+;;うまく行ってない
 (defun plot-graph
     (&key data-list state-data-free) ;; time-list)
   (send *gp* :command "")
