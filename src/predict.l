@@ -1,6 +1,9 @@
 ;;質量の推定
 ;;ここではグラフを見てfree の期間とholdの期間の開始時間を人が見て数字として与えている
 ;;各期間についてｚ方向の力を平滑化し、平均を取ってその差を取ることでz方向の力（期間のとり方によっては質量）を推定する
+;;send (elt *rs-list* 2) :get (read-from-string (format nil ":rarm-force-vector" )
+
+
 ;;git checkout
 ;;データがある場所で
 ;;export ROBOT=JAXON_RED
@@ -28,10 +31,16 @@
 ;;output
 ;;force vector
 (defun predict
-    (&key (target "force")(free 2) (hold 10) (axis :x) (rs-list *rs-list*) (limbs (get-limbs-in-force-sensor-order *robot*)))
+    (&key (target "force") (free 2) (hold 10) (axis :x) (rs-list *rs-list*) (limbs (get-limbs-in-force-sensor-order *robot*)))
   (let* ((state-data
           (mapcar #'(lambda (l)
-                      (mapcar #'(lambda (x) (send x :get (read-from-string (format nil "~A-off-~A-vector" l target)))) rs-list))
+                      ;; (mapcar #'(lambda (x) (send x :get (read-from-string (format nil "~A-off-~A-vector" l target)))) rs-list))
+                      (mapcar #'(lambda (rs)
+                                  ;; todo move *robot*'s root coords
+                                  (send *robot* :angle-vector (send rs :angle-vector))
+                                  (send (car (send *robot* l :force-sensors)) :inverse-rotate-vector
+                                        (send rs :get (read-from-string (format nil "~A-off-~A-vector" l target))))) rs-list))
+                      ;; (mapcar #'(lambda (x) (send x :get (read-from-string (format nil "~A-~A-vector" l target)))) rs-list))
                   (list :rarm)))
          ;;time-list
          (state-time-data
@@ -49,12 +58,12 @@
     (setq state-hold (subseq (car state-data) hold-start-index hold-end-index))    
 
     ;;low-pass filter smoothing
-    (setq state-free-smoothed (low-pass state-free))
-    (setq state-hold-smoothed (low-pass state-hold))
+    ;; (setq state-free-smoothed (low-pass state-free))
+    ;; (setq state-hold-smoothed (low-pass state-hold))
 
     ;;without low-pass filter
-    ;; (setq state-free-smoothed state-free)
-    ;; (setq state-hold-smoothed state-hold)
+    (setq state-free-smoothed state-free)
+    (setq state-hold-smoothed state-hold)
 
     (setq pred (v- (average state-hold-smoothed) (average state-free-smoothed)))
     (print (format nil "~A = ~A"  target pred))
@@ -65,8 +74,8 @@
 
 ;;predict mass
 (defun predict-mass
-    (&key (g  9.8))
-  (setq mass (* (/ 1.0 g) (elt (predict :target "force") 2)))
+    (&key (g  9.8) (free 2) (hold 10))
+  (setq mass (* (/ 1.0 g) (elt (predict :target "force" :free free :hold hold) 0)))
   (print (format nil "mass = ~A " mass))
   mass
   )
@@ -119,7 +128,7 @@
     (setq ave (float-vector (/ sum_x (float len)) (/ sum_y (float len)) (/ sum_z (float len))))
 
     (print (format nil "ave = ~A" ave))
-
+    (print len)
     (cond
      ((equal axis 0)
       (float (elt ave 0)))
@@ -127,7 +136,8 @@
       (elt ave 1))
      ((equal axis 2)
       (float (elt ave 2)))
-     (t ave)
+     (t (progn (print "output vector")
+               ave))
      )
 
     )
