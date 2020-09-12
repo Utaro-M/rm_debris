@@ -1,7 +1,10 @@
 ;;質量の推定
+;;ここではグラフを見てfree の期間とholdの期間の開始時間を人が見て数字として与えている
+;;各期間についてｚ方向の力を平滑化し、平均を取ってその差を取ることでz方向の力（期間のとり方によっては質量）を推定する
 ;;git checkout 
 ;;export ROBOT=JAXON_RED
-;;roseus 
+;;roseus
+
 (load "package://control_tools/log-tools.l")
 
 ;; (unless (and (boundp '*robot*) (boundp '*rs-list*))
@@ -10,10 +13,14 @@
   (setq rs (car *rs-list*))
   )
 
+;;plot用　0912時点ではplot関数がうまく行っていないから使ってない
 (setq state-data-free nil)
 (setq state-data-hold nil)
 (setq state-time-data nil)
-(defun predict-mass
+
+;;predict force 
+;; (defun predict-mass
+(defun predict-force    
     (&key (free 2) (hold 10) (axis :x) (rs-list *rs-list*) (limbs (get-limbs-in-force-sensor-order *robot*)))
   (let* ((state-data
           (mapcar #'(lambda (l)
@@ -31,18 +38,27 @@
     (setq hold-end-index (position-if #'(lambda (x) (and (< (- (+ hold 1) 0.1) x) (< x (+ (+ hold 1) 0.1) ))) state-time-data ))
 
     ;;get list of each period
-    (setq state-data-free (subseq (car state-data) free-start-index free-end-index))
-    (setq state-data-hold (subseq (car state-data) hold-start-index hold-end-index))    
+    (setq state-free (subseq (car state-data) free-start-index free-end-index))
+    (setq state-hold (subseq (car state-data) hold-start-index hold-end-index))    
 
+    ;;low-pass filter smoothing
+    (setq state-free-smoothed (low-pass state-free))
+    (setq state-hold-smoothed (low-pass state-hold))
 
-
+    ;;without low-pass filter
+    ;; (setq state-free-smoothed state-free)
+    ;; (setq state-hold-smoothed state-hold)
+    
+    ;;diff 
+    (setq mass (- (ave state-hold-smoothed) (ave state-free-smoothed)))
     ;;print to check
-    (print free-start-index)    
-    (print free-end-index)
-    (print (list-length (car state-data)))
-    (print (list-length state-data-free))
-    (print (list-length state-data-hold))
-    state-data-free
+    (print (format nil "free-start-index = ~A" free-start-index))
+    (print (format nil "free-end-index = ~A" free-end-index))
+    ;; (print (list-length (car state-data)))
+    ;; (print (list-length state-free))
+    ;; (print (list-length state-hold-smoothed))
+    (print (format nil "mass = ~A" mass))
+;;    state-free
     )
   )
 
@@ -62,9 +78,22 @@
       )
     (setq ret (cdr y-predict))
     (print (list-length ret))
+    ret    
     )
   )
 
+;;z方向の平均
+(defun ave (lis)
+  (let* ((len (list-length lis))
+             (sum 0))
+    (dotimes (i len)
+      (setq sum (+ sum (elt (elt lis i) 2)))
+      )
+    (setq ave (/ sum (float len)))
+    (print (format nil "ave = ~A" ave))
+    (/ ave 9.8)
+    )
+  )
 ;;plot したい
 (defun plot-graph
     (&key data-list state-data-free) ;; time-list)
