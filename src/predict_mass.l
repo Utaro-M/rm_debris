@@ -10,7 +10,9 @@
   (setq rs (car *rs-list*))
   )
 
-
+(setq state-data-free nil)
+(setq state-data-hold nil)
+(setq state-time-data nil)
 (defun predict-mass
     (&key (free 2) (hold 10) (axis :x) (rs-list *rs-list*) (limbs (get-limbs-in-force-sensor-order *robot*)))
   (let* ((state-data
@@ -32,7 +34,9 @@
     (setq state-data-free (subseq (car state-data) free-start-index free-end-index))
     (setq state-data-hold (subseq (car state-data) hold-start-index hold-end-index))    
 
-    
+
+
+    ;;print to check
     (print free-start-index)    
     (print free-end-index)
     (print (list-length (car state-data)))
@@ -59,4 +63,23 @@
     (setq ret (cdr y-predict))
     (print (list-length ret))
     )
+  )
+
+;;plot したい
+(defun plot-graph
+    (&key data-list state-data-free) ;; time-list)
+  (send *gp* :command "")
+        (graph-view
+         ;; (list ref-cmz-list act-cmz-list)
+         (list data-list)
+         state-time-data
+         :keylist (list "original")
+         :title "test"
+         ;; :graph-fname (reg-replace* " " "_" (if add-fname (format nil "~a ~a.eps" fname add-fname) (format nil "~a.eps" fname)))
+;         :dump-graph save
+         :xlabel "Time[s]"
+         :ylabel "CMz[mm]"
+         :mode "lines"
+         )
+
   )
