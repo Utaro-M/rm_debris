@@ -19,7 +19,11 @@
 (setq state-time-data nil)
 
 ;;predict force 
-;; (defun predict-mass
+;;input
+;;free: ログのうち利用したい、何も持っていない区間の開始時間
+;;hold; ログのうち利用したい、物を持っている区間の開始時間
+;;output
+;;force vector
 (defun predict-force    
     (&key (free 2) (hold 10) (axis :x) (rs-list *rs-list*) (limbs (get-limbs-in-force-sensor-order *robot*)))
   (let* ((state-data
@@ -53,15 +57,6 @@
     (print (format nil "force = ~A"  force))
     (print force)
     force
-    
-;;     ;;print to check
-;;     (print (format nil "free-start-index = ~A" free-start-index))
-;;     (print (format nil "free-end-index = ~A" free-end-index))
-;;     ;; (print (list-length (car state-data)))
-;;     ;; (print (list-length state-free))
-;;     ;; (print (list-length state-hold-smoothed))
-;;     (print (format nil "mass = ~A" mass))
-
     )
   )
 
@@ -71,12 +66,11 @@
   (setq mass (* (/ 1.0 g) (elt (predict-force) 2)))
   (print (format nil "mass = ~A " mass))
   mass
-
   )
-;;(predict-mass)
 
 
-;;low-pass filter  
+;;low-pass filter
+;;reffrence http://www.jsk.t.u-tokyo.ac.jp/~nozawa/share/doc/Control.pdf
 (defun low-pass
     (state-data) ;; (&key r 0.3))
   (let* ((len (list-length state-data))
@@ -104,13 +98,6 @@
          (sum_y 0)
          (sum_z 0))
          
-    ;; (dotimes (i len)
-    ;;   (setq (elt sum 0) (+ (elt sum 0) (elt (elt lis i) 0)))
-    ;;   (setq (elt sum 1) (+ (elt sum 1) (elt (elt lis i) 1)))
-    ;;   (setq (elt sum 2) (+ (elt sum 2) (elt (elt lis i) 2)))      
-    ;;   )
-
-;    (setq ave (list (/ (elt sum 0) (float len)) (/ (elt sum 1) (float len)) (/ (elt sum 2) (float len))))
     (dotimes (i len)
       (setq sum_x (+ sum_x (elt (elt lis i) 0)))
       (setq sum_y (+ sum_y (elt (elt lis i) 1)))
@@ -119,23 +106,21 @@
         
     (setq ave (float-vector (/ sum_x (float len)) (/ sum_y (float len)) (/ sum_z (float len))))
 
-    
-;;    (setq ave (/ sum (float len)))
     (print (format nil "ave = ~A" ave))
-;;    (setq ave_ret (scale (/ 1.0 g) ave))
-    (setq ave_ret ave)    
+
     (cond
      ((equal axis 0)
-      (float (elt ave_ret 0)))
+      (float (elt ave 0)))
      ((equal axis 1)
-      (elt ave_ret 1))
+      (elt ave 1))
      ((equal axis 2)
-      (float (elt ave_ret 2)))
-     (t ave_ret)
+      (float (elt ave 2)))
+     (t ave)
      )
 
     )
   )
+
 ;;plot したい
 ;;うまく行ってない
 (defun plot-graph
