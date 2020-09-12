@@ -104,6 +104,8 @@
     )
 
 ;;logを取る
+;;0908いろんな長さで叩いてみる実験用
+;;log "contact_70_7~~~" 7　とか
 (defun log (name ang)
   (progn (send *ri* :start-log) (unix:sleep 3) (snap 0 ang 0) (unix:sleep 2) (snap 0 (- 0 ang) 0) (unix:sleep 2) )
   (save-log :fname name)
