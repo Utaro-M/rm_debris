@@ -111,6 +111,10 @@
   (save-log :fname name)
   )
 
+(defun grab-and-release (name)
+  (progn (send *ri* :start-log) (unix:sleep 3) (grab) (unix:sleep 2) (open) (unix:sleep 2) )
+  (save-log :fname name)
+  )
 (defun series()
   (init)
   (grab)
