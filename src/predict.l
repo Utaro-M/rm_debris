@@ -22,15 +22,16 @@
 
 ;;predict force 
 ;;input
+;;target: 力がほしいなら "force" モーメントがほしいなら "moment"
 ;;free: ログのうち利用したい、何も持っていない区間の開始時間
 ;;hold; ログのうち利用したい、物を持っている区間の開始時間
 ;;output
 ;;force vector
-(defun predict-force    
-    (&key (free 2) (hold 10) (axis :x) (rs-list *rs-list*) (limbs (get-limbs-in-force-sensor-order *robot*)))
+(defun predict
+    (&key (target "force")(free 2) (hold 10) (axis :x) (rs-list *rs-list*) (limbs (get-limbs-in-force-sensor-order *robot*)))
   (let* ((state-data
           (mapcar #'(lambda (l)
-                      (mapcar #'(lambda (x) (send x :get (read-from-string (format nil "~A-off-force-vector" l)))) rs-list))
+                      (mapcar #'(lambda (x) (send x :get (read-from-string (format nil "~A-off-~A-vector" l target)))) rs-list))
                   (list :rarm)))
          ;;time-list
          (state-time-data
@@ -55,19 +56,28 @@
     ;; (setq state-free-smoothed state-free)
     ;; (setq state-hold-smoothed state-hold)
 
-    (setq force (v- (average state-hold-smoothed) (average state-free-smoothed)))
-    (print (format nil "force = ~A"  force))
-    (print force)
-    force
+    (setq pred (v- (average state-hold-smoothed) (average state-free-smoothed)))
+    (print (format nil "~A = ~A"  target pred))
+    ;; (print pred)
+    pred
     )
   )
 
 ;;predict mass
 (defun predict-mass
     (&key (g  9.8))
-  (setq mass (* (/ 1.0 g) (elt (predict-force) 2)))
+  (setq mass (* (/ 1.0 g) (elt (predict :target "force") 2)))
   (print (format nil "mass = ~A " mass))
   mass
+  )
+
+(defun predict_contact_point
+    ()
+  (setq f (predict :target "force"))
+  (setq m (predict :target "moment"))
+  
+
+
   )
 
 
