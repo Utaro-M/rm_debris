@@ -37,11 +37,26 @@
     (print free-end-index)
     (print (list-length (car state-data)))
     (print (list-length state-data-free))
-    (print (list-length state-data-hold))    
+    (print (list-length state-data-hold))
+    state-data-free
     )
   )
 
 ;;(predict-mass)
 
 
-  
+;;low-pass filter  
+(defun low-pass
+    (state-data) ;; (&key r 0.3))
+  (let* ((len (list-length state-data))
+         (y-predict (list (elt state-data 0)))
+         (r 0.3)
+         )
+    (dotimes (i len)
+      (setq y (v+ (scale r (elt state-data i)) (scale (- 1 r) (elt y-predict i))))
+      (list-insert y (+ i 1) y-predict)
+      )
+    (setq ret (cdr y-predict))
+    (print (list-length ret))
+    )
+  )
