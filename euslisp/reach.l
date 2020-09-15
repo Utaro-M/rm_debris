@@ -9,9 +9,9 @@
   )
 (objects (list *robot*))
 
-;;plot
-(send *ri* :set-log-maxlength (* 30 500))
-(load "package://control_tools/play-hrpsysfile.l")
+;; ;;plot
+;; (send *ri* :set-log-maxlength (* 30 500))
+;; (load "package://control_tools/play-hrpsysfile.l")
 
 ;; (setq target (instance arrow-object :init))
 ;; (send target :newcoords
@@ -115,6 +115,52 @@
   (progn (send *ri* :start-log) (unix:sleep 3) (grab) (unix:sleep 2) (open) (unix:sleep 2) )
   (save-log :fname name)
   )
+
+;;0914 predict.lにも同じものがある
+;; #!/usr/bin/env roseus
+;; (ros::load-ros-manifest "roseus")
+;; (ros::roseus "listener")
+;; ;; method call
+;; (defclass string-cb-class
+;;   :super propertied-object
+;;   :slots ())
+;; (defmethod string-cb-class
+;;   (:init () (ros::subscribe "off_rhsensor" geometry_msgs::WrenchStamped  #'send self :string-cb))
+;;   (:string-cb (msg) (print (list 'cb self (send msg :force)))))
+;; (setq m (instance string-cb-class :init))
+
+
+
+(defun display-arrow ()
+  
+  (objects (list *robot*))
+  (setq *viewer* (send *irtviewer* :viewer))
+  (setq idx 0)
+  (do-until-key
+   (unix:sleep 1)
+   (print "arrow")
+   ;; (send (send *robot* :rarm :end-coords ) :draw-on :flush t :size 300)
+   (send (send *robot* :rarm :end-coords ) :draw-on :flush nil :size 300)
+   (setq endpos (send *robot* :rarm :end-coords :worldpos)
+         ;; force-vec (scale 10 (send *ri* :state :off-force-vector :rarm)))
+         force-vec (scale 10 (send *ri* :state :off-force-vector :rarm)))
+   ;;force-vec (scale (* 10 (expt -1 idx)) (send *ri* :state :off-force-vector :rarm)))
+   (send *viewer* :draw-arrow endpos (v+ endpos force-vec))
+   (print  force-vec)
+   (print (v+ endpos force-vec))
+   (if (> (elt (v+ endpos force-vec) 0) 300)
+       (break))
+   ;; (print (scale 100 (send *ri* :state :potentio-vector )))
+   ;;     (send (send *irtviewer* :viewer)
+   ;; (send *irtviewer* :draw-objects :flush t)
+   ;; (send (send *irtviewer* :viewer) :flush)
+   (send *viewer* :flush)
+   (send *viewer* :draw-objects :flush nil)
+   (x::window-main-one)
+   (incf idx)
+   )
+  )
+
 (defun series()
   (init)
   (grab)

@@ -12,9 +12,10 @@
 
 (load "package://control_tools/log-tools.l")
 
-;; (unless (and (boundp '*robot*) (boundp '*rs-list*))
+(unless (and (boundp '*robot*) (boundp '*rs-list*)))
+
 (unless (boundp '*rs-list*)  
-  (prepare-plot)
+  (prepare-plot )
   (setq rs (car *rs-list*))
   )
 
@@ -34,13 +35,14 @@
     (&key (target "force") (free 2) (hold 10) (axis :x) (rs-list *rs-list*) (limbs (get-limbs-in-force-sensor-order *robot*)))
   (let* ((state-data
           (mapcar #'(lambda (l)
-                      ;; (mapcar #'(lambda (x) (send x :get (read-from-string (format nil "~A-off-~A-vector" l target)))) rs-list))
-                      (mapcar #'(lambda (rs)
-                                  ;; todo move *robot*'s root coords
-                                  (send *robot* :angle-vector (send rs :angle-vector))
-                                  (send (car (send *robot* l :force-sensors)) :inverse-rotate-vector
-                                        (send rs :get (read-from-string (format nil "~A-off-~A-vector" l target))))) rs-list))
-                      ;; (mapcar #'(lambda (x) (send x :get (read-from-string (format nil "~A-~A-vector" l target)))) rs-list))
+                       (mapcar #'(lambda (x) (send x :get (read-from-string (format nil "~A-off-~A-vector" l target)))) rs-list))
+                  ;;ロボットモデルが古くて、座標系の変換が必要だったときの変換込みのもの
+                  ;; (mapcar #'(lambda (rs)
+                  ;;                 ;; todo move *robot*'s root coords
+                  ;;                 (send *robot* :angle-vector (send rs :angle-vector))
+                  ;;                 (send (car (send *robot* l :force-sensors)) :inverse-rotate-vector
+                  ;;                       (send rs :get (read-from-string (format nil "~A-off-~A-vector" l target))))) rs-list))
+
                   (list :rarm)))
          ;;time-list
          (state-time-data
@@ -58,12 +60,12 @@
     (setq state-hold (subseq (car state-data) hold-start-index hold-end-index))    
 
     ;;low-pass filter smoothing
-    ;; (setq state-free-smoothed (low-pass state-free))
-    ;; (setq state-hold-smoothed (low-pass state-hold))
+    (setq state-free-smoothed (low-pass state-free))
+    (setq state-hold-smoothed (low-pass state-hold))
 
     ;;without low-pass filter
-    (setq state-free-smoothed state-free)
-    (setq state-hold-smoothed state-hold)
+    ;; (setq state-free-smoothed state-free)
+    ;; (setq state-hold-smoothed state-hold)
 
     (setq pred (v- (average state-hold-smoothed) (average state-free-smoothed)))
     (print (format nil "~A = ~A"  target pred))
@@ -72,21 +74,14 @@
     )
   )
 
-;;predict mass
-(defun predict-mass
-    (&key (g  9.8) (free 2) (hold 10))
-  (setq mass (* (/ 1.0 g) (elt (predict :target "force" :free free :hold hold) 0)))
-  (print (format nil "mass = ~A " mass))
-  mass
-  )
-
-(defun predict_contact_point
-    ()
-  (setq f (predict :target "force"))
-  (setq m (predict :target "moment"))
-  
 
 
+(defun display-arrow ()
+  (do-until-key
+   (unix:usleep 30)
+   (send (send *irtviewer* :viewer) :draw-arrow (send *robot* :rarm :end-coords :worldpos) (scale 100 (send *ri* :off-force-vector :rarm)))
+   )
+  (send *robot* :rarm :end-coords :worldpos)
   )
 
 
@@ -160,5 +155,36 @@
          :ylabel "CMz[mm]"
          :mode "lines"
          )
+
+  )
+
+
+;;predict mass
+(defun predict-mass
+    (&key (g  9.8) (free 2) (hold 10))
+  (setq mass (* (/ 1.0 g) (elt (predict :target "force" :free free :hold hold) 2)))
+  (print (format nil "mass = ~A " mass))
+  mass
+  )
+
+(defun predict-cop
+    (mass-vector &key (g  9.8) (free 2) (hold 10))
+  (setq f-row (predict :target "force"))
+  (setq f (- f-row mass-vector))
+  (setq m (predict :target "moment"))
+  (setq f-matrix (matrix (list 0 (- 0 (elt f 2)) (elt f 2)) (list (elt f 2) 0 (- 0 (elt f 0)))  (list (- 0 (elt f 1)) (elt f 1) 0)))
+  (print (format nil "f-matrix = ~A" f-matrix))
+  
+  (setq p (scale -1 (transform m (inverse-matrix f-matrix))))
+  (norm p)
+  )
+
+  
+(defun predict_contact_point
+    ()
+  (setq f (predict :target "force"))
+  (setq m (predict :target "moment"))
+  
+
 
   )
