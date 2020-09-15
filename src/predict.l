@@ -15,9 +15,12 @@
 (unless (and (boundp '*robot*) (boundp '*rs-list*)))
 
 (unless (boundp '*rs-list*)  
-  (prepare-plot )
+  ;; (prepare-plot :fname "pred_mass_JAXON_RED_2020_09-12_15-45_33")
+;;  (setq mass-vector (predict-mass))
+  (prepare-plot :create t)
   (setq rs (car *rs-list*))
   )
+
 
 ;;plot用　0912時点ではplot関数がうまく行っていないから使ってない
 (setq state-data-free nil)
@@ -44,7 +47,7 @@
                   ;;                       (send rs :get (read-from-string (format nil "~A-off-~A-vector" l target))))) rs-list))
 
                   (list :rarm)))
-         ;;time-list
+         ;;time-listn
          (state-time-data
           (mapcar #'(lambda (x) (send x :time )) rs-list)))
 
@@ -158,20 +161,25 @@
 
   )
 
-
+;; (defun prepare
+;;     ()
+;;   (setq *log* (create-log-interface fname-with-path :robot robot))
 ;;predict mass
 (defun predict-mass
     (&key (g  9.8) (free 2) (hold 10))
-  (setq mass (* (/ 1.0 g) (elt (predict :target "force" :free free :hold hold) 2)))
+  (setq mass (* -1 (* (/ 1.0 g) (elt (predict :target "force" :free free :hold hold) 2))))
   (print (format nil "mass = ~A " mass))
   mass
   )
 
+;;棒なしから棒を掴んだとき
 (defun predict-cop
     (mass-vector &key (g  9.8) (free 2) (hold 10))
-  (setq f-row (predict :target "force"))
-  (setq f (- f-row mass-vector))
-  (setq m (predict :target "moment"))
+  ;; (setq f-row (predict :target "force"))
+  ;; (setq f (m- f-row mass-vector))
+  ;; (setq m (predict :target "moment"))
+  (setq m (mapcar #'(lambda (l)
+                       (mapcar #'(lambda (x) (send x :get (read-from-string (format nil "~A-off-moment-vector" l )))) rs-list))))
   (setq f-matrix (matrix (list 0 (- 0 (elt f 2)) (elt f 2)) (list (elt f 2) 0 (- 0 (elt f 0)))  (list (- 0 (elt f 1)) (elt f 1) 0)))
   (print (format nil "f-matrix = ~A" f-matrix))
   
@@ -188,3 +196,7 @@
 
 
   )
+
+;; (setq mass-vector (predict-mass :free 2 :hold 10) )
+;; (prepare-plot :create t)
+;; (predict-cop mass-vector)
