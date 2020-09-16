@@ -173,33 +173,55 @@
   mass-vector
   )
 
-;;棒なしから棒を掴んだとき
-(defun predict-cop
-    ( &key (g  9.8) (free 1) (hold 4.5))
-  ;; (setq f-row (predict :target "force"))
-  ;; (setq f (m- f-row mass-vector))
+;;棒なしから棒を掴んだときの差より
+(defun predict-com
+    (mass-vector &key (g  9.8) (free 1) (hold 4.5))
+  ;massを求めているのと同じことしてる、、実はpredict-massでよい
   (setq f (predict :target "force" :free free :hold hold))
+  (print (format nil "f = ~A" f))
+
+  ;;モーメントのさを求める
   (setq m (predict :target "moment" :free free :hold hold))
-  ;; (setq m (mapcar #'(lambda (l)
-  ;;                      (mapcar #'(lambda (x) (send x :get (read-from-string (format nil "~A-off-moment-vector" l )))) rs-list))))
+  (print (format nil "m = ~A" m))
+
   (setq f-matrix (matrix (list 0 (- 0 (elt f 2)) (elt f 1)) (list (+ 0 (elt f 2)) 0 (- 0 (elt f 0)))  (list (- 0 (elt f 1)) (elt f 0) 0)))
   (print (format nil "f-matrix = ~A" f-matrix))
   
-  (setq p (scale -1 (transform m (inverse-matrix f-matrix))))
+  (setq p (scale -1 (transform (inverse-matrix f-matrix) m)))
   ;;  (norm p)
   p
   )
 
-  
-(defun predict_contact_point
-    ()
-  (setq f (predict :target "force"))
-  (setq m (predict :target "moment"))
-  
 
-
+(defun predict-com-test
+    (mass-vector f-row m &key (g  9.8) (free 1) (hold 4.5))
+  (setq f (v- f-row mass-vector))
+  (setq f-matrix (matrix (list 0 (- 0 (elt f 2)) (elt f 1)) (list (+ 0 (elt f 2)) 0 (- 0 (elt f 0)))  (list (- 0 (elt f 1)) (elt f 0) 0)))
+  (print (format nil "f-matrix = ~A" f-matrix))
+  
+  (setq p (scale -1 (transform (inverse-matrix f-matrix) m)))
+  p
   )
 
+;; 関数計算があっているか確認    あってそう？？？？
+;; 34.irteusgl$ predict-cop-test a (float-vector 1 0 -1) (float-vector 0 10 0)
+;; "f-matrix = #2f((0.0 1.0 0.0) (-1.0 0.0 -1.0) (0.0 1.0 0.0))"
+;; #f(10.0 0.0 0.0)
+
+(defun predict-contact-point
+    ()
+  ;;棒を掴んでないとき、掴んでいるときの差からmassと、comを求める
+  (prepare-plot :fname "pred_mass_JAXON_RED_2020_09-12_15-45_33")
+  (setq mass-vector (predict-mass :free 1 :hold 4.5) )
+  (setq com (predict-com mass-vector :free 1 :hold 4.5))
+
+  ;;ぶつけてみたときの接触点を求める
+  ;; (prepare-plot :create nil :fname "contact_70_JAXON_RED_2020_09-08_22-00_27")
+  ;; (setq com (predict-com mass-vector :free 2 :hold 10))
+  (print (format nil "com = ~A" com))
+  )
+
+  
 ;; (setq mass-vector (predict-mass :free 2 :hold 10) )
 ;; (prepare-plot :create t)
 ;; (predict-cop mass-vector)
