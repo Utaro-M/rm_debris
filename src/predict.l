@@ -78,7 +78,7 @@
   )
 
 
-
+;;reach.lが最新
 (defun display-arrow ()
   (do-until-key
    (unix:usleep 30)
@@ -125,8 +125,8 @@
         
     (setq ave (float-vector (/ sum_x (float len)) (/ sum_y (float len)) (/ sum_z (float len))))
 
-    (print (format nil "ave = ~A" ave))
-    (print len)
+    ;; (print (format nil "ave = ~A" ave))
+    ;; (print len)
     (cond
      ((equal axis 0)
       (float (elt ave 0)))
@@ -164,27 +164,30 @@
 ;; (defun prepare
 ;;     ()
 ;;   (setq *log* (create-log-interface fname-with-path :robot robot))
-;;predict mass
+;;predict mass return vector
 (defun predict-mass
-    (&key (g  9.8) (free 2) (hold 10))
-  (setq mass (* -1 (* (/ 1.0 g) (elt (predict :target "force" :free free :hold hold) 2))))
-  (print (format nil "mass = ~A " mass))
-  mass
+    (&key (g  9.8) (free 1) (hold 4.5))
+  (setq mass-vector (predict :target "force" :free free :hold hold))
+  (setq mass (* -1 (* (/ 1.0 g)  (elt mass-vector 2))))
+  (print (format nil "mass = ~A " mass ))
+  mass-vector
   )
 
 ;;棒なしから棒を掴んだとき
 (defun predict-cop
-    (mass-vector &key (g  9.8) (free 2) (hold 10))
+    ( &key (g  9.8) (free 1) (hold 4.5))
   ;; (setq f-row (predict :target "force"))
   ;; (setq f (m- f-row mass-vector))
-  ;; (setq m (predict :target "moment"))
-  (setq m (mapcar #'(lambda (l)
-                       (mapcar #'(lambda (x) (send x :get (read-from-string (format nil "~A-off-moment-vector" l )))) rs-list))))
-  (setq f-matrix (matrix (list 0 (- 0 (elt f 2)) (elt f 2)) (list (elt f 2) 0 (- 0 (elt f 0)))  (list (- 0 (elt f 1)) (elt f 1) 0)))
+  (setq f (predict :target "force" :free free :hold hold))
+  (setq m (predict :target "moment" :free free :hold hold))
+  ;; (setq m (mapcar #'(lambda (l)
+  ;;                      (mapcar #'(lambda (x) (send x :get (read-from-string (format nil "~A-off-moment-vector" l )))) rs-list))))
+  (setq f-matrix (matrix (list 0 (- 0 (elt f 2)) (elt f 1)) (list (+ 0 (elt f 2)) 0 (- 0 (elt f 0)))  (list (- 0 (elt f 1)) (elt f 0) 0)))
   (print (format nil "f-matrix = ~A" f-matrix))
   
   (setq p (scale -1 (transform m (inverse-matrix f-matrix))))
-  (norm p)
+  ;;  (norm p)
+  p
   )
 
   
