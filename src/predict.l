@@ -78,6 +78,35 @@
   )
 
 
+;;targetのprediodから期間duration秒の間のデータをならして出力
+(defun get
+    (&key (target "force") (period 2) (duration 1) (axis :x) (rs-list *rs-list*) (limbs (get-limbs-in-force-sensor-order *robot*)))
+  (let* ((state-data
+          (mapcar #'(lambda (l)
+                       (mapcar #'(lambda (x) (send x :get (read-from-string (format nil "~A-off-~A-vector" l target)))) rs-list))
+                  (list :rarm)))
+         ;;time-listn
+         (state-time-data
+          (mapcar #'(lambda (x) (send x :time )) rs-list)))
+
+    ;;get index of free period and hold period
+    (setq start-index (position-if #'(lambda (x) (and (< (- period 0.1) x) (< x (+ period 0.1) ))) state-time-data ))
+    (setq end-index (position-if #'(lambda (x) (and (< (- (+ period duration) 0.1) x) (< x (+ (+ period duration) 0.1) ))) state-time-data ))
+    
+    ;;get list of each period
+    (setq state (subseq (car state-data) free-start-index free-end-index))
+
+    ;;low-pass filter smoothing
+    (setq state-smoothed (low-pass state))
+
+    (setq ave (average state-smoothed))
+    (print (format nil "~A = ~A"  target  ave))
+    ;; (print pred)
+    ave
+    )
+  )
+
+
 ;;reach.lが最新
 (defun display-arrow ()
   (do-until-key
@@ -161,10 +190,7 @@
 
   )
 
-;; (defun prepare
-;;     ()
-;;   (setq *log* (create-log-interface fname-with-path :robot robot))
-;;predict mass return vector
+
 (defun predict-mass
     (&key (g  9.8) (free 1) (hold 4.5))
   (setq mass-vector (predict :target "force" :free free :hold hold))
@@ -174,8 +200,8 @@
   )
 
 ;;棒なしから棒を掴んだときの差より
-(defun predict-com
-    (mass-vector &key (g  9.8) (free 1) (hold 4.5))
+(defun predict-com-one-log
+    (&key (g  9.8) (free 1) (hold 4.5))
   ;massを求めているのと同じことしてる、、実はpredict-massでよい
   (setq f (predict :target "force" :free free :hold hold))
   (print (format nil "f = ~A" f))
@@ -188,38 +214,29 @@
   (setq f-inverse-matrix (inverse-matrix f-matrix))
   (print (format nil "f-matrix = ~A" f-matrix))
   (print (format nil "f-inverse-matrix = ~A" (inverse-matrix f-matrix)))
+
   (setq lu-a (lu-decompose f-matrix))
-
   (print (format nil "lu-a = ~A" lu-a))
-  (setq determinant (lu-determinant f-matrix  (lu-decompose f-matrix)))
-  (print (format nil  "lu-determinant=~A" determinant))
-  (print (format nil "f-matrix = ~A" f-matrix))
 
-  (if (< determinant 1)
+  (if lu-a
       (progn
-        (print nil)
-        nil)
-    
-    (progn
-      (setq p (scale -1 (transform f-inverse-matrix m)))
-      p)
+        (setq determinant (lu-determinant f-matrix lu-a))
+        (if (< determinant 0.5)
+            (progn
+              (print (format nil "inverse is not exist : determinant = ~A" determinant))
+              nil)
+          (progn
+            (print (format nil "determinant = ~A" determinant))
+            (setq p (scale -1 (transform f-inverse-matrix m)))
+            p)
+          ))
+    nil
     )
-
-  ;; (if (equal f-matrix f-inverse-matrix)
-  ;;     (progn
-  ;;       (print nil)
-  ;;       nil)
-    
-  ;;   (progn
-  ;;     (setq p (scale -1 (transform f-inverse-matrix m)))
-  ;;     p)
-  ;;   )
-
-  ;;  (norm p)
   )
 
+;;棒を持っていないときと、持っているときの差から求める
 
-(defun predict-com-test
+(defun predict-com-one-log-test
     (mass-vector f-row m &key (g  9.8) (free 1) (hold 4.5))
   (setq f (v- f-row mass-vector))
   (setq f-matrix (matrix (float-vector 0 (- 0 (elt f 2)) (elt f 1)) (float-vector (+ 0 (elt f 2)) 0 (- 0 (elt f 0)))  (float-vector (- 0 (elt f 1)) (elt f 0) 0)))
@@ -228,8 +245,8 @@
 
   (setq f-inverse-matrix (pseudo-inverse f-matrix))
   (print (format nil "f-inverse-matrix = ~A" f-inverse-matrix))
-  (setq p (scale -1 (transform f-inverse-matrix m)))
-  (print (format nil "p=~A with pseudo-inverse" p))
+  ;; (setq p (scale -1 (transform f-inverse-matrix m)))
+  ;; (print (format nil "p=~A with pseudo-inverse" p))
 
   (setq lu-a (lu-decompose f-matrix))
   (print (format nil "lu-a = ~A" lu-a))
@@ -256,19 +273,124 @@
   
   )
 
+(defun predict-com
+    (force-free moment-free force-hold moment-hold &key (g  9.8))
+  (setq f (v- force-hold force-free))
+  (setq f-matrix (matrix (float-vector 0 (- 0 (elt f 2)) (elt f 1)) (float-vector (+ 0 (elt f 2)) 0 (- 0 (elt f 0)))  (float-vector (- 0 (elt f 1)) (elt f 0) 0)))
+  (print (format nil "f-matrix = ~A" f-matrix))
+
+  (setq m (v- moment-hold moment-free))
+  (print (format nil "moment = ~A" m))
+
+  (setq lu-a (lu-decompose f-matrix))
+  (print (format nil "lu-a = ~A" lu-a))
+
+  (if lu-a
+      (progn
+        (setq determinant (lu-determinant f-matrix lu-a))
+        (if (< determinant 0.5)
+            (progn
+              (print (format nil "inverse is not exist : determinant = ~A" determinant))
+              nil)
+          (progn
+            (print (format nil "determinant = ~A" determinant))
+            (setq p (scale -1 (transform f-inverse-matrix m)))
+            p)
+          ))
+    nil
+    )
+  )
 
 
+(defun predict-com-det
+    (force-free moment-free force-hold moment-hold &key (g  9.8))
+  (setq f (v- force-hold force-free))
+  (setq f-matrix (matrix (float-vector 0 (- 0 (elt f 2)) (elt f 1)) (float-vector (+ 0 (elt f 2)) 0 (- 0 (elt f 0)))  (float-vector (- 0 (elt f 1)) (elt f 0) 0)))
+  (print (format nil "f-matrix = ~A" f-matrix))
+
+  (setq m (v- moment-hold moment-free))
+  (print (format nil "moment = ~A" m))
+
+  (setq det (determinant f-matrix))
+  (if (< det 0.5)
+      (progn
+        (print (format nil "inverse is not exist : determinant = ~A" det))
+        nil)
+    (progn
+      (print (format nil "determinant = ~A" det))
+      (setq p (scale -1 (transform f-inverse-matrix m)))
+      p)
+    )
+  )
+
+(defun pred-com-simultaneous
+    (force-free moment-free force-hold moment-hold &key (g  9.8))
+  (setq f (v- force-hold force-free))
+  (setq f-matrix (matrix (float-vector 0 (- 0 (elt f 2)) (elt f 1)) (float-vector (+ 0 (elt f 2)) 0 (- 0 (elt f 0))) (float-vector (- 0 (elt f 1)) (elt f 0) 0)))
+  (print (format nil "f-matrix = ~A" f-matrix))
+  (print (matrixp f-matrix))
+ 
+  (setq m (v- moment-hold moment-free))
+  (print (format nil "moment = ~A" m))
+  (print (vectorp m))
+
+  (simultaneous-equation f-matrix m)
+  )
+  
+
+(defun determinant
+    (mat)
+  (setq det 0)
+  (dotimes (i 3)
+    (setq det (+ det (* (aref mat 0 i) (- (* (aref mat 1 (mod (+ i 1) 3)) (aref mat 2 (mod (+ i 2) 3))) (* (aref mat 1 (mod (+ i 2) 3)) (aref mat 2 (mod (+ i 1) 3)))))))
+    )
+  (print (format nil "det = ~A" det))
+  det
+  )
+
+
+(defun pred
+    ()
+  ;;何も持っていない状態でのforce,momentを記録
+  (prepare-plot :fname "pred_mass_JAXON_RED_2020_09-12_15-45_33")
+  (setq force-free (get :target "force" :period 2 :duration 1 ))
+  (setq moment-free (get :target "moment" :period 2 :duration 1 ))
+  
+  ;;持っている状態でのforce,momentを記録
+  (prepare-plot :create nil :fname "contact_70_JAXON_RED_2020_09-08_22-00_27")
+  (dotimes (i 10)
+    (progn
+      (setq force-hold (get :target "force" :period (+ 3 (* i 0.1)) :duration 1 ))
+      (setq moment-hold (get :target "moment" :period (+ 3 (* i 0.1)) :duration 1 ))
+      (setq com (predict-com force-free moment-free force-hold moment-hold))
+      (if com
+          break
+        )
+      )
+    )
+  
+  (print (format nil "com = ~A" com))
+  ;; ;;ぶつかったときのforce,momentを記録
+  ;; (prepare-plot :fname "pred_mass_JAXON_RED_2020_09-12_15-45_33")
+  ;; (setq force-contact (get :target "force" :period 2 :duration 1 ))
+  ;; (setq moment-contact (get :target "moment" :period 2 :duration 1 ))
+
+)
+
+
+  
 ;; 関数計算があっているか確認    あってそう？？？？
 ;; 34.irteusgl$ predict-cop-test a (float-vector 1 0 -1) (float-vector 0 10 0)
 ;; "f-matrix = #2f((0.0 1.0 0.0) (-1.0 0.0 -1.0) (0.0 1.0 0.0))"
 ;; #f(10.0 0.0 0.0)
 
+;;今のとこrはまだCOMの推定
 (defun predict-contact-point
     ()
   ;;棒を掴んでないとき、掴んでいるときの差からmassと、comを求める
   (prepare-plot :fname "pred_mass_JAXON_RED_2020_09-12_15-45_33")
   (setq mass-vector (predict-mass :free 1 :hold 4.5) )
-  (setq com (predict-com mass-vector :free 1 :hold 4.5))
+  (setq com (predict-com :free 1 :hold 4.5))
 
   ;;ぶつけてみたときの接触点を求める
   ;; (prepare-plot :create nil :fname "contact_70_JAXON_RED_2020_09-08_22-00_27")
