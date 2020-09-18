@@ -101,7 +101,7 @@
       (list-insert y (+ i 1) y-predict)
       )
     (setq ret (cdr y-predict))
-    (print (list-length ret))
+    ;; (print (list-length ret))
     ret    
     )
   )
@@ -134,7 +134,7 @@
       (elt ave 1))
      ((equal axis 2)
       (float (elt ave 2)))
-     (t (progn (print "output vector")
+     (t (progn ;;(print "output vector")
                ave))
      )
 
@@ -185,23 +185,78 @@
   (print (format nil "m = ~A" m))
 
   (setq f-matrix (matrix (list 0 (- 0 (elt f 2)) (elt f 1)) (list (+ 0 (elt f 2)) 0 (- 0 (elt f 0)))  (list (- 0 (elt f 1)) (elt f 0) 0)))
+  (setq f-inverse-matrix (inverse-matrix f-matrix))
   (print (format nil "f-matrix = ~A" f-matrix))
-  
-  (setq p (scale -1 (transform (inverse-matrix f-matrix) m)))
+  (print (format nil "f-inverse-matrix = ~A" (inverse-matrix f-matrix)))
+  (setq lu-a (lu-decompose f-matrix))
+
+  (print (format nil "lu-a = ~A" lu-a))
+  (setq determinant (lu-determinant f-matrix  (lu-decompose f-matrix)))
+  (print (format nil  "lu-determinant=~A" determinant))
+  (print (format nil "f-matrix = ~A" f-matrix))
+
+  (if (< determinant 1)
+      (progn
+        (print nil)
+        nil)
+    
+    (progn
+      (setq p (scale -1 (transform f-inverse-matrix m)))
+      p)
+    )
+
+  ;; (if (equal f-matrix f-inverse-matrix)
+  ;;     (progn
+  ;;       (print nil)
+  ;;       nil)
+    
+  ;;   (progn
+  ;;     (setq p (scale -1 (transform f-inverse-matrix m)))
+  ;;     p)
+  ;;   )
+
   ;;  (norm p)
-  p
   )
 
 
 (defun predict-com-test
     (mass-vector f-row m &key (g  9.8) (free 1) (hold 4.5))
   (setq f (v- f-row mass-vector))
-  (setq f-matrix (matrix (list 0 (- 0 (elt f 2)) (elt f 1)) (list (+ 0 (elt f 2)) 0 (- 0 (elt f 0)))  (list (- 0 (elt f 1)) (elt f 0) 0)))
+  (setq f-matrix (matrix (float-vector 0 (- 0 (elt f 2)) (elt f 1)) (float-vector (+ 0 (elt f 2)) 0 (- 0 (elt f 0)))  (float-vector (- 0 (elt f 1)) (elt f 0) 0)))
   (print (format nil "f-matrix = ~A" f-matrix))
+  (print (format nil "m = ~A" m))
+
+  (setq f-inverse-matrix (pseudo-inverse f-matrix))
+  (print (format nil "f-inverse-matrix = ~A" f-inverse-matrix))
+  (setq p (scale -1 (transform f-inverse-matrix m)))
+  (print (format nil "p=~A with pseudo-inverse" p))
+
+  (setq lu-a (lu-decompose f-matrix))
+  (print (format nil "lu-a = ~A" lu-a))
+
+  (if lu-a
+      (progn
+        (setq determinant (lu-determinant f-matrix lu-a))
+        (if (< determinant 0.5)
+            (progn
+              (print (format nil "inverse is not exist : determinant = ~A" determinant))
+              nil)
+          (progn
+            (print (format nil "determinant = ~A" determinant))
+            (setq p (scale -1 (transform f-inverse-matrix m)))
+            p)
+          ))
+    nil
+    )
+
+
+  ;; (lu-determinant f-matrix (lu-decompose f-matrix))
+  ;; (setq p (scale -1 (transform f-inverse-matrix  m)))
+ ;; (setq p (scale -1 (simultaneous-equation f-matrix m)))
   
-  (setq p (scale -1 (transform (inverse-matrix f-matrix) m)))
-  p
   )
+
+
 
 ;; 関数計算があっているか確認    あってそう？？？？
 ;; 34.irteusgl$ predict-cop-test a (float-vector 1 0 -1) (float-vector 0 10 0)
