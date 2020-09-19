@@ -77,7 +77,7 @@
     )
   )
 
-
+;;0918
 ;;targetのprediodから期間duration秒の間のデータをならして出力
 (defun get
     (&key (target "force") (period 2) (duration 1) (axis :x) (rs-list *rs-list*) (limbs (get-limbs-in-force-sensor-order *robot*)))
@@ -301,7 +301,6 @@
     )
   )
 
-
 (defun predict-com-det
     (force-free moment-free force-hold moment-hold &key (g  9.8))
   (setq f (v- force-hold force-free))
@@ -333,7 +332,6 @@
   (setq m (v- moment-hold moment-free))
   (print (format nil "moment = ~A" m))
   (print (vectorp m))
-
   (simultaneous-equation f-matrix m)
   )
   
@@ -348,7 +346,8 @@
   det
   )
 
-
+;;一つの姿勢のデータを使っての推定
+;;歪対称行列のランクは最大２で常に行列式が０になるので逆行列は存在せず、解くことはできない
 (defun pred
     ()
   ;;何も持っていない状態でのforce,momentを記録
