@@ -21,14 +21,47 @@
 
   ;;momentベクトルをくっつける
   (setq m1 moment1)
-  (setq m2xo moment2)
+  (setq m2 moment2)
   (setq m (float-vector (elt m1 0) (elt m1 1)  (elt m1 2) (elt m2 0) (elt m2 1)  (elt m2 2)))
   (print (format nil "moment  = ~A" m))
 
+  (setq f-inverse-matrix (pseudo-inverse f-matrix))
+  (print (format nil "f-inverse-matrix = ~A" f-inverse-matrix))
+
+  ;; (setq p (scale -1 (simultaneous-equation f-matrix m)))
+  ;; (print (format nil "p=~A with pseudo-inverse" p))
+
+  (setq det (determinant f-matrix))
+  (if (< det 0.5)
+      (progn
+        (print (format nil "inverse is not exist : determinant = ~A" det))
+        nil)
+    (progn
+      (print (format nil "determinant = ~A" det))
+      (setq p (scale -1 (transform f-inverse-matrix m)))
+      p)
+    )
   
   )
 
+
+
+(defun rot-coords()
+  (send (send *robot* :rarm :end-coords ) :draw-on :flush t :size 300)
+  (setq pre-coords (send *robot* :rarm :end-coords :worldrot))
+  (print (format nil "pre-coords = ~A" pre-coords))
+  (send *robot* :rarm :end-coords :rot)
+
+  (unix:sleep 1)
+  (snap 0 90 0)
+  (unix:sleep 1)  
+  (setq post-coords (send *robot* :rarm :end-coords :worldrot))
+  (print (format nil "post-coords = ~A" post-coords))
+  (send (send *robot* :rarm :end-coords ) :draw-on :flush t :size 300)
   
+  (send *robot* :rarm :end-coords :worldrot)
+
+)
   ;; ;;何も持っていない状態でのforce,momentを記録
   ;; (prepare-plot :fname "pred_mass_JAXON_RED_2020_09-12_15-45_33")
   ;; (setq force-free (get :target "force" :period 2 :duration 1 ))
