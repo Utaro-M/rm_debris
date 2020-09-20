@@ -94,7 +94,7 @@
     (setq end-index (position-if #'(lambda (x) (and (< (- (+ period duration) 0.1) x) (< x (+ (+ period duration) 0.1) ))) state-time-data ))
     
     ;;get list of each period
-    (setq state (subseq (car state-data) free-start-index free-end-index))
+    (setq state (subseq (car state-data) start-index end-index))
 
     ;;low-pass filter smoothing
     (setq state-smoothed (low-pass state))
@@ -102,7 +102,10 @@
     (setq ave (average state-smoothed))
     (print (format nil "~A = ~A"  target  ave))
     ;; (print pred)
-    ave
+    
+    (setq pre-coords (elt (send (elt rs-list start-index) :end-coords-list) 1)) ;;(send (elt rs-list start-index) :rarm :end-coords))
+    (setq post-coords (elt (send (elt rs-list end-index) :end-coords-list) 1)) ;;(send (elt rs-list end-index) :rarm :end-coords))
+    (list ave pre-coords post-coords)
     )
   )
 
