@@ -12,14 +12,13 @@
 
 (load "package://control_tools/log-tools.l")
 
-(unless (and (boundp '*robot*) (boundp '*rs-list*)))
+;;logを使うときはコメントアウトを外す
+;; (unless (and (boundp '*robot*) (boundp '*rs-list*)))
 
-(unless (boundp '*rs-list*)  
-  ;; (prepare-plot :fname "pred_mass_JAXON_RED_2020_09-12_15-45_33")
-;;  (setq mass-vector (predict-mass))
-  (prepare-plot :create t)
-  (setq rs (car *rs-list*))
-  )
+;; (unless (boundp '*rs-list*)  
+;;   (prepare-plot :create t)
+;;   (setq rs (car *rs-list*))
+;;   )
 
 
 ;;plot用　0912時点ではplot関数がうまく行っていないから使ってない
@@ -110,17 +109,9 @@
   )
 
 
-;;reach.lが最新
-(defun display-arrow ()
-  (do-until-key
-   (unix:usleep 30)
-   (send (send *irtviewer* :viewer) :draw-arrow (send *robot* :rarm :end-coords :worldpos) (scale 100 (send *ri* :off-force-vector :rarm)))
-   )
-  (send *robot* :rarm :end-coords :worldpos)
-  )
-
 
 ;;low-pass filter
+;;log version
 ;;reffrence http://www.jsk.t.u-tokyo.ac.jp/~nozawa/share/doc/Control.pdf
 (defun low-pass
     (state-data) ;; (&key r 0.3))
@@ -169,7 +160,6 @@
      (t (progn ;;(print "output vector")
                ave))
      )
-
     )
   )
 

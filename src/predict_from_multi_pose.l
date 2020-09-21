@@ -15,6 +15,11 @@
 ;; (setq pre-coords  #<coordinates #X557a04797290  209.447 -418.273 1127.391 / -0.157 -0.093 -0.086>)
 ;; (setq post-coords  #<coordinates #X557a1f5c1dd0  209.465 -418.263 1127.399 / 1.102 1.275 1.245>)
 
+
+;;
+;;0921この関数でやっている変換transformのやつは実は間違っている
+正しくは、
+;;(send (car (send robot limb :force-sensors)) :rotate-vector (send self :off-moment-vector limb)) みたいにforce-sensors と:rotate-vectorを使わないと行けない（まだ書き直してない）
 ;;comを推定
 (defun pred-multi-com
     (force1 moment1 force2 moment2 pre-coords post-coords &key (g  9.8))
@@ -101,8 +106,9 @@
   (setq hold-f-world (send hold-coords :transform-vector hold-f-local))
 
   (setq mass-vector-world (v- hold-f-world free-f-world))
-  (print (format nil "mass-vector = ~A" mass-vector))
-  
+  (print (format nil "mass-vector = ~A" mass-vector-world))
+
+  ;;;
   (setq f1 (low-pass-online "force"))
   (setq m1 (low-pass-online "moment"))
   (setq pre-coords (send *robot* :rarm-end-coords))
