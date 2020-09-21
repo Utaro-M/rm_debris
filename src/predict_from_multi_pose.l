@@ -3,7 +3,7 @@
 ;; このコードでは複数姿勢の力モーメントを回転させて重ねて、拘束過多の疑似逆行列を用いて推定を行う
 ;;cascoords-~~から移植した
 
-;;(load "./predict.l")
+(load "./predict.l")
 (load "../euslisp/reach.l")
 
 ;; (setq f1 (float-vector 0 0 -10))
@@ -80,26 +80,61 @@
 ;; "f-inverse-matrix = #2f((-0.025151 -0.020498 0.048508 0.019029 0.022899 -0.016881) (0.019979 0.014639 -0.015537 -0.024534 -0.012644 0.039754) (-0.022482 -0.015974 0.010511 -0.003976 -0.014085 -0.006385))"
 ;; "com=#f(-0.285145 0.29928 0.124284) with pseudo-inverse"
 ;; "com norm = 0.431651"
-;; #f(-0.285145 0.29928 0.124284)
+;; #f(-0.285145 0.29928 0.p124284)
 (defun test_on_simulator
     ()
   ;; (init)
-  ;; (grab_on_table)
-  ;; (init)
 
-  (setq f1 (send *ri* :off-force-vector :rarm))
-  (setq m1 (send *ri* :off-moment-vector :rarm))
+  (reach)
+  (setq free-f-local (low-pass-online "force"))
+  (setq free-coords (send *robot* :rarm-end-coords))
+  (setq free-f-world (send free-coords :transform-vector free-f-local))
+  
+  (send *ri* :start-grasp)
+  ;; (snap 0 -90 0)
+  (init)
+  (snap 0 10 0)
+
+  (unix:sleep 1)
+  (setq hold-f-local (low-pass-online "force"))
+  (setq hold-coords (send *robot* :rarm-end-coords))
+  (setq hold-f-world (send hold-coords :transform-vector hold-f-local))
+
+  (setq mass-vector-world (v- hold-f-world free-f-world))
+  (print (format nil "mass-vector = ~A" mass-vector))
+  
+  (setq f1 (low-pass-online "force"))
+  (setq m1 (low-pass-online "moment"))
   (setq pre-coords (send *robot* :rarm-end-coords))
   
   (snap 0 30 0)
   
-  (setq f2 (send *ri* :off-force-vector :rarm))
-  (setq m2 (send *ri* :off-moment-vector :rarm))
+  (setq f2 (low-pass-online "force"))
+  (setq m2 (low-pass-online "moment"))
   (setq post-coords (send *robot* :rarm-end-coords))
   (setq com (pred-multi-com f1 m1 f2 m2 pre-coords post-coords))
   )
 
 
+;;呼ばれた瞬間から0.1秒間で5回分のセンサ値をlow-pass filterでならしてその平均を出力
+(defun low-pass-online
+    (target &key (r 0.3))
+  (let* (
+         (y-predict (list (send *ri* (read-from-string (format nil ":off-~A-vector" target)) :rarm)))
+         )
+    
+    (dotimes (i 5)
+      (setq y (v+ (scale r (send *ri* (read-from-string (format nil ":off-~A-vector" target)) :rarm)) (scale (- 1 r) (elt y-predict i))))
+      (list-insert y (+ i 1) y-predict)
+      (unix:usleep 20)
+      )
+    (setq ret (cdr y-predict))
+    (print (format nil "~A vector through filter = ~A" target ret))
+    (setq ret-average (average ret))
+    (print (format nil "~A vector through filter and average = ~A" target ret-average))
+    ret-average
+    )
+  )
 
 ;; ;;
 ;; (setq pos_rarm (scale 0.001 (send *robot* :rarm :end-coords :worldpos)))
@@ -107,11 +142,6 @@
 ;; (setq com_simulator (v- pos_stick pos_rarm))
 ;; (norm com_simulator)
 
-(defun a
-    (mass-vector com-vector force moment coords  &key (g  9.8))
-  (setq contact-force (v- force mass-vector))
-  (setq com-vector-world (send coords :transform-vector com-vector))
-  )
       
 
 ;;座標系の変換関係でのシミュレーションでの実験
