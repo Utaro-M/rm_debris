@@ -87,7 +87,6 @@
   ;; (grab_on_table)
   ;; (init)
 
-  (
   (setq f1 (send *ri* :off-force-vector :rarm))
   (setq m1 (send *ri* :off-moment-vector :rarm))
   (setq pre-coords (send *robot* :rarm-end-coords))
