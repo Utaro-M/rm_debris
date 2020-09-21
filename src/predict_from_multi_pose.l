@@ -16,7 +16,7 @@
 ;; (setq post-coords  #<coordinates #X557a1f5c1dd0  209.465 -418.263 1127.399 / 1.102 1.275 1.245>)
 
 ;;comを推定
-(defun pred-multi-test
+(defun pred-multi-com
     (force1 moment1 force2 moment2 pre-coords post-coords &key (g  9.8))
 
   (setq change (get-transform-matrix pre-coords post-coords))
@@ -69,7 +69,6 @@
 
 ;;simulator で重心を探してみた
 ;;0921 log
-
 ;; test_on_simulator
 ;; Do you move real machine?(Y or N): y
 ;; ;; #<rotational-joint #X55895c89dfe0 CHEST_JOINT1> :joint-angle(-0.053159) violate min-angle(0.0)
@@ -87,6 +86,8 @@
   ;; (init)
   ;; (grab_on_table)
   ;; (init)
+
+  (
   (setq f1 (send *ri* :off-force-vector :rarm))
   (setq m1 (send *ri* :off-moment-vector :rarm))
   (setq pre-coords (send *robot* :rarm-end-coords))
@@ -96,15 +97,22 @@
   (setq f2 (send *ri* :off-force-vector :rarm))
   (setq m2 (send *ri* :off-moment-vector :rarm))
   (setq post-coords (send *robot* :rarm-end-coords))
-  (pred-multi-test f1 m1 f2 m2 pre-coords post-coords)
+  (setq com (pred-multi-com f1 m1 f2 m2 pre-coords post-coords))
   )
+
+
 
 ;; ;;
 ;; (setq pos_rarm (scale 0.001 (send *robot* :rarm :end-coords :worldpos)))
 ;; (setq pos_stick #f(0.259 -0.425 1.174))
 ;; (setq com_simulator (v- pos_stick pos_rarm))
 ;; (norm com_simulator)
-      
+
+(defun a
+    (mass-vector com-vector force moment coords  &key (g  9.8))
+  (setq contact-force (v- force mass-vector))
+  (setq com-vector-world (send coords :transform-vector com-vector))
+  )
       
 
 ;;座標系の変換関係でのシミュレーションでの実験
