@@ -17,9 +17,7 @@
 
 
 ;;
-;;0921この関数でやっている変換transformのやつは実は間違っている
-正しくは、
-;;(send (car (send robot limb :force-sensors)) :rotate-vector (send self :off-moment-vector limb)) みたいにforce-sensors と:rotate-vectorを使わないと行けない（まだ書き直してない）
+;;0921 あってるかわからない、座標系とか　計算結果はそれっぽくなってはいるけど
 ;;comを推定
 (defun pred-multi-com
     (force1 moment1 force2 moment2 pre-coords post-coords &key (g  9.8))
@@ -50,11 +48,11 @@
   (setq f-inverse-matrix (pseudo-inverse f-matrix))
   (print (format nil "f-inverse-matrix = ~A" f-inverse-matrix))
 
-  ;;  (setq p (scale -1 (simultaneous-equation f-matrix m)))
-  (setq com (scale -1 (transform f-inverse-matrix m)))
+  ;; (setq com (scale -1 (transform f-inverse-matrix m)))
+  (setq com (scale 1 (transform f-inverse-matrix m)))
   (print (format nil "com=~A with pseudo-inverse" com))
   (print (format nil "com norm = ~A" (norm com)))
-  com
+;;  (transform (inverse-matrix change-rot) com)
 
   ;; (setq det (determinant f-matrix))
   ;; (if (< det 0.5)
@@ -86,14 +84,20 @@
 ;; "com=#f(-0.285145 0.29928 0.124284) with pseudo-inverse"
 ;; "com norm = 0.431651"
 ;; #f(-0.285145 0.29928 0.p124284)
+
+;;正しくは、
+;;(send (car (send robot limb :force-sensors)) :rotate-vector (send self :off-moment-vector limb)) みたいにforce-sensors と:rotate-vectorを使わないと行けない（まだ書き直してない）
 (defun test_on_simulator
     ()
   ;; (init)
 
+  (setq free-f-world (low-pass-online "force" "absolute"))
   (reach)
-  (setq free-f-local (low-pass-online "force"))
-  (setq free-coords (send *robot* :rarm-end-coords))
-  (setq free-f-world (send free-coords :transform-vector free-f-local))
+  ;; (setq free-f-local (low-pass-online "force"))
+  ;; (setq free-coords (send *robot* :rarm-end-coords))
+  ;; (setq free-f-world (send free-coords :transform-vector free-f-local))
+
+
   
   (send *ri* :start-grasp)
   ;; (snap 0 -90 0)
@@ -101,22 +105,26 @@
   (snap 0 10 0)
 
   (unix:sleep 1)
-  (setq hold-f-local (low-pass-online "force"))
-  (setq hold-coords (send *robot* :rarm-end-coords))
-  (setq hold-f-world (send hold-coords :transform-vector hold-f-local))
+  ;; (setq hold-f-local (low-pass-online "force"))
+  ;; (setq hold-coords (send *robot* :rarm-end-coords))
+  ;; (setq hold-f-world (send hold-coords :transform-vector hold-f-local))
 
+  (setq hold-f-world (low-pass-online "force" "absolute"))
+  
   (setq mass-vector-world (v- hold-f-world free-f-world))
   (print (format nil "mass-vector = ~A" mass-vector-world))
+  (print (format nil "norm of mass-vector / 9.8 = ~A [kg]" (/ (norm mass-vector-world) 9.8))
+  
 
   ;;;
-  (setq f1 (low-pass-online "force"))
-  (setq m1 (low-pass-online "moment"))
+  (setq f1 (low-pass-online "force" "off"))
+  (setq m1 (low-pass-online "moment" "off"))
   (setq pre-coords (send *robot* :rarm-end-coords))
   
   (snap 0 30 0)
   
-  (setq f2 (low-pass-online "force"))
-  (setq m2 (low-pass-online "moment"))
+  (setq f2 (low-pass-online "force" "off"))
+  (setq m2 (low-pass-online "moment" "off"))
   (setq post-coords (send *robot* :rarm-end-coords))
   (setq com (pred-multi-com f1 m1 f2 m2 pre-coords post-coords))
   )
@@ -124,13 +132,13 @@
 
 ;;呼ばれた瞬間から0.1秒間で5回分のセンサ値をlow-pass filterでならしてその平均を出力
 (defun low-pass-online
-    (target &key (r 0.3))
+    (target coords &key (r 0.3))
   (let* (
-         (y-predict (list (send *ri* (read-from-string (format nil ":off-~A-vector" target)) :rarm)))
+         (y-predict (list (send *ri* (read-from-string (format nil ":~A-~A-vector" coords target)) :rarm)))
          )
     
     (dotimes (i 5)
-      (setq y (v+ (scale r (send *ri* (read-from-string (format nil ":off-~A-vector" target)) :rarm)) (scale (- 1 r) (elt y-predict i))))
+      (setq y (v+ (scale r (send *ri* (read-from-string (format nil ":~A-~A-vector" coords target)) :rarm)) (scale (- 1 r) (elt y-predict i))))
       (list-insert y (+ i 1) y-predict)
       (unix:usleep 20)
       )
