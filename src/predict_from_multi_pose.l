@@ -52,6 +52,7 @@
   (setq com (scale 1 (transform f-inverse-matrix m)))
   (print (format nil "com=~A with pseudo-inverse" com))
   (print (format nil "com norm = ~A" (norm com)))
+  com
 ;;  (transform (inverse-matrix change-rot) com)
 
   ;; (setq det (determinant f-matrix))
@@ -113,7 +114,7 @@
   
   (setq mass-vector-world (v- hold-f-world free-f-world))
   (print (format nil "mass-vector = ~A" mass-vector-world))
-  (print (format nil "norm of mass-vector / 9.8 = ~A [kg]" (/ (norm mass-vector-world) 9.8))
+  (print (format nil "norm of mass-vector / 9.8 = ~A [kg]" (/ (norm mass-vector-world) 9.8)))
   
 
   ;;;
@@ -122,12 +123,31 @@
   (setq pre-coords (send *robot* :rarm-end-coords))
   
   (snap 0 30 0)
-  
+  (unix:sleep 1)
   (setq f2 (low-pass-online "force" "off"))
   (setq m2 (low-pass-online "moment" "off"))
   (setq post-coords (send *robot* :rarm-end-coords))
-  (setq com (pred-multi-com f1 m1 f2 m2 pre-coords post-coords))
-  )
+  (setq com-local (pred-multi-com f1 m1 f2 m2 pre-coords post-coords)) ;;たぶんlocal
+
+  (snap 0 66 0)
+  (unix:sleep 1)  
+  
+  (setq contact-f-world (low-pass-online "force" "absolute"))
+  (setq contact-m-world (low-pass-online "moment" "absolute"))
+  (setq com-world (send (car (send *robot* :rarm :force-sensors)) :transform-vector com-local))
+  (setq right-side (v- contact-m-world (v* com-world mass-vector-world)))
+  (setq left-side-vector (v* com-world contact-f-world))
+  (setq tmp 0)
+  (dotimes (i 3)
+    (setq tmp (+ tmp (/ (elt right-side i) (elt left-side-vector i))))
+    )
+  (setq scalar (/ tmp 3.0))
+  (print (format nil "scalar = ~A" scalar))
+  (setq contact-point-world (scale scalar com-world))
+  (setq contact-point-local (send (car (send *robot* :rarm :force-sensors)) :inverse-transform-vector contact-point-world))
+  contact-point-local
+)
+
 
 
 ;;呼ばれた瞬間から0.1秒間で5回分のセンサ値をlow-pass filterでならしてその平均を出力
