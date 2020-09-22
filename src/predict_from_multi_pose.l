@@ -19,16 +19,24 @@
 (defun pred-multi-com
     (force1 moment1 force2 moment2 pre-coords post-coords &key (g  9.8))
 
-  (setq change (get-transform-matrix pre-coords post-coords))
-  (setq change-rot (send change :worldrot))
+  ;; (setq change (get-transform-matrix pre-coords post-coords))
+  ;; (setq change-rot (send change :worldrot))
   
   ;;make f-matrix
-  (setq f force1)
+
+  ;;pre-coods座標系で絶対座標系で表現されたforce１を表現し直す
+  (setq f (send pre-coords :inverse-rotate-vector force1))
+  ;; (print (format nil "f1 = ~A" f))
   (setq f-matrix1 (matrix (float-vector 0 (- 0 (elt f 2)) (elt f 1)) (float-vector (+ 0 (elt f 2)) 0 (- 0 (elt f 0)))  (float-vector (- 0 (elt f 1)) (elt f 0) 0)))
   (print (format nil "f-matrix1 = ~A" f-matrix1))
 
-  
-  (setq f (transform change-rot force2))
+  ;; (setq f (transform change-rot force2))
+  ;;小島さんより
+  ;;post-coods座標系で,絶対座標系で表現されたforce2を表現し直す
+  (setq f2 (send post-coords :inverse-rotate-vector force2))
+  ;; (print (format nil "f2 = ~A" f2))
+  ;;pre-coodsに座標系が重なるようにベクトルを回転させる
+  (setq f (send (send post-coords :transformation pre-coords :world) :rotate-vector f2))
   (setq f-matrix2 (matrix (float-vector 0 (- 0 (elt f 2)) (elt f 1)) (float-vector (+ 0 (elt f 2)) 0 (- 0 (elt f 0)))  (float-vector (- 0 (elt f 1)) (elt f 0) 0)))
   (print (format nil "f-matrix2 = ~A" f-matrix2))
 
@@ -37,20 +45,26 @@
   (print (format nil "f-matrix = ~A" f-matrix))
 
   ;;momentベクトルをくっつける
-  (setq m1 moment1)
-  (setq m2 (transform change-rot moment2))
+  ;;絶対座標系で表現されたmoment１をpre-coods座標系で表現し直す
+  (setq m1 (send pre-coords :inverse-rotate-vector moment1))
+  ;;小島さんより
+  ;; (setq m2 (transform change-rot moment2))
+  ;;絶対座標系で表現されたmoment2をpost-coods座標系で表現し直す
+  (setq mm2 (send post-coords :inverse-rotate-vector moment2))
+  ;;pre-coodsに座標系が重なるようにベクトルを回転させる  
+  (setq m2 (send (send post-coords :transformation pre-coords :world) :rotate-vector mm2))
   (setq m (float-vector (elt m1 0) (elt m1 1)  (elt m1 2) (elt m2 0) (elt m2 1)  (elt m2 2)))
   (print (format nil "moment  = ~A" m))
 
   (setq f-inverse-matrix (pseudo-inverse f-matrix))
   (print (format nil "f-inverse-matrix = ~A" f-inverse-matrix))
 
-  ;; (setq com (scale -1 (transform f-inverse-matrix m)))
-  (setq com (scale 1 (transform f-inverse-matrix m)))
+  (setq com (scale -1 (transform f-inverse-matrix m)))
   (print (format nil "com=~A with pseudo-inverse" com))
   (print (format nil "com norm = ~A" (norm com)))
   com
-;;  (transform (inverse-matrix change-rot) com)
+
+  ;;  (transform (inverse-matrix change-rot) com)
 
   ;; (setq det (determinant f-matrix))
   ;; (if (< det 0.5)
@@ -67,14 +81,46 @@
 )
 
 ;;小島さんに教えてもらったメモたち0922
-;; (progn (send (send *irtviewer* :viewer) :draw-arrow #f(0 0 0) (send (send coords1 :transformation coords0 :world) :inverse-rotate-vector arrow)) (send *irtviewer* :viewer :flush))
-;; (progn (send (send *irtviewer* :viewer) :draw-arrow #f(0 0 0) (send (send coords0 :transformation coords1 :world) :rotate-vector arrow)) (send *irtviewer* :viewer :flush))
-
 ;; send (setq coords0 (make-coords :pos #f(100 0 0) :rpy (list (deg2rad 30) (deg2rad 30) 0))) :draw-on :flush t :size 100 :color #f(1 0 0)
 ;; send (setq coords1 (make-coords :pos #f(-100 0 0) :rpy (list (deg2rad 30) (deg2rad 60) 0))) :draw-on :flush t :size 100 :color #f(0 1 0)
+;; (progn (send (send *irtviewer* :viewer) :draw-arrow #f(0 0 0) (send (send coords1 :transformation coords0 :world) :inverse-rotate-vector arrow)) (send *irtviewer* :viewer :flush))
+;; (progn (send (send *irtviewer* :viewer) :draw-arrow #f(0 0 0) (send (send coords0 :transformation coords1 :world) :rotate-vector arrow)) (send *irtviewer* :viewer :flush))
 ;; (progn (send (send *irtviewer* :viewer) :draw-arrow #f(0 0 0) (send (send coords1 :transformation coords0 :world) :inverse-rotate-vector arrow) :color #f(0 0 1)) (send *irtviewer* :viewer :flush))
 
 
+;;; pred-multi-comのテスト用、3バージョンの初期値に対して正しい値が出るかどうか
+;;0922には全部正しく出た
+(defun test-pred-multi-com
+    (&key (d-init 30) (d 30))
+
+  ;;setting ver1 ;;com=#f( 1 0 0)
+  (setq f1 (float-vector 0 0 -10))
+  (setq f2 (float-vector 0 0 -10))
+  (setq m1 (float-vector 0 10 0))
+  (setq m2 (float-vector (* -1 (* 10 (sin (deg2rad d)))) (* 10 (cos (deg2rad d))) 0))
+  (setq pre-coords (make-coords :pos #f(0  0 0) :rpy (list 0 0 0)))
+  (setq post-coords (make-coords :pos #f(100 0 0) :rpy (list (deg2rad d) 0 0)))
+
+  ;; ver2 ;;com=#f( 1 0 0)
+  ;; (setq f1 (float-vector 0 0 -10))
+  ;; (setq f2 (float-vector 0 0 -10))
+  ;; (setq m1 (float-vector 0 10 0))
+  ;; (setq m2 (float-vector (* -1 (* 10 (sin (deg2rad d)))) (* 10 (cos (deg2rad d))) 0))
+  ;; (setq pre-coords (make-coords :pos #f(100  0 0) :rpy (list 0 0 0)))
+  ;; (setq post-coords (make-coords :pos #f(100 0 0) :rpy (list (deg2rad d) 0 0)))
+
+  ;;ver3 ;;com=#f( 0 0 1) y軸方向に30度傾いた状態と更に30度y軸周りに回転させたとき
+  ;; (setq f1 (float-vector 0 0 -10))
+  ;; (setq f2 (float-vector 0 0 -10))
+  ;; (setq m1 (float-vector 0 (* 10 (sin (deg2rad d-init))) 0))
+  ;; (setq m2 (float-vector 0 (* 10 (sin (deg2rad (+ d-init d)))) 0))
+  ;; (setq pre-coords (make-coords :pos #f(100 0 0) :rpy (list 0 (deg2rad d-init) 0)))
+  ;; (setq post-coords (make-coords :pos #f(100 0 0) :rpy (list 0 (deg2rad (+ d-init d)) 0)))
+
+  (setq com-local (pred-multi-com f1 m1 f2 m2 pre-coords post-coords))
+  )
+
+  
 ;;simulator で重心を探してみた
 ;;0921 log
 ;; test_on_simulator
@@ -103,6 +149,7 @@
 
   ;; (setq free-f-world (low-pass-online "force" "absolute"))
   ;; (send *ri* :start-grasp)
+  ;;(init)
   ;; (unix:sleep 1)
   
   ;; (setq hold-f-world (low-pass-online "force" "absolute"))
@@ -119,11 +166,13 @@
 
   ;;;
   (snap 0 -30 0)
+  (unix:sleep 1)
   ;; (setq f1 (low-pass-online "force" "off"))
   ;; (setq m1 (low-pass-online "moment" "off"))
   (setq f1 (low-pass-online "force" "absolute"))
   (setq m1 (low-pass-online "moment" "absolute"))
-  (setq pre-coords (send *robot* :rarm-end-coords))
+  ;; (setq pre-coords (send *robot* :rarm-end-coords))
+  (setq pre-coords (car (send *robot* :rarm :force-sensors)))
   
   (snap 0 30 0)
   (unix:sleep 1)
@@ -131,7 +180,8 @@
   ;; (setq m2 (low-pass-online "moment" "off"))
   (setq f2 (low-pass-online "force" "absolute"))
   (setq m2 (low-pass-online "moment" "absolute"))
-  (setq post-coords (send *robot* :rarm-end-coords))
+  ;; (setq post-coords (send *robot* :rarm-end-coords))
+  (setq post-coords (car (send *robot* :rarm :force-sensors)))
   (setq com-local (pred-multi-com f1 m1 f2 m2 pre-coords post-coords)) ;;たぶんlocal
 
 
@@ -168,7 +218,7 @@
     (dotimes (i 5)
       (setq y (v+ (scale r (send *ri* :state (read-from-string (format nil ":~A-~A-vector" coords target)) :rarm)) (scale (- 1 r) (elt y-predict i))))
       (list-insert y (+ i 1) y-predict)
-      (unix:usleep 20)
+      (unix:usleep 10)
       )
     (setq ret (cdr y-predict))
     (print (format nil "~A vector through filter = ~A" target ret))
