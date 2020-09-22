@@ -12,9 +12,6 @@
 ;; (setq m1 (float-vector 0 10 0))
 ;; (setq m2 (float-vector 0 10 0))
 
-;; (setq pre-coords  #<coordinates #X557a04797290  209.447 -418.273 1127.391 / -0.157 -0.093 -0.086>)
-;; (setq post-coords  #<coordinates #X557a1f5c1dd0  209.465 -418.263 1127.399 / 1.102 1.275 1.245>)
-
 
 ;;
 ;;0921 あってるかわからない、座標系とか　計算結果はそれっぽくなってはいるけど
@@ -69,6 +66,13 @@
  ;; )
 )
 
+;;小島さんに教えてもらったメモたち0922
+;; (progn (send (send *irtviewer* :viewer) :draw-arrow #f(0 0 0) (send (send coords1 :transformation coords0 :world) :inverse-rotate-vector arrow)) (send *irtviewer* :viewer :flush))
+;; (progn (send (send *irtviewer* :viewer) :draw-arrow #f(0 0 0) (send (send coords0 :transformation coords1 :world) :rotate-vector arrow)) (send *irtviewer* :viewer :flush))
+
+;; send (setq coords0 (make-coords :pos #f(100 0 0) :rpy (list (deg2rad 30) (deg2rad 30) 0))) :draw-on :flush t :size 100 :color #f(1 0 0)
+;; send (setq coords1 (make-coords :pos #f(-100 0 0) :rpy (list (deg2rad 30) (deg2rad 60) 0))) :draw-on :flush t :size 100 :color #f(0 1 0)
+;; (progn (send (send *irtviewer* :viewer) :draw-arrow #f(0 0 0) (send (send coords1 :transformation coords0 :world) :inverse-rotate-vector arrow) :color #f(0 0 1)) (send *irtviewer* :viewer :flush))
 
 
 ;;simulator で重心を探してみた
@@ -92,61 +96,65 @@
     ()
   ;; (init)
 
-  (setq free-f-world (low-pass-online "force" "absolute"))
-  (reach)
-  ;; (setq free-f-local (low-pass-online "force"))
-  ;; (setq free-coords (send *robot* :rarm-end-coords))
-  ;; (setq free-f-world (send free-coords :transform-vector free-f-local))
+  ;; (setq free-f-world (low-pass-online "force" "absolute"))
 
+;;@red-multi-com実験のためコメントアウト
+  ;; (reach)
 
+  ;; (setq free-f-world (low-pass-online "force" "absolute"))
+  ;; (send *ri* :start-grasp)
+  ;; (unix:sleep 1)
   
-  (send *ri* :start-grasp)
-  ;; (snap 0 -90 0)
-  (init)
-  (snap 0 10 0)
+  ;; (setq hold-f-world (low-pass-online "force" "absolute"))
 
-  (unix:sleep 1)
-  ;; (setq hold-f-local (low-pass-online "force"))
-  ;; (setq hold-coords (send *robot* :rarm-end-coords))
-  ;; (setq hold-f-world (send hold-coords :transform-vector hold-f-local))
+  ;; (init)
+  ;; (snap 0 10 0)
 
-  (setq hold-f-world (low-pass-online "force" "absolute"))
+  ;; ;; (setq hold-f-world (low-pass-online "force" "absolute"))
   
-  (setq mass-vector-world (v- hold-f-world free-f-world))
-  (print (format nil "mass-vector = ~A" mass-vector-world))
-  (print (format nil "norm of mass-vector / 9.8 = ~A [kg]" (/ (norm mass-vector-world) 9.8)))
-  
+  ;; (setq mass-vector-world (v- hold-f-world free-f-world))
+  ;; (print (format nil "mass-vector = ~A" mass-vector-world))
+  ;; (print (format nil "norm of mass-vector / 9.8 = ~A [kg]" (/ (norm mass-vector-world) 9.8)))
+;;  ここまで
 
   ;;;
-  (setq f1 (low-pass-online "force" "off"))
-  (setq m1 (low-pass-online "moment" "off"))
+  (snap 0 -30 0)
+  ;; (setq f1 (low-pass-online "force" "off"))
+  ;; (setq m1 (low-pass-online "moment" "off"))
+  (setq f1 (low-pass-online "force" "absolute"))
+  (setq m1 (low-pass-online "moment" "absolute"))
   (setq pre-coords (send *robot* :rarm-end-coords))
   
   (snap 0 30 0)
   (unix:sleep 1)
-  (setq f2 (low-pass-online "force" "off"))
-  (setq m2 (low-pass-online "moment" "off"))
+  ;; (setq f2 (low-pass-online "force" "off"))
+  ;; (setq m2 (low-pass-online "moment" "off"))
+  (setq f2 (low-pass-online "force" "absolute"))
+  (setq m2 (low-pass-online "moment" "absolute"))
   (setq post-coords (send *robot* :rarm-end-coords))
   (setq com-local (pred-multi-com f1 m1 f2 m2 pre-coords post-coords)) ;;たぶんlocal
 
-  (snap 0 66 0)
-  (unix:sleep 1)  
+
+;;pred-multi-comの実験のためコメントアウト  
+  ;; (snap 0 66 0)
+  ;; (unix:sleep 1)  
   
-  (setq contact-f-world (low-pass-online "force" "absolute"))
-  (setq contact-m-world (low-pass-online "moment" "absolute"))
-  (setq com-world (send (car (send *robot* :rarm :force-sensors)) :transform-vector com-local))
-  (setq right-side (v- contact-m-world (v* com-world mass-vector-world)))
-  (setq left-side-vector (v* com-world contact-f-world))
-  (setq tmp 0)
-  (dotimes (i 3)
-    (setq tmp (+ tmp (/ (elt right-side i) (elt left-side-vector i))))
-    )
-  (setq scalar (/ tmp 3.0))
-  (print (format nil "scalar = ~A" scalar))
-  (setq contact-point-world (scale scalar com-world))
-  (setq contact-point-local (send (car (send *robot* :rarm :force-sensors)) :inverse-transform-vector contact-point-world))
-  contact-point-local
-)
+  ;; (setq contact-f-world (low-pass-online "force" "absolute"))
+  ;; (setq contact-m-world (low-pass-online "moment" "absolute"))
+  ;; (setq com-world (send (car (send *robot* :rarm :force-sensors)) :transform-vector com-local))
+  ;; (setq right-side (v- contact-m-world (v* com-world mass-vector-world)))
+  ;; (setq left-side-vector (v* com-world contact-f-world))
+  ;; (setq tmp 0)
+  ;; (dotimes (i 3)
+  ;;   (setq tmp (+ tmp (/ (elt right-side i) (elt left-side-vector i))))
+  ;;   )
+  ;; (setq scalar (/ tmp 3.0))
+  ;; (print (format nil "scalar = ~A" scalar))
+  ;; (setq contact-point-world (scale scalar com-world))
+  ;; (setq contact-point-local (send (car (send *robot* :rarm :force-sensors)) :inverse-transform-vector contact-point-world))
+  ;; contact-point-local
+;;ここまで
+  )
 
 
 
@@ -154,11 +162,11 @@
 (defun low-pass-online
     (target coords &key (r 0.3))
   (let* (
-         (y-predict (list (send *ri* (read-from-string (format nil ":~A-~A-vector" coords target)) :rarm)))
+         (y-predict (list (send *ri* :state (read-from-string (format nil ":~A-~A-vector" coords target)) :rarm)))
          )
     
     (dotimes (i 5)
-      (setq y (v+ (scale r (send *ri* (read-from-string (format nil ":~A-~A-vector" coords target)) :rarm)) (scale (- 1 r) (elt y-predict i))))
+      (setq y (v+ (scale r (send *ri* :state (read-from-string (format nil ":~A-~A-vector" coords target)) :rarm)) (scale (- 1 r) (elt y-predict i))))
       (list-insert y (+ i 1) y-predict)
       (unix:usleep 20)
       )
