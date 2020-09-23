@@ -46,11 +46,13 @@
 
 (defun reach()
   (setq *rarm-end* (send *robot* :rarm :end-coords :copy-worldcoords))
-  (send *rarm-end* :translate (float-vector 200.0 0.0 20.0))
+  (send *rarm-end* :translate (float-vector 210.0 80.0 0.0))
   (send *rarm-end* :rotate (/ pi 2) :y)
   (send *robot* :rarm :inverse-kinematics *rarm-end* :rotation-axis :z)
   (send-angle-vector 3000 :force-move t)
   (send *robot* :rarm :move-end-pos #f(140 0 0))
+  (send-angle-vector 3000 :force-move t)
+  (send *robot* :rarm :move-end-pos #f(0 0 20))   
   (send-angle-vector 3000 :force-move t)
   )
 
