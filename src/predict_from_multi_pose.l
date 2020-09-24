@@ -69,14 +69,14 @@
   ;; (print (format nil "moment  = ~A" m))
 
   (setq f-inverse-matrix (pseudo-inverse f-matrix))
-  (format t "f-inverse-matrix = ~A" f-inverse-matrix)
+  (format t "f-inverse-matrix = ~A~%" f-inverse-matrix)
 
   (setq com (scale -1 (transform f-inverse-matrix m)))
   (format t "com=~A with pseudo-inverse~%" com)
   (format t "com norm = ~A~%" (norm com))
   (setq com-world (send pre-coords :rotate-vector com))
-  (format "com-world =~A with pseudo-inverse" com-world)
-  (print (format nil "com-local norm = ~A" (norm com-world)))
+  (format t "com-world =~A with pseudo-inverse~%" com-world)
+  (format t "com-local norm = ~A~%" (norm com-world))
   com
 
 )
@@ -138,7 +138,7 @@
   (print (format nil "f-inverse-matrix = ~A" f-inverse-matrix))
 
   (setq com (scale -1 (transform f-inverse-matrix m)))
-  (print (format nil "com=~A with pseudo-inverse" com))
+  (print (format nil "com=~A with pseudo-inverse~%" com))
   (print (format nil "com norm = ~A" (norm com)))n
   ;; (setq com-local (send pre-coords :inverse-rotate-vector com))
   ;; (print (format nil "com-local =~A with pseudo-inverse" com-local))
@@ -301,23 +301,23 @@
   ;; (setq free-f-world (low-pass-online "force" "absolute"))
 
 ;;@red-multi-com実験のためコメントアウト
-  ;; (reach)
+  (reach)
 
-  ;; (setq free-f-world (low-pass-online "force" "absolute"))
-  ;; (send *ri* :start-grasp)
-  ;;(init)
-  ;; (unix:sleep 1)
+  (setq free-f-world (low-pass-online "force" "absolute"))
+  (send *ri* :start-grasp)
+  (init)
+  (unix:sleep 1)
   
+  (setq hold-f-world (low-pass-online "force" "absolute"))
+
+  (init)
+  (snap 0 10 0)
+
   ;; (setq hold-f-world (low-pass-online "force" "absolute"))
-
-  ;; (init)
-  ;; (snap 0 10 0)
-
-  ;; ;; (setq hold-f-world (low-pass-online "force" "absolute"))
   
-  ;; (setq mass-vector-world (v- hold-f-world free-f-world))
-  ;; (print (format nil "mass-vector = ~A" mass-vector-world))
-  ;; (print (format nil "norm of mass-vector / 9.8 = ~A [kg]" (/ (norm mass-vector-world) 9.8)))
+  (setq mass-vector-world (v- hold-f-world free-f-world))
+  (print (format nil "mass-vector = ~A" mass-vector-world))
+  (print (format nil "norm of mass-vector / 9.8 = ~A [kg]" (/ (norm mass-vector-world) 9.8)))
 ;;  ここまで
 
   ;;;
@@ -383,13 +383,13 @@
          (y-predict (list (send *ri* :state (read-from-string (format nil ":~A-~A-vector" coords target)) :rarm)))
          )
     
-    (dotimes (i 100)
+    (dotimes (i 40)
            (setq data (send *ri* :state (read-from-string (format nil ":~A-~A-vector" coords target)) :rarm))
       (setq y (v+ (scale r data) (scale (- 1 r) (elt y-predict i))))
       (list-insert y (+ i 1) y-predict)
       (list-insert data (+ i 1) y-data)
       ;; (unix:usleep 1000)
-      (unix:usleep 50000)      
+      (unix:usleep 10000)      
       )
     (setq ret (cdr y-predict))
 ;;    (print (format nil "~A vector through filter = ~A" target ret))
