@@ -18,26 +18,39 @@
 (defun pred-multi-com
     (force1 moment1 force2 moment2 pre-coords post-coords &key (g  9.8))
 
-  ;; (setq change (get-transform-matrix pre-coords post-coords))
-  ;; (setq change-rot (send change :worldrot))
-  
   ;;make f-matrix
 
   ;;pre-coods座標系で絶対座標系で表現されたforce１を表現し直す
-  (setq f (send pre-coords :inverse-rotate-vector force1))
+  (format t "coord1     = ~A~%" pre-coords)
+  (format t "f1 (world) = ~A~%" force1)
+  (setq f  (send pre-coords :inverse-rotate-vector force1))
+  (setq m1 (send pre-coords :inverse-rotate-vector moment1))
+  (format t "f1(coord1) = ~A~%" f)
   ;; (print (format nil "f1 = ~A" f))
   (setq f-matrix1 (matrix (float-vector 0 (- 0 (elt f 2)) (elt f 1)) (float-vector (+ 0 (elt f 2)) 0 (- 0 (elt f 0)))  (float-vector (- 0 (elt f 1)) (elt f 0) 0)))
-  (print (format nil "f-matrix1 = ~A" f-matrix1))
+  (format t "f-matrix1 = ~A~%~%" f-matrix1)
 
   ;; (setq f (transform change-rot force2))
   ;;小島さんより
   ;;post-coods座標系で,絶対座標系で表現されたforce2を表現し直す
-  (setq f2 (send post-coords :inverse-rotate-vector force2))
+  (format t "coord2     = ~A~%" post-coords)
+  (format t "f2 (world) = ~A~%" force2)
+  ;; (setq f2  (send post-coords :inverse-rotate-vector force2))
+  ;; (setq mm2 (send post-coords :inverse-rotate-vector moment2))
+  (setq f  (send post-coords :inverse-rotate-vector force2))
+  (setq m2 (send post-coords :inverse-rotate-vector moment2))
+  (format t "f2(coord2) = ~A~%" f)
   ;; (print (format nil "f2 = ~A" f2))
   ;;pre-coodsに座標系が重なるようにベクトルを回転させる
-  (setq f (send (send post-coords :transformation pre-coords :world) :rotate-vector f2))
+  ;; (setq f  (send (send post-coords :transformation pre-coords :world) :inverse-rotate-vector f2))
+  ;; (setq f  (send (send post-coords :transformation pre-coords) :inverse-rotate-vector f2))
+  ;; (setq m2 (send (send post-coords :transformation pre-coords :world) :inverse-rotate-vector mm2))
+  (format t "f2(coord1) = ~A~%" f)
   (setq f-matrix2 (matrix (float-vector 0 (- 0 (elt f 2)) (elt f 1)) (float-vector (+ 0 (elt f 2)) 0 (- 0 (elt f 0)))  (float-vector (- 0 (elt f 1)) (elt f 0) 0)))
-  (print (format nil "f-matrix2 = ~A" f-matrix2))
+  (format t "f-matrix2 = ~A~%~%" f-matrix2)
+
+  (setq m (float-vector (elt m1 0) (elt m1 1)  (elt m1 2) (elt m2 0) (elt m2 1)  (elt m2 2)))
+  (print (format nil "moment  = ~A" m))
 
   ;;f-matrixをくっつける
   (setq f-matrix (matrix (matrix-row f-matrix1 0) (matrix-row f-matrix1 1)  (matrix-row f-matrix1 2) (matrix-row f-matrix2 0) (matrix-row f-matrix2 1)  (matrix-row f-matrix2 2)))
@@ -45,41 +58,27 @@
 
   ;;momentベクトルをくっつける
   ;;絶対座標系で表現されたmoment１をpre-coods座標系で表現し直す
-  (setq m1 (send pre-coords :inverse-rotate-vector moment1))
+  ;; (setq m1 (send pre-coords :inverse-rotate-vector moment1))
   ;;小島さんより
   ;; (setq m2 (transform change-rot moment2))
   ;;絶対座標系で表現されたmoment2をpost-coods座標系で表現し直す
-  (setq mm2 (send post-coords :inverse-rotate-vector moment2))
+  ;; (setq mm2 (send post-coords :inverse-rotate-vector moment2))
   ;;pre-coodsに座標系が重なるようにベクトルを回転させる  
-  (setq m2 (send (send post-coords :transformation pre-coords :world) :rotate-vector mm2))
-  (setq m (float-vector (elt m1 0) (elt m1 1)  (elt m1 2) (elt m2 0) (elt m2 1)  (elt m2 2)))
-  (print (format nil "moment  = ~A" m))
+  ;; (setq m2 (send (send post-coords :transformation pre-coords :world) :rotate-vector mm2))
+  ;; (setq m (float-vector (elt m1 0) (elt m1 1)  (elt m1 2) (elt m2 0) (elt m2 1)  (elt m2 2)))
+  ;; (print (format nil "moment  = ~A" m))
 
   (setq f-inverse-matrix (pseudo-inverse f-matrix))
-  (print (format nil "f-inverse-matrix = ~A" f-inverse-matrix))
+  (format t "f-inverse-matrix = ~A" f-inverse-matrix)
 
   (setq com (scale -1 (transform f-inverse-matrix m)))
-  (print (format nil "com=~A with pseudo-inverse" com))
-  (print (format nil "com norm = ~A" (norm com)))
-  (setq com-local (send pre-coords :inverse-rotate-vector com))
-  (print (format nil "com-local =~A with pseudo-inverse" com-local))
-  (print (format nil "com-local norm = ~A" (norm com-local)))
+  (format t "com=~A with pseudo-inverse~%" com)
+  (format t "com norm = ~A~%" (norm com))
+  (setq com-world (send pre-coords :rotate-vector com))
+  (format "com-world =~A with pseudo-inverse" com-world)
+  (print (format nil "com-local norm = ~A" (norm com-world)))
   com
 
-  ;;  (transform (inverse-matrix change-rot) com)
-
-  ;; (setq det (determinant f-matrix))
-  ;; (if (< det 0.5)
-  ;;     (progn
-  ;;       (print (format nil "inverse is not exist : determinant = ~A" det))
-  ;;       nil)
-  ;;   (progn
-  ;;     (print (format nil "determinant = ~A" det))
-  ;;     (setq p (scale -1 (transform f-inverse-matrix m)))
-  ;;     p)
-  ;;   )
-  
- ;; )
 )
 
 (defun pred-triple-com
@@ -140,7 +139,7 @@
 
   (setq com (scale -1 (transform f-inverse-matrix m)))
   (print (format nil "com=~A with pseudo-inverse" com))
-  (print (format nil "com norm = ~A" (norm com)))
+  (print (format nil "com norm = ~A" (norm com)))n
   ;; (setq com-local (send pre-coords :inverse-rotate-vector com))
   ;; (print (format nil "com-local =~A with pseudo-inverse" com-local))
   ;; (print (format nil "com-local norm = ~A" (norm com-local)))
@@ -148,9 +147,9 @@
 
 )
 
-;;小島さんのをそのままいれた感じ
+;; ;;小島さんのをそのままいれた感じ
 ;; (defun pred-multi-com
-;;     (force1 moment1 force2 moment2 pre-coords post-coords &key (g  9.8))
+;;     (force1 moment1 force2 moment2 pre-coords post-coords &key (g  9.8) )
 
 ;;   ;; (setq change (get-transform-matrix pre-coords post-coords))
 ;;   ;; (setq change-rot (send change :worldrot))
@@ -189,10 +188,15 @@
 ;;   (setq f-inverse-matrix (pseudo-inverse f-matrix))
 ;;   (print (format nil "f-inverse-matrix = ~A" f-inverse-matrix))
 
+;;   ;;comはlocal??
 ;;   (setq com (scale -1 (transform f-inverse-matrix m)))
-;;   (setq com-local (send pre-coords :inverse-transform-vector com))
+
+;;   (setq com-local (send pre-coords :transform-vector com))
 ;;   (print (format nil "com=~A with pseudo-inverse" com))
-;;   (print (format nil "com-local x=~A with pseudo-inverse" com-local))
+;;   (print (format nil "com-local pre=~A with pseudo-inverse" com-local))
+
+;;   (setq com-local (send post-coords :transform-vector com))
+;;   (print (format nil "com-local post=~A with pseudo-inverse" com-local))
 ;;   (print (format nil "com norm = ~A" (norm com)))
 ;;   com
 
@@ -336,15 +340,15 @@
   (setq post-coords (car (send *robot* :rarm :force-sensors)))
   (setq com-local (pred-multi-com f1 m1 f2 m2 pre-coords post-coords)) ;;たぶんlocal
 
-  (snap 0 20 0)
-  (unix:sleep 1)
-  ;; (setq f2 (low-pass-online "force" "off"))
-  ;; (setq m2 (low-pass-online "moment" "off"))
-  (setq f3 (low-pass-online "force" "absolute"))
-  (setq m3 (low-pass-online "moment" "absolute"))
-  ;; (setq post-coords (send *robot* :rarm-end-coords))
-  (setq ppost-coords (car (send *robot* :rarm :force-sensors)))
-  (setq com-local (pred-triple-com f1 m1 f2 m2 f3 m3 pre-coords post-coords ppost-coords)) ;;たぶんlocal
+  ;; (snap 0 20 0)
+  ;; (unix:sleep 1)
+  ;; ;; (setq f2 (low-pass-online "force" "off"))
+  ;; ;; (setq m2 (low-pass-online "moment" "off"))
+  ;; (setq f3 (low-pass-online "force" "absolute"))
+  ;; (setq m3 (low-pass-online "moment" "absolute"))
+  ;; ;; (setq post-coords (send *robot* :rarm-end-coords))
+  ;; (setq ppost-coords (car (send *robot* :rarm :force-sensors)))
+  ;; (setq com-local (pred-triple-com f1 m1 f2 m2 f3 m3 pre-coords post-coords ppost-coords)) ;;たぶんlocal
 
 ;;pred-multi-comの実験のためコメントアウト  
   ;; (snap 0 66 0)
@@ -373,7 +377,7 @@
 ;; (send *gp* :draw x-list y-list z-list)
 ;;呼ばれた瞬間から0.1秒間で5回分のセンサ値をlow-pass filterでならしてその平均を出力
 (defun low-pass-online
-    (target coords &key (r 0.3) (data nil))
+    (target coords &key (r 0.3) (flag nil))
   (let* (
          (y-data (list (send *ri* :state (read-from-string (format nil ":~A-~A-vector" coords target)) :rarm)))
          (y-predict (list (send *ri* :state (read-from-string (format nil ":~A-~A-vector" coords target)) :rarm)))
@@ -390,10 +394,12 @@
     (setq ret (cdr y-predict))
 ;;    (print (format nil "~A vector through filter = ~A" target ret))
     (setq ret-average (average ret))
-    (print (format nil "~A vector through filter and average = ~A" target ret-average))
-    (if data 
+
+    (if flag
         (list  (cdr y-data) ret)
-      ret-average
+      (progn
+        (print (format nil "~A vector through filter and average = ~A" target ret-average))
+        ret-average)
     )
     )
   )
