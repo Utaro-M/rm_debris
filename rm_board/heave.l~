@@ -1,0 +1,48 @@
+(require "irteus/demo/sample-robot-model.l")
+(require "models/arrow-object.l")
+
+
+(load "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
+(unless (and (boundp '*robot*) (boundp '*ri*))
+  (jaxon_red-init)
+  (setq *robot* *jaxon_red*)
+  )
+(objects (list *robot*))
+
+
+(send *robot* :reset-manip-pose)
+
+(defun reach()
+  (let* ((rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
+         (lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
+         (rarm-coords (send (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate #f(400 0 -700) ) :rotate (deg2rad 0) :x)) 
+         (larm-coords (send (send (send *robot* :larm :end-coords :copy-worldcoords) :translate #f(400 0 -700) ) :rotate (deg2rad 0) :x)))
+    (send *robot* :torso :waist-p :joint-angle 10)
+    
+    (send *robot* :fullbody-inverse-kinematics
+          (list rleg-coords
+                lleg-coords
+                rarm-coords
+                larm-coords)
+          
+          :move-target
+          (list (send *robot* :rleg :end-coords)
+                (send *robot* :lleg :end-coords)
+                (send *robot* :rarm :end-coords)
+                (send *robot* :larm :end-coords))
+          :link-list
+          (list (send *robot* :link-list (send *robot* :rleg :end-coords :parent))
+                (send *robot* :link-list (send *robot* :lleg :end-coords :parent))
+                (send *robot* :link-list (send *robot* :rarm :end-coords :parent))                 
+                (send *robot* :link-list (send *robot* :larm :end-coords :parent)))
+          :translation-axis (list t t t t)
+          :rotation-axis (list t t nil nil)
+          :target-centroid-pos (midpoint 0.5
+                                         (send *robot* :rleg :end-coords :worldpos)
+                                         (send *robot* :lleg :end-coords :worldpos))
+          :cog-translation-axis :z)
+    (send *robot* :rarm :wrist-y :joint-angle 30)
+    (send *robot* :larm :wrist-y :joint-angle -30)
+    (objects (list *robot*))
+    )
+)
