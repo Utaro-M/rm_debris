@@ -11,11 +11,13 @@
 
 
 (send *robot* :reset-manip-pose)
-(send-angle-vector 2000 :force-move t)  
-(defun reach()
-  (ik #f(400 0 -700) #f(400 0 -700))
+(send-angle-vector 3000 :force-move t)  
+(defun reach(rarm larm)
+  (ik rarm larm)
   (send *robot* :rarm :wrist-y :joint-angle 30)
   (send *robot* :larm :wrist-y :joint-angle -30)
+  (send-angle-vector 4600 :force-move t)
+  ;; (ik #f(0 0 40) #f(0 0 40))
   (objects (list *robot*))
   )
 
@@ -62,13 +64,13 @@
   )
 
 (defun demo ()
-  (reach)
-  (send-angle-vector 2000 :force-move t)
-  (ik #f(0 -300 0 ) #f( 0 300 0))
-  (send-angle-vector 2000 :force-move t)
+  ;; (reach #f(360 0 -700) #f(360 0 -700))
+  (reach #f(260 0 -700) #f(260 0 -700))
+  (ik #f(0 -280 0) #f( 0 280 0))
+  (send-angle-vector 3000 :force-move t)
 
-  (ik #f(0 -100 0 ) #f( 0 100 0))
-  (send-angle-vector 2000 :force-move t)  
+  (ik #f(0 -100 0) #f( 0 100 0))
+  (send-angle-vector 3000 :force-move t)  
 
   )
 (print "reach")
