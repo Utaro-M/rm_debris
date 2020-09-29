@@ -12,14 +12,12 @@
 
 (defun reach()
   (send *robot* :fix-leg-to-coords (make-coords))
-  (setq rarm-coords (make-coords :pos (float-vector 600 -400 400) :rpy (float-vector 0 (deg2rad  30) (deg2rad  90))))
-  (setq larm-coords (make-coords :pos (float-vector 600  400 400) :rpy (float-vector 0 (deg2rad  30) (deg2rad -90))))
+  (setq rarm-coords (make-coords :pos (float-vector 550 -400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad  90))))
+  (setq larm-coords (make-coords :pos (float-vector 550  400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad -90))))
   (ik rarm-coords larm-coords)
-  ;; (send *robot* :rarm :wrist-y :joint-angle 30)
-  ;; (send *robot* :larm :wrist-y :joint-angle -30)
-  (send-pose 4600 :force-move t)
+  (send-pose 4600 :force-move nil)
   ;; (ik #f(0 0 40) #f(0 0 40))
-  ;; (objects (list *robot*))
+
   )
 
 
@@ -85,23 +83,75 @@
   ;; (reach #f(200 0 -710) #f(200 0 -710))
   (reach)
 
-  ;; (setq rarm-coords (make-coords :pos (float-vector 600 -400 400) :rpy (float-vector 0 (deg2rad  30) (deg2rad  90))))
-  ;; (setq larm-coords (make-coords :pos (float-vector 600  400 400) :rpy (float-vector 0 (deg2rad  30) (deg2rad -90))))
+  ;; (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate #f(0  300 0)))
+  ;; (setq larm-coords (send (send *robot* :larm :end-coords :copy-worldcoords) :translate #f(0 -300 0)))
+  ;; ;; (ik #f(0 -280 0) #f( 0 280 0))
+  ;; (ik rarm-coords larm-coords)
+  ;; ;; (send-pose 3000 :force-move t)
+  ;; (send-pose 3000 :force-move nil)
+  (heave #f(0  300 0) #f(0  -300 0))
 
-  (ik #f(0 -280 0) #f( 0 280 0))
-  (send-pose 3000 :force-move t)
+  ;; (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate #f(40  200 0)))
+  ;; (setq larm-coords (send (send *robot* :larm :end-coords :copy-worldcoords) :translate #f(40 -200 0)))
+  ;; (ik rarm-coords larm-coords)
+  ;; ;; (ik #f(0 -100 0) #f( 0 100 0))
+  ;; ;; (send-pose 3000 :force-move t)
+  ;; (send-pose 3000 :force-move nil)
+  (heave #f(40  200 0) #f(40  -200 0))
+  
+  ;; (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate #f(0  100 0)))
+  ;; (setq larm-coords (send (send *robot* :larm :end-coords :copy-worldcoords) :translate #f(0 -100 0)))
+  ;; ;; (ik #f(0 -280 60) #f( 0 280 60))
+  ;; ;; (send-pose 3000 :force-move t)
+  ;; (send-pose 3000 :force-move nil)
+  (heave #f(0  100 0) #f(0  -100 0))
+  
+  ;; (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate #f(0  100 0)))
+  ;; (setq larm-coords (send (send *robot* :larm :end-coords :copy-worldcoords) :translate #f(0 -100 0)))
+  ;; (send-pose 3000 :force-move nil)
 
-  (ik #f(0 -100 0) #f( 0 100 0))
-  (send-pose 3000 :force-move t)  
-
-  (ik #f(0 -280 60) #f( 0 280 60))
-  (send-pose 3000 :force-move t)
-
-  (ik #f(0 -100 0) #f( 0 100 0))
-  (send-pose 3000 :force-move t)  
+  ;; (ik #f(0 -100 0) #f( 0 100 0))
+  ;; (send-pose 3000 :force-move t)  
 
   )
+
+(defun heave
+    (rarm-move larm-move)
+  (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate rarm-move))
+  (setq larm-coords (send (send *robot* :larm :end-coords :copy-worldcoords) :translate larm-move))
+  (ik rarm-coords larm-coords)
+  (send-pose 3000 :force-move nil)
+  )
+
+(defun snap (x y z)
+  (setq rarm-coords (send *robot* :rarm :end-coords :copy-worldcoords) )
+  (setq larm-coords (send *robot* :larm :end-coords :copy-worldcoords) )
+
+  (if x
+      (progn
+        (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :rotate x :x))
+        (setq larm-coords (send (send *robot* :larm :end-coords :copy-worldcoords) :rotate x :x)))
+    )
+  (if y
+      (progn
+        (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :rotate y :y))
+        (setq larm-coords (send (send *robot* :larm :end-coords :copy-worldcoords) :rotate y :y)))
+    )
+  (if z
+      (progn
+        (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :rotate z :z))
+        (setq larm-coords (send (send *robot* :larm :end-coords :copy-worldcoords) :rotate z :z)))
+    )
+  
+ 
+  (ik rarm-coords larm-coords)
+  (send-pose 3000 :force-move nil)
+)  
+  
+
+(print "init-pose")
 (print "(reach #f(260 0 -700) #f(260 0 -700))")
+
 
 (defun prepare-ex ()
   (unless (= (send (send *ri* :get-st-param) :emergency_check_mode) 0)
@@ -113,9 +163,22 @@
 
   )
 
+(defun log (name ang)
+  (send *ri* :start-log)
+  (unix:sleep 3)
+  (init-pose)
+  (unix:sleep 2)
+  (reach)
+  (unix:sleep 2)
+  
+  (save-log :fname name)
+  )
+
 (defun init-pose()
+  (send *robot* :fix-leg-to-coords (make-coords))
+  (objects)
   (send *robot* :reset-manip-pose)
-  (send-pose 3000 :force-move t)
+  (send-pose 3000 :force-move nil)
   )
 
 
