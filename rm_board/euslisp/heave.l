@@ -17,6 +17,13 @@
   
   (setq flag-simulator t) ;;simulatorではｔ
   (setq movetime 4000)
+  (unless (= (send (send *ri* :get-st-param) :emergency_check_mode) 0)
+    (warn "disable emergency-check~%")
+    ;;COPのemergencyをきる
+    (send *ri* :stop-st)
+    (send *ri* :set-st-param :emergency-check-mode 0)
+    (send *ri* :start-st))
+
 )
 (defun reach()
   ;; (send *robot* :fix-leg-to-coords (make-coords))
