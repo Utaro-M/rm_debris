@@ -7,9 +7,17 @@
   (jaxon_red-init)
   (setq *robot* *jaxon_red*)
   )
+
+
 (objects (list *robot*))
-(setq flag-simulator t) ;;simulatorではｔ
-(setq movetime 4000)
+(setq flag-simulator nil) ;;simulatorではｔ
+(setq movetime 16000)
+
+(defun prepare-simulator()
+  
+  (setq flag-simulator t) ;;simulatorではｔ
+  (setq movetime 4000)
+)
 (defun reach()
   ;; (send *robot* :fix-leg-to-coords (make-coords))
   (send *robot* :reset-manip-pose)
@@ -29,7 +37,8 @@
 
 
 
-(defun ik (rarm-coords larm-coords &key rleg lleg (cog #f(0 0 700) ))
+(defun ik
+    (rarm-coords larm-coords &key rleg lleg (cog #f(0 0 700) ) (move-root-link t))
   ;; (let* ((rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
   ;;        (lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
   ;;        ;; (rarm-coords (send (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate rarm ) :rotate (deg2rad 90) :z)) 
@@ -67,13 +76,12 @@
                                    cog)
           ;; :debug-view nil
           :revert-if-fail nil
-          :cog-translation-axis t)
+          :cog-translation-axis move-root-link
+          )
 
     (send rarm-coords :draw-on :flush nil :size 300)
     (send larm-coords :draw-on :flush t   :size 300)
-
     )
-  )
 
 (defun send-pose (time &key (force-move nil))
   (objects)
@@ -152,6 +160,20 @@
   (send-pose movetime :force-move flag-simulator)
   )
 
+;;手先位置は固定で腰を高くするheight 1000とか
+(defun stand-up
+    (height &key (cog #f(0 0 700)) (degree 0) (move-root-link :z))
+  
+  (setq rarm-coords-const (send *robot* :rarm :end-coords :copy-worldcoords))
+  (setq larm-coords-const (send *robot* :larm :end-coords :copy-worldcoords))
+  (setq rleg-coords  (send *robot* :rleg :end-coords :copy-worldcoords)
+        lleg-coords  (send *robot* :lleg :end-coords :copy-worldcoords))
+  (send *robot* :fix-leg-to-coords (make-coords))
+  (send *robot* :move-coords (make-coords :pos (float-vector 0 0 height) :rpy (float-vector 0 (deg2rad 50) 0)) (car (send *robot* :links)))
+  
+  (ik rarm-coords-const larm-coords-const :rleg rleg-coords :lleg lleg-coords :cog cog :move-root-link move-root-link)
+  (send-pose movetime :force-move flag-simulator)
+  )
 
 (defun push-board ()
   (if auto-detect-p
@@ -159,36 +181,12 @@
     (progn
       (send *ri* :set-ref-force (float-vector 0 0 (* 9.8 2.5 -1)) 2000 :arms)
       (send *ri* :wait-interpolation-seq))))
-
-;; (defun snap (x y z)
-;;   (setq rarm-coords (send *robot* :rarm :end-coords :copy-worldcoords) )
-;;   (setq larm-coords (send *robot* :larm :end-coords :copy-worldcoords) )
-
-;;   (if x
-;;       (progn
-;;         (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :rotate x :x))
-;;         (setq larm-coords (send (send *robot* :larm :end-coords :copy-worldcoords) :rotate x :x)))
-;;     )
-;;   (if y
-;;       (progn
-;;         (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :rotate y :y))
-;;         (setq larm-coords (send (send *robot* :larm :end-coords :copy-worldcoords) :rotate y :y)))
-;;     )
-;;   (if z
-;;       (progn
-;;         (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :rotate z :z))
-;;         (setq larm-coords (send (send *robot* :larm :end-coords :copy-worldcoords) :rotate z :z)))
-;;     )
   
  
 ;;   (ik rarm-coords larm-coords)
 ;;   (send-pose 3000 :force-move nil)
 ;; )  
   
-
-(print "init-pose")
-(print "(reach #f(260 0 -700) #f(260 0 -700))")
-
 
 (defun prepare-ex ()
   (unless (= (send (send *ri* :get-st-param) :emergency_check_mode) 0)
@@ -218,6 +216,10 @@
   (send-pose 3000 :force-move flag-simulator)
   )
 
+
+
+(print "init-pose")
+(print "(reach #f(260 0 -700) #f(260 0 -700))")
 
 ;;(prepare-ex)
 
