@@ -3,6 +3,8 @@
 (load "package://control_tools/log-tools.l")
 
 (require "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
+
+(require "~/research/rm_debris/euslisp/save-log.l")
 (unless (and (boundp '*robot*) (boundp '*ri*))
   (jaxon_red-init)
   (setq *robot* *jaxon_red*)
@@ -96,10 +98,11 @@
   (send *robot* :move-coords (make-coords :pos #f(0 0 600) :rpy (float-vector 0 (deg2rad 50) 0)) (car (send *robot* :links)))
   ;; (setq rarm-coords (make-coords :pos (float-vector 550 -400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad  -90))))
   ;; (setq larm-coords (make-coords :pos (float-vector 550  400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad   90))))
-  (setq rarm-coords (make-coords :pos (float-vector 420 -400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad -90))))
-  (setq larm-coords (make-coords :pos (float-vector 420  400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad  90))))  
-  ;; (setq rarm-coords (make-coords :pos (float-vector 320 -400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad -90))))
-  ;; (setq larm-coords (make-coords :pos (float-vector 320  400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad  90))))  
+  ;; (setq rarm-coords (make-coords :pos (float-vector 420 -400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad -90))))
+  ;; (setq larm-coords (make-coords :pos (float-vector 420  400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad  90))))
+  
+  (setq rarm-coords (make-coords :pos (float-vector 290 -400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad -90))))
+  (setq larm-coords (make-coords :pos (float-vector 290  400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad  90))))  
 
   (setq rleg-coords (make-coords :pos #f(0 -100 0))
 	lleg-coords (make-coords :pos #f(0  100 0)))
@@ -334,8 +337,12 @@
   (send-pose 3000 :force-move flag-simulator)
   )
 
-
-
+;; (defun save(&key (fname "emergency"))
+;;   ;; (setq path "~/google-drive/JSK/log")
+;;     (setq path "/home/utaro/google-drive/JSK/log")
+                 
+;;   (send *ri* :save-log (format nil "~A/~A" path name) :make-directory t)
+;; )
 (print "init-pose")
 (print "(reach #f(260 0 -700) #f(260 0 -700))")
 
