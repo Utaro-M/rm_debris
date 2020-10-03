@@ -4,7 +4,7 @@
 
 (require "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
 
-(require "~/research/rm_debris/euslisp/save-log.l")
+(require "../../euslisp/save-log.l")
 (unless (and (boundp '*robot*) (boundp '*ri*))
   (jaxon_red-init)
   (setq *robot* *jaxon_red*)
@@ -13,7 +13,11 @@
 
 (objects (list *robot*))
 (setq flag-simulator nil) ;;simulatorではｔ
-(setq movetime 16000)
+(setq movetime 30000)
+
+
+
+;;(send *ri* :save-log "~/matsuura/log/testes" :make-directory t)
 
 (defun prepare-simulator()
   
@@ -28,9 +32,9 @@
 
 )
 
-
+;;(float-vector 0 0 (elt (send (car (send *robot* :links)) :worldpos) 2))
 (defun ik
-    (rarm-coords larm-coords &key rleg lleg (cog (float-vector 0 0 (elt (send (car (send *robot* :links)) :worldpos) 2))) (move-root-link t))
+    (rarm-coords larm-coords &key rleg lleg (cog #f(0 0 0)) (move-root-link :z))
   ;; (let* ((rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
   ;;        (lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
   ;;        ;; (rarm-coords (send (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate rarm ) :rotate (deg2rad 90) :z)) 
@@ -58,10 +62,9 @@
                 (send *robot* :link-list (send *robot* :lleg :end-coords :parent))
                 (send *robot* :link-list (send *robot* :rarm :end-coords :parent))                 
                 (send *robot* :link-list (send *robot* :larm :end-coords :parent)))
-          ;; :root-link-virtual-joint-weight #f(0.1 0.1 0.1  1 1 1)
+          :root-link-virtual-joint-weight #f(0.5 0.5 0.5  1 1 1)
           ;; :root-link-virtual-joint-weight #f(0.1 0.1 0.1  100 100 100)
-          :root-link-virtual-joint-weight #f(0.5 0.5 0.5 0.0 0.0 0.0)
-          ;; :root-link-virtual-joint-weight #f(0.1 0.1 0.1  1000 1000 1000)
+          ;; :root-link-virtual-joint-weight #f(0.5 0.5 0.5 0.0 0.0 0.0)
 
           :additional-weight-list (list (list (send *robot* :torso :waist-y :child-link) 0.0)
                                         (list (send *robot* :torso :waist-p :child-link) 0.0)
@@ -75,7 +78,7 @@
           :debug-view nil
           ;; :revert-if-fail t
           ;; :cog-translation-axis move-root-link
-          :cog-translation-axis :z
+          :cog-translation-axis move-root-link
           )
 
     (send rarm-coords :draw-on :flush nil :size 300)
@@ -106,7 +109,7 @@
 
   (setq rleg-coords (make-coords :pos #f(0 -100 0))
 	lleg-coords (make-coords :pos #f(0  100 0)))
-  (ik rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords)
+  (ik rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog #f(0 0 1000) :move-root-link :z)
   (send-pose movetime :force-move flag-simulator)
   ;; (ik #f(0 0 40) #f(0 0 40))
 
@@ -334,7 +337,7 @@
   (objects)
   (send *robot* :fix-leg-to-coords (make-coords))
   (send *robot* :reset-manip-pose)
-  (send-pose 3000 :force-move flag-simulator)
+  (send-pose movetime :force-move flag-simulator)
   )
 
 ;; (defun save(&key (fname "emergency"))
