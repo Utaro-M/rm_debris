@@ -202,12 +202,12 @@
     (send *robot* :rarm :move-end-pos (scale offset #f(-2 0 0)) :local)
     (send-pose movetime :force-move flag-simulator)
   
-    (send *robot* :angle-vector (send *ri* :state :angle-vector))
-    (send *robot* :rarm :move-end-pos (scale offset #f(-1 1.5 0)) :local)
+    ;; (send *robot* :angle-vector (send *ri* :state :angle-vector))
+    (send *robot* :rarm :move-end-pos (scale offset #f(0 2 0)) :local)
     (send-pose movetime :force-move flag-simulator)
 
-    (send *robot* :angle-vector (send *ri* :state :angle-vector))
-    (send *robot* :rarm :move-end-pos (scale offset #f(1 0 0)) :local)
+    ;; (send *robot* :angle-vector (send *ri* :state :angle-vector))
+    (send *robot* :rarm :move-end-pos (scale offset #f(1.5 0 0)) :local)
     (send-pose movetime :force-move flag-simulator)
   )
 
@@ -218,6 +218,7 @@
 
 
 ;;手先位置は固定で腰を高くするheight 1000とか
+;;stand-up 1000 :cog #f( 100 0 800)
 (defun stand-up
     (height &key (cog #f(0 0 700)) (degree 0) (move-root-link :z))
 
@@ -227,15 +228,16 @@
         lleg-coords  (send *robot* :lleg :end-coords :copy-worldcoords))
 
   ;; (send *robot* :fix-leg-to-coords (make-coords))
-  (send *robot* :reset-manip-pose)
+  ;; (send *robot* :reset-manip-pose)
   ;; (send *robot* :reset-pose)
-  ;; (send *robot* :move-coords (make-coords :pos (float-vector 0 0 height) :rpy (float-vector 0 (deg2rad 50) 0)) (car (send *robot* :links)))
+
   (setq waist-pos (send (car (send *robot* :links)) :worldpos))
-  (aset waist-pos 2 height)
-  (send *robot* :move-coords (make-coords :pos waist-pos
-                                          :rpy (float-vector 0 (deg2rad 50) 0)) (car (send *robot* :links)))
+  ;; (aset waist-pos 2 height)
+  (setq coo (make-coords :pos (float-vector (elt waist-pos 0) (elt waist-pos 1) height) :rpy (float-vector 0 (deg2rad 30) 0)))
+  (send *robot* :move-coords  coo (car (send *robot* :links)))
+  ;; (send *robot* :move-coords (make-coords :pos waist-pos :rpy (float-vector 0 (deg2rad 30) 0)) (car (send *robot* :links)))
   (objects)
-  (do-until-key (x::window-main-one))
+  ;; (do-until-key (x::window-main-one))
   
   (ik rarm-coords-const larm-coords-const :rleg rleg-coords :lleg lleg-coords :cog cog :move-root-link move-root-link :virtual-joint-weight #f(0.5 0.5 0.5 0 0 0))
   ;; (objects)(read-line)
@@ -370,4 +372,6 @@
 ;;heave #f(0 -200 0) #f(0 200 0)
 ;;(send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500)
 
-;;(progn (load "~/research/rm_debris/rm_board/euslisp/heave.l") (prepare-simulator) (init-pose) (reach) (heave #f(100 0 0) #f( 100 0 0)) (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500)   (setq theta 10) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms) (heave #f(0 -50 0) #f(0 50 0)) (heave #f(0 -200 0) #f(0 200 0))   (setq theta 40) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms) (heave #f(0 -200 0) #f(0 200 0))  (heave #f(60 -200 0) #f(60 200 0)))   (setq theta 60) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms))
+(defun dem()
+  (progn (load "~/research/rm_debris/rm_board/euslisp/heave.l") (prepare-simulator) (init-pose) (reach) (heave #f(100 0 0) #f( 100 0 0) :cog #f(100 0 700)) (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500)   (setq theta 10) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms) (heave #f(0 -50 0) #f(0 50 0)) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700))   (setq theta 40) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms) (heave #f(0 -200 0) #f(0 200 0) :cog #f(200 0 800))  (heave #f(60 -200 0) #f(60 200 0) :cog #f(200 0 800))   (setq theta 60) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms)(heave #f(60 -100 0) #f(60 100 0) :cog #f(200 0 1000)) (setq theta 80) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms) (change-arm 100) (setq theta 80) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms))
+  )
