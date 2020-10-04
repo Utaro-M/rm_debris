@@ -1,7 +1,7 @@
 (require "irteus/demo/sample-robot-model.l")
 (require "models/arrow-object.l")
 ;; (load "package://control_tools/log-tools.l")
-
+(require "package://control_tools/play-hrpsysfile.l")
 (require "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
 
 (require "../../euslisp/save-log.l")
