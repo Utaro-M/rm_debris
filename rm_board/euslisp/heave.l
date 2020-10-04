@@ -14,9 +14,6 @@
 (objects (list *robot*))
 (setq flag-simulator nil) ;;simulatorではｔ
 (setq movetime 30000)
-
-
-
 ;;(send *ri* :save-log "~/matsuura/log/testes" :make-directory t)
 
 (defun prepare-simulator()
