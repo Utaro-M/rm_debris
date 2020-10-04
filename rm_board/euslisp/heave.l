@@ -13,7 +13,7 @@
 
 (objects (list *robot*))
 (setq flag-simulator nil) ;;simulatorではｔ
-(setq movetime 30000)
+(setq movetime 10000)
 ;;(send *ri* :save-log "~/matsuura/log/testes" :make-directory t)
 
 (defun prepare-simulator()
@@ -207,7 +207,7 @@
     (send-pose movetime :force-move flag-simulator)
 
     ;; (send *robot* :angle-vector (send *ri* :state :angle-vector))
-    (send *robot* arm :move-end-pos (scale offset #f(1.5 0 0)) :local)
+    (send *robot* arm :move-end-pos (scale offset #f(1.5 1.5 0)) :local)
     (send-pose movetime :force-move flag-simulator)
   )
 
