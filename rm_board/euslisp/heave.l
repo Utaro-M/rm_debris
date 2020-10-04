@@ -417,21 +417,23 @@
   
   )
 
-(defun dem()
+(defun dem-pre()
   (init-pose)
   (unix::sleep 3)
   (reach)
-  (unix::sleep 3)  
+  (unix::sleep 3)
+)
+(defun dem-mid()  
   ;; (heave #f(100 0 0) #f( 100 0 0) :cog #f(100 0 700))
   ;; (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500)
 
   (progn (setq theta 10) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms))
   (unix::sleep 3)
   
-  (heave #f(0 -50 0) #f(0 50 0))
+  (heave #f(50 -50 0) #f(50 50 0))
   (unix::sleep 3)
   
-  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700))
+  (heave #f(60 -200 0) #f(60 200 0) :cog #f(100 0 700))
   (unix::sleep 3)
   
   (progn (setq theta 40) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms))
@@ -457,7 +459,9 @@
   
   (progn (setq theta 80) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms))
   (unix::sleep 3)
-  
+
+  )
+(defun dem-post()
   (progn (setq theta 80) (send *ri* :set-ref-force (scale 2 (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta))))) 2000 :larm) (change-arm 140 :rarm))
   (unix::sleep 3)
   
