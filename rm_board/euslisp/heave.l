@@ -1,6 +1,6 @@
 (require "irteus/demo/sample-robot-model.l")
 (require "models/arrow-object.l")
-(load "package://control_tools/log-tools.l")
+;; (load "package://control_tools/log-tools.l")
 
 (require "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
 
@@ -34,7 +34,7 @@
 
 ;;(float-vector 0 0 (elt (send (car (send *robot* :links)) :worldpos) 2))
 (defun ik
-    (rarm-coords larm-coords &key rleg lleg (cog #f(0 0 0)) (move-root-link :z))
+    (rarm-coords larm-coords &key rleg lleg (cog #f(0 0 0)) (move-root-link :z) (virtual-joint-weight #f(0.5 0.5 0.5  1 1 1)))
   ;; (let* ((rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
   ;;        (lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
   ;;        ;; (rarm-coords (send (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate rarm ) :rotate (deg2rad 90) :z)) 
@@ -62,8 +62,7 @@
                 (send *robot* :link-list (send *robot* :lleg :end-coords :parent))
                 (send *robot* :link-list (send *robot* :rarm :end-coords :parent))                 
                 (send *robot* :link-list (send *robot* :larm :end-coords :parent)))
-          :root-link-virtual-joint-weight #f(0.5 0.5 0.5  1 1 1)
-          ;; :root-link-virtual-joint-weight #f(0.1 0.1 0.1  100 100 100)
+          :root-link-virtual-joint-weight virtual-joint-weight
           ;; :root-link-virtual-joint-weight #f(0.5 0.5 0.5 0.0 0.0 0.0)
 
           :additional-weight-list (list (list (send *robot* :torso :waist-y :child-link) 0.0)
@@ -238,7 +237,7 @@
   (objects)
   (do-until-key (x::window-main-one))
   
-  (ik rarm-coords-const larm-coords-const :rleg rleg-coords :lleg lleg-coords :cog cog :move-root-link move-root-link)
+  (ik rarm-coords-const larm-coords-const :rleg rleg-coords :lleg lleg-coords :cog cog :move-root-link move-root-link :virtual-joint-weight #f(0.5 0.5 0.5 0 0 0))
   ;; (objects)(read-line)
   (send-pose movetime :force-move flag-simulator)
   )
@@ -365,3 +364,10 @@
 
 ;; (* (* (/ data 360) 
       ;; ) 
+
+
+;;;(progn (load "~/research/rm_debris/rm_board/euslisp/heave.l") (prepare-simulator) (init-pose) (reach) (heave #f(100 0 0) #f( 100 0 0)) (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500) (send *ri* :set-ref-force (float-vector 0 0 (* 9.8 4 -1)) 2000 :arms) (heave #f(0 -50 0) #f(0 50 0)))
+;;heave #f(0 -200 0) #f(0 200 0)
+;;(send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500)
+
+;;(progn (load "~/research/rm_debris/rm_board/euslisp/heave.l") (prepare-simulator) (init-pose) (reach) (heave #f(100 0 0) #f( 100 0 0)) (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500)   (setq theta 10) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms) (heave #f(0 -50 0) #f(0 50 0)) (heave #f(0 -200 0) #f(0 200 0))   (setq theta 40) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms) (heave #f(0 -200 0) #f(0 200 0))  (heave #f(60 -200 0) #f(60 200 0)))   (setq theta 60) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms))
