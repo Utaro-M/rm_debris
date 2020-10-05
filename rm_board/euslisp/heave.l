@@ -134,7 +134,7 @@
 
 
 ;;#f(-10.2571 2.48265 -119.158 121.041 -23.7349 -2.51195 -10.0688 2.94909 -119.142 115.161 -17.879 -3.01482 -5.32426 12.8033 -17.6559 0.0 30.0 29.4087 -133.23 -41.5248 10.8825 -14.2435 111.379 53.7101 -33.4791 -16.9189 -143.345 22.992 5.13361 -7.01039 -144.568 -56.239 -30.3203)
-(defun change-arm-develloping
+(defun change-arm-developing
     (putback-offset &key (cog #f(0 0 700)) (degree 0) (move-root-link :z))
   (send *robot* :angle-vector (send *ri* :state :angle-vector))
   (send *robot* :fix-leg-to-coords (make-coords))
@@ -214,9 +214,15 @@
     (send-pose movetime :force-move flag-simulator)
 
     ;; (send *robot* :angle-vector (send *ri* :state :angle-vector))
-    ;; (send *robot* arm :move-end-pos (scale offset #f(1.5 1.5 0)) :local)
+    ;; (if (eq arm :rarm)
+    ;;     (send *robot* arm :move-end-pos (scale offset #f(1.5 -1.5 0)) :local)
+    ;;   (send *robot* arm :move-end-pos (scale offset #f(1.5 1.5 0)) :local))
+
     ;;choreonoid
-    (send *robot* arm :move-end-pos (scale offset #f(1.5 0 0)) :local)
+    (if (eq arm :rarm)
+        (send *robot* arm :move-end-pos (scale offset #f(1.5 0 0)) :local)
+      (send *robot* arm :move-end-pos (scale offset #f(1.5 0 0)) :local))
+
     (send-pose movetime :force-move flag-simulator)
   )
 
