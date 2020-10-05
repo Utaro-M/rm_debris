@@ -5,6 +5,7 @@
 (require "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
 
 (require "../../euslisp/save-log.l")
+(require "~/research/rm_debris/src/predict_from_multi_pose.l")
 (unless (and (boundp '*robot*) (boundp '*ri*))
   (jaxon_red-init)
   (setq *robot* *jaxon_red*)
@@ -27,7 +28,50 @@
     (send *ri* :set-st-param :emergency-check-mode 0)
     (send *ri* :start-st))
 
-)
+  )
+
+(defclass my-coords
+  :super propertied-object
+  :slots (rarm-coords larm-coords rleg-coords lleg-coords cog)
+  )
+
+(defmethod my-coords
+  (:init (rarm larm rleg lleg cg)
+         (progn
+           (send self :set-rarm rarm)
+           (send self :set-larm larm)
+           (send self :set-rleg rleg)
+           (send self :set-lleg lleg)
+           (send self :set-cog cg)
+           )
+         self)
+  (:set-rarm (val)
+             (setq rarm-coords val))
+  (:set-larm (val)
+             (setq larm-coords val))
+  (:set-rleg (val)
+             (setq rleg-coords val))
+  (:set-lleg (val)
+             (setq lleg-coords val))
+  (:set-cog (val)
+             (setq cog val))
+  
+  (:get-rarm ()
+             rarm-coords)
+  (:get-larm ()
+             larm-coords)
+  (:get-rleg ()
+             rleg-coords)
+  (:get-lleg ()
+             lleg-coords)
+  (:get-cog ()
+             cog)
+  ;; (:get (part)
+  ;;       (read-from-string (format nil "~A-coords" part))
+  ;;       )
+        
+  )
+
 
 ;;(float-vector 0 0 (elt (send (car (send *robot* :links)) :worldpos) 2))
 (defun ik
@@ -131,7 +175,30 @@
   (send-pose movetime :force-move flag-simulator)
   )
 
+(defun check (rarm-ref larm-ref)
+  (while(t)
 
+    (setq rarm-f (cdr (low-pass-online "force" "absolute" :rarm :flag t)))
+    (setq larm-f (cdr (low-pass-online "force" "absolute" :larm :flag t)))
+    (setq rarm-diff (v- rarm-ref rarm-f) )
+    (setq larm-diff (v- larm-ref larm-f) )
+    (if (> (abs rarm-diff) rarm-thre)
+        (progn
+          (setq rarm-drop t)
+          
+    (if (> (abs larm-diff) larm-thre)
+        (setq larm-drop t))
+    (if 
+        (setq pre-angle (send *ri* :state :angle-vector)))))))
+
+(defun retry(arm)
+  (setq stop-angle (send *robot* :angle-vector))
+  (setq rarm-coords (send *robot* arm :end-coords))
+  (unix:sleep 3)
+  (send *robot* :angle-vector (send *ri* :state :angle-vector))
+  (setq rarm-coords-drop (send *robot* arm :end-coords))
+  (ik rarm-retry-coords larm-retry-coords :rleg rleg-coords :lleg lleg-coords :cog cog)
+       
 
 ;;#f(-10.2571 2.48265 -119.158 121.041 -23.7349 -2.51195 -10.0688 2.94909 -119.142 115.161 -17.879 -3.01482 -5.32426 12.8033 -17.6559 0.0 30.0 29.4087 -133.23 -41.5248 10.8825 -14.2435 111.379 53.7101 -33.4791 -16.9189 -143.345 22.992 5.13361 -7.01039 -144.568 -56.239 -30.3203)
 (defun change-arm-developing
@@ -395,21 +462,18 @@
   (heave #f(100 0 0) #f( 100 0 0) :cog #f(100 0 700))
   (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500)
 
-  (progn (setq theta 10) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms))
-
+  (send *ri* :set-reference-force-updater-param :arms :motion-dir #f(0 0 -1) :p-gain 0.01 :update-time-ratio 1.0)
+  (send *ri* :start-reference-force-updater :arms)
+  
   (heave #f(0 -50 0) #f(0 50 0))
 
   (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700))
 
-  (progn (setq theta 40) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms))
-
-  ;; (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 800))
-
-  ;; (heave #f(60 -200 0) #f(60 200 0) :cog #f(100 0 800))
+  ;; (progn (setq theta 40) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms))
 
   (heave #f(60 -400 0) #f(60 400 0) :cog #f(100 0 800))
 
-  (progn (setq theta 60) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms))
+  ;; (progn (setq theta 60) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms))
 
   (stand-up 1000  :cog #f(100 0 900))
 
@@ -417,18 +481,17 @@
 
   (heave #f(60 -100 0) #f(60 100 0) :cog #f(100 0 1000))
 
-  (progn (setq theta 80) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms))
+  ;; (progn (setq theta 80) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms))
 
   (progn (setq theta 80) (send *ri* :set-ref-force (scale 2 (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta))))) 2000 :larm) (change-arm 140 :rarm))
-
   (progn (setq theta 80) (send *ri* :set-ref-force (scale 2 (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta))))) 2000 :rarm) (change-arm 140 :larm))
 
-  (progn (setq theta 80) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms))
+  ;; (progn (setq theta 80) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms))
 
   (send *ri* :go-pos 0.3 0 0)
   (send *ri* :go-pos 0.3 0 0)
 
-  (setq theta 80) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms)
+  ;; (setq theta 80) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms)
   
   )
 
