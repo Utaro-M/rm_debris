@@ -10,7 +10,7 @@
 ;;roseus
 ;;load "~/research/rm_debris/predict.l"
 
-(load "package://control_tools/log-tools.l")
+;; (load "package://control_tools/log-tools.l")
 
 ;;logを使うときはコメントアウトを外す
 ;; (unless (and (boundp '*robot*) (boundp '*rs-list*)))
@@ -78,7 +78,7 @@
 
 ;;0918
 ;;targetのprediodから期間duration秒の間のデータをならして出力
-(defun get
+(defun get-data
     (&key (target "force") (period 2) (duration 1) (axis :x) (rs-list *rs-list*) (limbs (get-limbs-in-force-sensor-order *robot*)))
   (let* ((state-data
           (mapcar #'(lambda (l)
@@ -345,15 +345,15 @@
     ()
   ;;何も持っていない状態でのforce,momentを記録
   (prepare-plot :fname "pred_mass_JAXON_RED_2020_09-12_15-45_33")
-  (setq force-free (get :target "force" :period 2 :duration 1 ))
-  (setq moment-free (get :target "moment" :period 2 :duration 1 ))
+  (setq force-free (get-data :target "force" :period 2 :duration 1 ))
+  (setq moment-free (get-data :target "moment" :period 2 :duration 1 ))
   
   ;;持っている状態でのforce,momentを記録
   (prepare-plot :create nil :fname "contact_70_JAXON_RED_2020_09-08_22-00_27")
   (dotimes (i 10)
     (progn
-      (setq force-hold (get :target "force" :period (+ 3 (* i 0.1)) :duration 1 ))
-      (setq moment-hold (get :target "moment" :period (+ 3 (* i 0.1)) :duration 1 ))
+      (setq force-hold (get-data :target "force" :period (+ 3 (* i 0.1)) :duration 1 ))
+      (setq moment-hold (get-data :target "moment" :period (+ 3 (* i 0.1)) :duration 1 ))
       (setq com (predict-com force-free moment-free force-hold moment-hold))
       (if com
           break
@@ -364,8 +364,8 @@
   (print (format nil "com = ~A" com))
   ;; ;;ぶつかったときのforce,momentを記録
   ;; (prepare-plot :fname "pred_mass_JAXON_RED_2020_09-12_15-45_33")
-  ;; (setq force-contact (get :target "force" :period 2 :duration 1 ))
-  ;; (setq moment-contact (get :target "moment" :period 2 :duration 1 ))
+  ;; (setq force-contact (get-data :target "force" :period 2 :duration 1 ))
+  ;; (setq moment-contact (get-data :target "moment" :period 2 :duration 1 ))
 
 )
 
