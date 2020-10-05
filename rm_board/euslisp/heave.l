@@ -197,17 +197,26 @@
 
   
     (send *robot* :angle-vector (send *ri* :state :angle-vector))
-    (send *robot* arm :move-end-pos (scale offset #f(-2 0 0)) :local)
+    ;; (send *robot* arm :move-end-pos (scale offset #f(-2 0 0)) :local)
+    ;;choreonoid
+    (send *robot* arm :move-end-pos (scale offset #f(-1 0 0)) :local)
     (send-pose movetime :force-move flag-simulator)
-  
-    ;; (send *robot* :angle-vector (send *ri* :state :angle-vector))
+
+    ;;jikki
+    ;; (if (eq arm :rarm)
+    ;;     (send *robot* arm :move-end-pos (scale offset #f(0 2 0)) :local)
+    ;;   (send *robot* arm :move-end-pos (scale offset #f(0 -2 0)) :local))
+    ;;choreonoid
     (if (eq arm :rarm)
-        (send *robot* arm :move-end-pos (scale offset #f(0 2 0)) :local)
-      (send *robot* arm :move-end-pos (scale offset #f(0 -2 0)) :local))
+        (send *robot* arm :move-end-pos (scale offset #f(0 1.5 0)) :local)
+      (send *robot* arm :move-end-pos (scale offset #f(0 -1.5 0)) :local))
+
     (send-pose movetime :force-move flag-simulator)
 
     ;; (send *robot* :angle-vector (send *ri* :state :angle-vector))
-    (send *robot* arm :move-end-pos (scale offset #f(1.5 1.5 0)) :local)
+    ;; (send *robot* arm :move-end-pos (scale offset #f(1.5 1.5 0)) :local)
+    ;;choreonoid
+    (send *robot* arm :move-end-pos (scale offset #f(1.5 0 0)) :local)
     (send-pose movetime :force-move flag-simulator)
   )
 
@@ -412,7 +421,7 @@
 
   (send *ri* :go-pos 0.3 0 0)
   (send *ri* :go-pos 0.3 0 0)
-  (send *ri* :go-pos 0.1 0 0)
+
   (setq theta 80) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms)
   
   )
@@ -423,6 +432,7 @@
   (reach)
   (unix::sleep 3)
 )
+
 (defun dem-mid()  
   ;; (heave #f(100 0 0) #f( 100 0 0) :cog #f(100 0 700))
   ;; (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500)
