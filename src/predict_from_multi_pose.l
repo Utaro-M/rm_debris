@@ -377,19 +377,19 @@
 ;; (send *gp* :draw x-list y-list z-list)
 ;;呼ばれた瞬間から0.1秒間で5回分のセンサ値をlow-pass filterでならしてその平均を出力
 (defun low-pass-online
-    (target coords &key (r 0.3) (flag nil))
+    (target coords arm &key (times 40) (r 0.3) (sleep 10000) (flag nil))
   (let* (
-         (y-data (list (send *ri* :state (read-from-string (format nil ":~A-~A-vector" coords target)) :rarm)))
-         (y-predict (list (send *ri* :state (read-from-string (format nil ":~A-~A-vector" coords target)) :rarm)))
+         (y-data (list (send *ri* :state (read-from-string (format nil ":~A-~A-vector" coords target)) arm)))
+         (y-predict (list (send *ri* :state (read-from-string (format nil ":~A-~A-vector" coords target)) arm)))
          )
     
-    (dotimes (i 40)
-           (setq data (send *ri* :state (read-from-string (format nil ":~A-~A-vector" coords target)) :rarm))
+    (dotimes (i times)
+           (setq data (send *ri* :state (read-from-string (format nil ":~A-~A-vector" coords target)) arm))
       (setq y (v+ (scale r data) (scale (- 1 r) (elt y-predict i))))
       (list-insert y (+ i 1) y-predict)
       (list-insert data (+ i 1) y-data)
       ;; (unix:usleep 1000)
-      (unix:usleep 10000)      
+      (unix:usleep sleep)      
       )
     (setq ret (cdr y-predict))
 ;;    (print (format nil "~A vector through filter = ~A" target ret))
@@ -407,7 +407,7 @@
 ;;filterをかけるとたしかに滑らかになった気がする
 (defun compare-filter()
   
-  (setq f1 (low-pass-online "force" "absolute" :data t))
+  (setq f1 (low-pass-online "force" "absolute" :rarm :flag t))
 
   (print (format nil "y-data= ~A" (elt f1 0)))
 
