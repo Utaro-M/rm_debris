@@ -267,6 +267,7 @@
     )
   )
 
+;;もとの姿勢に戻すか、正常なハンドの位置に合わせて戻すか
 (defun retry-while-still (drop-arm &key (same-pose nil) (cog #f(100 0 0)))
   (send *robot* :angle-vector (send *poses* :get-fin-pose-ri))
   ;;動作終了時
@@ -277,6 +278,7 @@
         (setq larm-coodrs (send *robot* :larm :end-coords :copy-worldcoords))
         (ik rarm-coords larm-coords :cog cog))
     (progn
+      (format t "return to other arm pos")
       (if (eq drop-arm :rarm)
           (setq hold-arm :larm)
         (setq hold-arm :rarm))
@@ -285,8 +287,14 @@
       (setq hold-arm-coords-tmp (send hold-arm-coords :copy-worldcoords))
       (setq drop-arm-target-coords (make-coords :pos (aset (send (send hold-arm-coords-tmp :copy-worldcoords) :worldpos) 1 (* -1 (elt (send hold-arm-coords-tmp :worldpos) 1)))  :rpy (car (send hold-arm-coords-tmp :rpy-angle ))))
 
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      (if (eq drop-arm :rarm)
+          (ik drop-arm-target-coords hold-arm-coords :cog cog)
+        (ik hold-arm-coords drop-arm-target-coords :cog cog))
       
+      ))
+  (send-pose movetime :force-move flag-simulator)
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+  )
   
   
   (setq  (send *robot* :angle-vector))
