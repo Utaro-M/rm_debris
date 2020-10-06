@@ -67,19 +67,30 @@
   (:get-lleg ()
              lleg-coords)
   (:get-cog ()
-            cog)
-  ;; (:get (part)
-  ;;       (read-from-string (format nil "~A-coords" part))
-  ;;       )
-        
+            cog)        
   )
 
-(defun tes
-    (&key val)
-  (if (eq val nil)
-      (format t "nothing"))
-  (format  t "val=~A" val)
+(defclass poses
+  :super propertied-object
+  :slots (fin-pose-ri fin-pose-robot )
   )
+(defmethod poses
+  (:init (pose-robot pose-ri)
+         (send self :set-fin-pose-robot pose-robot)
+         (send self :set-fin-pose-ri pose-ri)
+         self
+         )
+  (:set-fin-pose-ri (val)
+                    (setq fin-pose-ri val))
+  (:set-fin-pose-robot (val)
+                 (setq fin-pose-robot val))  
+  (:get-fin-pose-ri ()
+                    fin-pose-ri )
+  (:get-fin-pose-robot ()
+                    fin-pose-robot )
+    
+  )
+
 (setq *coords* (instance my-coords :init
                        (copy-object (send *robot* :rarm :end-coords :copy-worldcoords))
                        (copy-object (send *robot* :larm :end-coords :copy-worldcoords))
@@ -87,6 +98,9 @@
                        (copy-object (send *robot* :lleg :end-coords :copy-worldcoords))
                        #f(0 0 700)))
 
+(setq *pose* (instance poses :init
+                       (send *robot* :angle-vector)
+                       (send *ri* :state-angle-vector)))
 ;;(float-vector 0 0 (elt (send (car (send *robot* :links)) :worldpos) 2))
 (defun ik
     (rarm-coords larm-coords &key rleg lleg cog (move-root-link :z) (virtual-joint-weight #f(0.5 0.5 0.5  1 1 1)))
@@ -218,12 +232,14 @@
   
   (ik rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog cog)
   (send-pose movetime :force-move flag-simulator)
-  (check (float-vector 0 0 (* 9.8 -3)) (float-vector 0 0 (* 9.8 -3)) (list 10 10) 6)
-  ;; (check rarm-coords larm-coords (list 100 100) 10)
+  (check-while-still (float-vector 0 0 (* 9.8 -3)) (float-vector 0 0 (* 9.8 -3)) (list 40 40) 6)
+  ;; (check rarm-coords larm-coords (list 80 80) 5)
 
   )
 
-(defun check (rarm-ref-f larm-ref-f thre-list fin)
+;;静止時の以上検知
+;;前の動作終了時の力をref-fとして与えておｓ子から外れると落としたと判断
+(defun check-while-still (rarm-ref-f larm-ref-f thre-list fin)
   (setq pre-angle (send *ri* :state :angle-vector))
 
   (while t
@@ -251,8 +267,29 @@
     )
   )
 
-(defun retry(arm)
-  (setq stop-angle (send *robot* :angle-vector))
+(defun retry-while-still (drop-arm &key (same-pose nil) (cog #f(100 0 0)))
+  (send *robot* :angle-vector (send *poses* :get-fin-pose-ri))
+  ;;動作終了時
+  (if same-pose
+      (progn
+        (format t "retry to same pose~%")
+        (setq rarm-coodrs (send *robot* :rarm :end-coords :copy-worldcoords))
+        (setq larm-coodrs (send *robot* :larm :end-coords :copy-worldcoords))
+        (ik rarm-coords larm-coords :cog cog))
+    (progn
+      (if (eq drop-arm :rarm)
+          (setq hold-arm :larm)
+        (setq hold-arm :rarm))
+
+      (setq hold-arm-coords (send *robot* hold-arm :end-coords :copy-worldcoords))
+      (setq hold-arm-coords-tmp (send hold-arm-coords :copy-worldcoords))
+      (setq drop-arm-target-coords (make-coords :pos (aset (send (send hold-arm-coords-tmp :copy-worldcoords) :worldpos) 1 (* -1 (elt (send hold-arm-coords-tmp :worldpos) 1)))  :rpy (car (send hold-arm-coords-tmp :rpy-angle ))))
+
+      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+      
+  
+  
+  (setq  (send *robot* :angle-vector))
   (setq rarm-coords (send *robot* arm :end-coords))
   (unix:sleep 3)
   (send *robot* :angle-vector (send *ri* :state :angle-vector))
