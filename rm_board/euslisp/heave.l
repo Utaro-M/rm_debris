@@ -218,29 +218,35 @@
   
   (ik rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog cog)
   (send-pose movetime :force-move flag-simulator)
-  (check (float-vector 0 0 (* 9.8 8)) (float-vector 0 0 (* 9.8 8)) (list 10 10) 6)
+  (check (float-vector 0 0 (* 9.8 -3)) (float-vector 0 0 (* 9.8 -3)) (list 10 10) 6)
   ;; (check rarm-coords larm-coords (list 100 100) 10)
 
   )
 
-(defun check (rarm-ref larm-ref thre-list fin)
+(defun check (rarm-ref-f larm-ref-f thre-list fin)
   (setq pre-angle (send *ri* :state :angle-vector))
 
   (while t
-    (setq rarm-f  (low-pass-online "force" "absolute" :rarm :times 30 :sleep 10000 :flag nil))
-    (setq larm-f  (low-pass-online "force" "absolute" :larm :times 30 :sleep 10000 :flag nil))
-    (setq rarm-dif (norm (v- rarm-ref rarm-f) ))
-    (setq larm-dif (norm (v- larm-ref larm-f) ))
+    (setq rarm-f  (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
+    (setq larm-f  (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
+    ;; (setq rarm-dif (norm (v- rarm-ref-f rarm-f) ))
+    ;; (setq larm-dif (norm (v- larm-ref-f larm-f) ))
+    (setq rarm-dif (elt (v- rarm-ref-f rarm-f) 2))
+    (setq larm-dif (elt (v- larm-ref-f larm-f) 2))    
     (setq drop (list nil nil))
-    
+    (format t "rarm-dif = ~A~%" rarm-dif)
+    (format t "larm-dif = ~A~%" larm-dif)
     (if (> rarm-dif (elt thre-list 0))
-        (list-insert 1 0 drop))
+        (setq drop (list-insert t 0 drop)))
     (if (>  larm-dif (elt thre-list 1))
-        (list-insert 1 1 drop))
-    (if (or  (or (elt drop 0) (elt drop 0))  (and (< rarm-dif fin) (< larm-dif fin)))
+        (setq drop (list-insert t 1 drop)))
+    (if (or (elt drop 0) (elt drop 0))  
         (progn
-          pre-angle
-          (break)))
+          (format t "drop")          
+          (return pre-angle)))
+    (if (and (< rarm-dif fin) (< larm-dif fin))
+        (format t "goal")
+        (return t))
     (setq pre-angle (send *ri* :state :angle-vector))
     )
   )
