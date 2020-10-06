@@ -72,20 +72,15 @@
         
   )
 
-
+(setq *coords* (instance my-coords :init
+                       (send *robot* :rarm :end-coords :copy-worldcoords)
+                       (send *robot* :larm :end-coords :copy-worldcoords)
+                       (send *robot* :rleg :end-coords :copy-worldcoords)
+                       (send *robot* :lleg :end-coords :copy-worldcoords)
+                       #f(0 0 700)))
 ;;(float-vector 0 0 (elt (send (car (send *robot* :links)) :worldpos) 2))
 (defun ik
     (rarm-coords larm-coords &key rleg lleg (cog #f(0 0 0)) (move-root-link :z) (virtual-joint-weight #f(0.5 0.5 0.5  1 1 1)))
-  ;; (let* ((rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
-  ;;        (lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
-  ;;        ;; (rarm-coords (send (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate rarm ) :rotate (deg2rad 90) :z)) 
-  ;;        ;; (larm-coords (send (send (send *robot* :larm :end-coords :copy-worldcoords) :translate larm ) :rotate (deg2rad 90) :z)))
-
-  ;;        ;; (rarm-coords (send *robot* :rarm :end-coords :worldpos (make-coords :pos rarm :rpy (float-vector 0 0 (deg2rad 90)))))
-  ;;        ;; (larm-coords (send *robot* :rarm :end-coords :worldpos (make-coords :pos rarm :rpy (float-vector 0 0 (deg2rad 90)))))         
-  ;;        ;; (larm-coords (send (send (send *robot* :larm :end-coords :copy-worldcoords) :translate larm ) :rotate (deg2rad 90) :z)))
-  ;;        )
-
     ;; (send *robot* :torso :waist-p :joint-angle 10)
     (send *robot* :fullbody-inverse-kinematics
           (list rleg
@@ -198,7 +193,71 @@
   (send *robot* :angle-vector (send *ri* :state :angle-vector))
   (setq rarm-coords-drop (send *robot* arm :end-coords))
   (ik rarm-retry-coords larm-retry-coords :rleg rleg-coords :lleg lleg-coords :cog cog)
-       
+
+
+(defun change-arm
+    (offset arm)
+
+  
+    (send *robot* :angle-vector (send *ri* :state :angle-vector))
+    ;; (send *robot* arm :move-end-pos (scale offset #f(-2 0 0)) :local)
+    ;;choreonoid
+    (send *robot* arm :move-end-pos (scale offset #f(-1 0 0)) :local)
+    (send-pose movetime :force-move flag-simulator)
+
+    ;;jikki
+    ;; (if (eq arm :rarm)
+    ;;     (send *robot* arm :move-end-pos (scale offset #f(0 2 0)) :local)
+    ;;   (send *robot* arm :move-end-pos (scale offset #f(0 -2 0)) :local))
+    ;;choreonoid
+    (if (eq arm :rarm)
+        (send *robot* arm :move-end-pos (scale offset #f(0 1.5 0)) :local)
+      (send *robot* arm :move-end-pos (scale offset #f(0 -1.5 0)) :local))
+
+    (send-pose movetime :force-move flag-simulator)
+
+    ;; (send *robot* :angle-vector (send *ri* :state :angle-vector))
+    ;; (if (eq arm :rarm)
+    ;;     (send *robot* arm :move-end-pos (scale offset #f(1.5 -1.5 0)) :local)
+    ;;   (send *robot* arm :move-end-pos (scale offset #f(1.5 1.5 0)) :local))
+
+    ;;choreonoid
+    (if (eq arm :rarm)
+        (send *robot* arm :move-end-pos (scale offset #f(1.5 0 0)) :local)
+      (send *robot* arm :move-end-pos (scale offset #f(1.5 0 0)) :local))
+
+    (send-pose movetime :force-move flag-simulator)
+  )
+
+
+
+;;手先位置は固定で腰を高くするheight 1000とか
+;;stand-up 1000 :cog #f( 100 0 800)
+(defun stand-up
+    (height &key (cog #f(0 0 700)) (degree 0) (move-root-link :z))
+
+  (setq rarm-coords-const (send *robot* :rarm :end-coords :copy-worldcoords))
+  (setq larm-coords-const (send *robot* :larm :end-coords :copy-worldcoords))
+  (setq rleg-coords  (send *robot* :rleg :end-coords :copy-worldcoords)
+        lleg-coords  (send *robot* :lleg :end-coords :copy-worldcoords))
+
+  ;; (send *robot* :fix-leg-to-coords (make-coords))
+  ;; (send *robot* :reset-manip-pose)
+  ;; (send *robot* :reset-pose)
+
+  (setq waist-pos (send (car (send *robot* :links)) :worldpos))
+  ;; (aset waist-pos 2 height)
+  (setq coo (make-coords :pos (float-vector (elt waist-pos 0) (elt waist-pos 1) height) :rpy (float-vector 0 (deg2rad 40) 0)))
+  (send *robot* :move-coords  coo (car (send *robot* :links)))
+  ;; (send *robot* :move-coords (make-coords :pos waist-pos :rpy (float-vector 0 (deg2rad 30) 0)) (car (send *robot* :links)))
+  (objects)
+  ;; (do-until-key (x::window-main-one))
+  
+  (ik rarm-coords-const larm-coords-const :rleg rleg-coords :lleg lleg-coords :cog cog :move-root-link move-root-link :virtual-joint-weight #f(0.5 0.5 0.5 0 0 0))
+  ;; (objects)(read-line)
+  (send-pose movetime :force-move flag-simulator)
+  )
+  
 
 ;;#f(-10.2571 2.48265 -119.158 121.041 -23.7349 -2.51195 -10.0688 2.94909 -119.142 115.161 -17.879 -3.01482 -5.32426 12.8033 -17.6559 0.0 30.0 29.4087 -133.23 -41.5248 10.8825 -14.2435 111.379 53.7101 -33.4791 -16.9189 -143.345 22.992 5.13361 -7.01039 -144.568 -56.239 -30.3203)
 (defun change-arm-developing
@@ -259,72 +318,6 @@
 
   )
 
-(defun change-arm
-    (offset arm)
-
-  
-    (send *robot* :angle-vector (send *ri* :state :angle-vector))
-    ;; (send *robot* arm :move-end-pos (scale offset #f(-2 0 0)) :local)
-    ;;choreonoid
-    (send *robot* arm :move-end-pos (scale offset #f(-1 0 0)) :local)
-    (send-pose movetime :force-move flag-simulator)
-
-    ;;jikki
-    ;; (if (eq arm :rarm)
-    ;;     (send *robot* arm :move-end-pos (scale offset #f(0 2 0)) :local)
-    ;;   (send *robot* arm :move-end-pos (scale offset #f(0 -2 0)) :local))
-    ;;choreonoid
-    (if (eq arm :rarm)
-        (send *robot* arm :move-end-pos (scale offset #f(0 1.5 0)) :local)
-      (send *robot* arm :move-end-pos (scale offset #f(0 -1.5 0)) :local))
-
-    (send-pose movetime :force-move flag-simulator)
-
-    ;; (send *robot* :angle-vector (send *ri* :state :angle-vector))
-    ;; (if (eq arm :rarm)
-    ;;     (send *robot* arm :move-end-pos (scale offset #f(1.5 -1.5 0)) :local)
-    ;;   (send *robot* arm :move-end-pos (scale offset #f(1.5 1.5 0)) :local))
-
-    ;;choreonoid
-    (if (eq arm :rarm)
-        (send *robot* arm :move-end-pos (scale offset #f(1.5 0 0)) :local)
-      (send *robot* arm :move-end-pos (scale offset #f(1.5 0 0)) :local))
-
-    (send-pose movetime :force-move flag-simulator)
-  )
-
-
-
-
-
-
-
-;;手先位置は固定で腰を高くするheight 1000とか
-;;stand-up 1000 :cog #f( 100 0 800)
-(defun stand-up
-    (height &key (cog #f(0 0 700)) (degree 0) (move-root-link :z))
-
-  (setq rarm-coords-const (send *robot* :rarm :end-coords :copy-worldcoords))
-  (setq larm-coords-const (send *robot* :larm :end-coords :copy-worldcoords))
-  (setq rleg-coords  (send *robot* :rleg :end-coords :copy-worldcoords)
-        lleg-coords  (send *robot* :lleg :end-coords :copy-worldcoords))
-
-  ;; (send *robot* :fix-leg-to-coords (make-coords))
-  ;; (send *robot* :reset-manip-pose)
-  ;; (send *robot* :reset-pose)
-
-  (setq waist-pos (send (car (send *robot* :links)) :worldpos))
-  ;; (aset waist-pos 2 height)
-  (setq coo (make-coords :pos (float-vector (elt waist-pos 0) (elt waist-pos 1) height) :rpy (float-vector 0 (deg2rad 40) 0)))
-  (send *robot* :move-coords  coo (car (send *robot* :links)))
-  ;; (send *robot* :move-coords (make-coords :pos waist-pos :rpy (float-vector 0 (deg2rad 30) 0)) (car (send *robot* :links)))
-  (objects)
-  ;; (do-until-key (x::window-main-one))
-  
-  (ik rarm-coords-const larm-coords-const :rleg rleg-coords :lleg lleg-coords :cog cog :move-root-link move-root-link :virtual-joint-weight #f(0.5 0.5 0.5 0 0 0))
-  ;; (objects)(read-line)
-  (send-pose movetime :force-move flag-simulator)
-  )
 
 
 (defun demo ()
