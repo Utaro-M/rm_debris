@@ -100,7 +100,7 @@
 
 (setq *pose* (instance poses :init
                        (send *robot* :angle-vector)
-                       (send *ri* :state-angle-vector)))
+                       (send *ri* :state :angle-vector)))
 ;;(float-vector 0 0 (elt (send (car (send *robot* :links)) :worldpos) 2))
 (defun ik
     (rarm-coords larm-coords &key rleg lleg cog (move-root-link :z) (virtual-joint-weight #f(0.5 0.5 0.5  1 1 1)))
@@ -164,7 +164,7 @@
   (objects)
   (when (or force-move (y-or-n-p "Do you move real machine?"))
     (send *ri* :angle-vector (send *robot* :angle-vector) time)
-    (send *ri* :wait-interpolation)
+    ;; (send *ri* :wait-interpolation)
     )
   )
 
@@ -232,23 +232,25 @@
   
   (ik rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog cog)
   (send-pose movetime :force-move flag-simulator)
-  (check-while-still (float-vector 0 0 (* 9.8 -3)) (float-vector 0 0 (* 9.8 -3)) (list 40 40) 6)
+  (setq rarm-ref-f (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
+  (setq larm-ref-f (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
+  (check-while-still rarm-ref-f larm-ref-f )
   ;; (check rarm-coords larm-coords (list 80 80) 5)
 
   )
-
+;; (setq waiting nil)
 ;;静止時の以上検知
 ;;前の動作終了時の力をref-fとして与えておｓ子から外れると落としたと判断
-(defun check-while-still (rarm-ref-f larm-ref-f thre-list fin)
+(defun check-while-still (rarm-ref-f larm-ref-f &key (waiting-time 4) (sleep-time 20000) (thre-list (list 10 10)) (fin 3))
   (setq pre-angle (send *ri* :state :angle-vector))
 
-  (while t
+  (dotimes (/ (* waiting-time 1000000) sleep-time)
     (setq rarm-f  (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
     (setq larm-f  (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
     ;; (setq rarm-dif (norm (v- rarm-ref-f rarm-f) ))
     ;; (setq larm-dif (norm (v- larm-ref-f larm-f) ))
-    (setq rarm-dif (elt (v- rarm-ref-f rarm-f) 2))
-    (setq larm-dif (elt (v- larm-ref-f larm-f) 2))    
+    (setq rarm-dif (abs (elt (v- rarm-ref-f rarm-f) 2)))
+    (setq larm-dif (abs (elt (v- larm-ref-f larm-f) 2)))
     (setq drop (list nil nil))
     (format t "rarm-dif = ~A~%" rarm-dif)
     (format t "larm-dif = ~A~%" larm-dif)
@@ -258,13 +260,17 @@
         (setq drop (list-insert t 1 drop)))
     (if (or (elt drop 0) (elt drop 0))  
         (progn
-          (format t "drop")          
+          (print "drop")          
           (return pre-angle)))
     (if (and (< rarm-dif fin) (< larm-dif fin))
-        (format t "goal")
-        (return t))
+        (progn
+          (print "goal")
+          (return t)))
+
     (setq pre-angle (send *ri* :state :angle-vector))
+    (unix:usleep 20000)
     )
+  
   )
 
 ;;もとの姿勢に戻すか、正常なハンドの位置に合わせて戻すか
@@ -297,13 +303,13 @@
   )
   
   
-  (setq  (send *robot* :angle-vector))
-  (setq rarm-coords (send *robot* arm :end-coords))
-  (unix:sleep 3)
-  (send *robot* :angle-vector (send *ri* :state :angle-vector))
-  (setq rarm-coords-drop (send *robot* arm :end-coords))
-  (ik rarm-retry-coords larm-retry-coords :rleg rleg-coords :lleg lleg-coords :cog cog)
-)
+;;   (setq  (send *robot* :angle-vector))
+;;   (setq rarm-coords (send *robot* arm :end-coords))
+;;   (unix:sleep 3)
+;;   (send *robot* :angle-vector (send *ri* :state :angle-vector))
+;;   (setq rarm-coords-drop (send *robot* arm :end-coords))
+;;   (ik rarm-retry-coords larm-retry-coords :rleg rleg-coords :lleg lleg-coords :cog cog)
+;; )
 
 (defun change-arm
     (offset arm)
