@@ -178,7 +178,7 @@
                  (optimize-torque? t)
                  (pre-process-func)
                  (post-process-func)
-                 (stop 30)
+                 (stop 50)
                  )
   (if (eq rleg nil)
       (setq rleg  (send *coords* :get-rleg))
@@ -188,17 +188,17 @@
   (if (eq cog nil)
       (setq cog  (send *coords* :get-cog)))
 
-  ;; (send *robot* :torso-waist-p :joint-angle 30)
+  (send *robot* :torso-waist-p :joint-angle 30)
   (setq *target-centroid-pos* (float-vector 300 0 0))  
     ;;ground rleg
   (setq *ground* (make-cube 3000 2000 5))  
   (send *ground* :newcoords
-        (make-coords :pos (float-vector 0 100 0))); -923.285)));(- (- 0 (elt (send *robot* :body_lk :worldpos ) 2)) 2.5))))
+        (make-coords :pos (float-vector 0 -1200 0))); -923.285)));(- (- 0 (elt (send *robot* :body_lk :worldpos ) 2)) 2.5))))
                                         ;        (send (send *pull_target* :copy-worldcoords) :translate #f(0 -200 0))) ;;thickness of door
         
   (send *ground* :set-color (float-vector 1.0 0 0))
 
-  (setq *floor1* (elt (send *ground* :faces) 1)) ;;elt 3 :normal-move-target-axis :z)  が見た感じ最適？ 
+  (setq *floor1* (elt (send *ground* :faces) 3)) ;;elt 3 :normal-move-target-axis :z)  が見た感じ最適？ 
   (print (send *ground* :faces))
   (send *floor1* :put :margin 20) ;; [mm]
   (send *floor1* :put :normal-move-target-axis :z)  
@@ -207,9 +207,9 @@
   ;;ground2 lleg
   (setq *ground2* (make-cube 3000 2000 5))  
   (send *ground2* :newcoords
-        (make-coords :pos (float-vector 0 -100 0)));;-923.285))); (- (- 0 (elt (send *robot* :body_lk :worldpos ) 2)) 2.5))))
+        (make-coords :pos (float-vector 0 1200 0)));;-923.285))); (- (- 0 (elt (send *robot* :body_lk :worldpos ) 2)) 2.5))))
   (send *ground2* :set-color (float-vector 0 0 1.0))  
-  (setq *floor2* (elt (send *ground2* :faces) 1)) ;;elt 3 :normal-move-target-axis :z)  が見た感じ最適？ 
+  (setq *floor2* (elt (send *ground2* :faces) 3)) ;;elt 3 :normal-move-target-axis :z)  が見た感じ最適？ 
   (print (send *ground2* :faces))
   (send *floor2* :put :margin 20) ;; [mm]
   (send *floor2* :put :normal-move-target-axis :z)  
@@ -221,10 +221,10 @@
         (list
          ;; rleg
          ;; lleg
-         ;; (send (send *robot* :rleg :end-coords) :copy-worldcoords)
-         ;; (send (send *robot* :lleg :end-coords) :copy-worldcoords)
-         *floor1*
-         *floor2*
+         (send (send *robot* :rleg :end-coords) :copy-worldcoords)
+         (send (send *robot* :lleg :end-coords) :copy-worldcoords)
+         ;; *floor1*
+         ;; *floor2*
          ;; (send *coords* :get-rleg)
          ;; (send *coords* :get-lleg)         
 
@@ -247,10 +247,10 @@
               (send *robot* :link-list (send *robot* :larm :end-coords :parent)))
         
         :contact-target-coords
-        (list (send (send *robot* :rleg :end-coords) :copy-worldcoords)
-         (send (send *robot* :lleg :end-coords) :copy-worldcoords)
-         ;; *floor1*
-         ;; *floor2*
+        (list ;; (send (send *robot* :rleg :end-coords) :copy-worldcoords)
+         ;; (send (send *robot* :lleg :end-coords) :copy-worldcoords)
+         *floor1*
+         *floor2*
               )
         :contact-move-target
         (list (send *robot* :rleg :end-coords)
@@ -319,7 +319,7 @@
         ;;                          cog)
         :target-centroid-pos (v+ (midpoint 0.5 (send (send (send *robot* :rleg :end-coords) :copy-worldcoords) :worldpos)
                                            (send (send (send *robot* :lleg :end-coords) :copy-worldcoords) :worldpos))
-                                 #f(300 0 0))
+                                 #f(1000 0 0))
 
         :cog-translation-axis move-root-link     
         )
