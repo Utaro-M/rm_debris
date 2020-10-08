@@ -309,6 +309,14 @@
         :rotation-axis (list t t t t)
         ;; :debug-view t
         :root-virtual-mode :6dof
+        :collision-avoidance-link-pair
+        (list
+         (list 
+         (elt (send *robot* :lleg :links) 5)
+         (elt (send *robot* :rleg :links) 5)
+         )
+         )
+        :collision-distance-margin 100
         :optimize-torque? optimize-torque?
         :stop stop
         :min-loop 30
