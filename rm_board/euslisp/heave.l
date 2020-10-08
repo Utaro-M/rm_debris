@@ -3,7 +3,7 @@
 ;; (load "package://control_tools/log-tools.l")
 ;; (require "package://control_tools/play-hrpsysfile.l")
 (require "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
-(require "/home/utaro/catkin_ws/jaxon_tutorial/src/jsk_control/eus_qp/optmotiongen/euslisp/inverse-kinematics-statics-wrapper.l")
+(require "~/catkin_ws/jaxon_tutorial/src/jsk_control/eus_qp/optmotiongen/euslisp/inverse-kinematics-statics-wrapper.l")
 
 (require "../../euslisp/save-log.l")
 (require "~/research/rm_debris/src/predict_from_multi_pose.l")
@@ -180,7 +180,15 @@
                  (post-process-func)
                  (stop 30)
                  )
+  (if (eq rleg nil)
+      (setq rleg  (send *coords* :get-rleg))
+    (format t "rleg ~A" rleg))
+  (if (eq lleg nil)
+      (setq lleg  (send *coords* :get-lleg)))
+  (if (eq cog nil)
+      (setq cog  (send *coords* :get-cog)))
 
+  
     ;;ground rleg
   (setq *ground* (make-cube 3000 2000 5))  
   (send *ground* :newcoords
@@ -208,8 +216,13 @@
 
   (send *robot*
         :inverse-kinematics-optmotiongen
-        (list (send (send *robot* :rleg :end-coords) :copy-worldcoords)
-              (send (send *robot* :lleg :end-coords) :copy-worldcoords)
+        (list
+         rleg
+         lleg
+        ;; (list (send (send *robot* :rleg :end-coords) :copy-worldcoords)
+        ;;  (send (send *robot* :lleg :end-coords) :copy-worldcoords)
+         ;; (send *coords* :get-rleg)
+         ;; (send *coords* :get-lleg)         
               rarm-coords
               larm-coords
               )
@@ -228,15 +241,16 @@
         :contact-target-coords
         (list ;; (send (send *robot* :rleg :end-coords) :copy-worldcoords)
          ;; (send (send *robot* :lleg :end-coords) :copy-worldcoords)
-         *floor1* *floor2*
+         *floor1*
+         *floor2*
               )
         :contact-move-target
-        ;; (list (send *robot* :rleg :end-coords)
-        ;;       (send *robot* :lleg :end-coords)
-        ;;       )
-        (list (send *coords* :get-rleg )
-              (send *coords* :get-lleg )
+        (list (send *robot* :rleg :end-coords)
+              (send *robot* :lleg :end-coords)
               )
+        ;; (list (send *coords* :get-rleg )
+        ;;       (send *coords* :get-lleg )
+              ;; )
                 
         :contact-constraint
         ;; (list
@@ -278,9 +292,13 @@
         :pre-process-func pre-process-func
         :post-process-func post-process-func
         ;;cog関係は無視されてそう
-        :target-centroid-pos (v+ (midpoint 0.5 (send rleg :worldpos) (send lleg :worldpos))
+        ;; :target-centroid-pos (v+ (midpoint 0.5 (send rleg :worldpos) (send lleg :worldpos))
+        ;;                          cog)
+        :target-centroid-pos (v+ (midpoint 0.5 (send (send (send *robot* :rleg :end-coords) :copy-worldcoords) :worldpos)
+                                           (send (send (send *robot* :lleg :end-coords) :copy-worldcoords) :worldpos))
                                  cog)
-        :cog-translation-axis move-root-link        
+
+        :cog-translation-axis move-root-link     
         )
   )
 
@@ -465,7 +483,8 @@
   ;; (setq rleg-coords  (send *coords* :get-rleg)
   ;;       lleg-coords  (send *coords* :get-lleg))
   
-  
+  ;;load した状態でmy-ikを使うとセグフォ
+  ;; (my-ik rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog cog)  
   (ik-walk rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog cog)
   (send-pose movetime :force-move flag-simulator)
   (setq rarm-ref-f (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
