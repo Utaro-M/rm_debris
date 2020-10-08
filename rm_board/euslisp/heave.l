@@ -184,7 +184,7 @@
     ;;ground rleg
   (setq *ground* (make-cube 3000 2000 5))  
   (send *ground* :newcoords
-        (make-coords :pos (float-vector 0 0 0))); -923.285)));(- (- 0 (elt (send *robot* :body_lk :worldpos ) 2)) 2.5))))
+        (make-coords :pos (float-vector 0 100 0))); -923.285)));(- (- 0 (elt (send *robot* :body_lk :worldpos ) 2)) 2.5))))
                                         ;        (send (send *pull_target* :copy-worldcoords) :translate #f(0 -200 0))) ;;thickness of door
         
   (send *ground* :set-color (float-vector 1.0 0 0))
@@ -198,7 +198,7 @@
   ;;ground2 lleg
   (setq *ground2* (make-cube 3000 2000 5))  
   (send *ground2* :newcoords
-        (make-coords :pos (float-vector 0 0 0)));;-923.285))); (- (- 0 (elt (send *robot* :body_lk :worldpos ) 2)) 2.5))))
+        (make-coords :pos (float-vector 0 -100 0)));;-923.285))); (- (- 0 (elt (send *robot* :body_lk :worldpos ) 2)) 2.5))))
   (send *ground2* :set-color (float-vector 0 0 1.0))  
   (setq *floor2* (elt (send *ground2* :faces) 1)) ;;elt 3 :normal-move-target-axis :z)  が見た感じ最適？ 
   (print (send *ground2* :faces))
@@ -208,8 +208,9 @@
 
   (send *robot*
         :inverse-kinematics-optmotiongen
-        (list (send (send *robot* :rleg :end-coords) :copy-worldcoords)
-              (send (send *robot* :lleg :end-coords) :copy-worldcoords)
+        (list ;; (send (send *robot* :rleg :end-coords) :copy-worldcoords)
+         ;; (send (send *robot* :lleg :end-coords) :copy-worldcoords)
+         *floor1* *floor2*
               rarm-coords
               larm-coords
               )
@@ -239,32 +240,32 @@
               )
                 
         :contact-constraint
-        ;; (list
-        ;;  (instance default-contact-constraint
-        ;;            :init-from-support-polygon
-        ;;            :support-polygon (send  (send (send *robot* :rleg :end-coords) :parent) :get :support-polygon)
-        ;;            :support-polygon-coords (send (send *robot* :rleg :end-coords) :worldcoords)
-        ;;            )
-        ;;  (instance default-contact-constraint
-        ;;            :init-from-support-polygon
-        ;;            :support-polygon (send (send (send *robot* :lleg :end-coords) :parent) :get :support-polygon)
-        ;;            :support-polygon-coords (send (send *robot* :lleg :end-coords) :worldcoords)
-        ;;            )
-
-        ;;  )
         (list
          (instance default-contact-constraint
                    :init-from-support-polygon
-                   :support-polygon (send (send (send *robot* :rleg :end-coords) :parent) :get :support-polygon)
-                   :support-polygon-coords (send (send *coords* :get-rleg) :worldcoords)
+                   :support-polygon (send  (send (send *robot* :rleg :end-coords) :parent) :get :support-polygon)
+                   :support-polygon-coords (send (send *robot* :rleg :end-coords) :worldcoords)
                    )
          (instance default-contact-constraint
                    :init-from-support-polygon
                    :support-polygon (send (send (send *robot* :lleg :end-coords) :parent) :get :support-polygon)
-                   :support-polygon-coords (send (send *coords* :get-lleg) :worldcoords)
+                   :support-polygon-coords (send (send *robot* :lleg :end-coords) :worldcoords)
                    )
 
          )
+        ;; (list
+        ;;  (instance default-contact-constraint
+        ;;            :init-from-support-polygon
+        ;;            :support-polygon (send (send (send *robot* :rleg :end-coords) :parent) :get :support-polygon)
+        ;;            :support-polygon-coords (send (send *coords* :get-rleg) :worldcoords)
+        ;;            )
+        ;;  (instance default-contact-constraint
+        ;;            :init-from-support-polygon
+        ;;            :support-polygon (send (send (send *robot* :lleg :end-coords) :parent) :get :support-polygon)
+        ;;            :support-polygon-coords (send (send *coords* :get-lleg) :worldcoords)
+        ;;            )
+
+        ;;  )
         
         ;; :translation-axis (list t t)
         ;; :rotation-axis (list t t)
