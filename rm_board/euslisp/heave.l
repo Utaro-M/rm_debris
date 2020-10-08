@@ -3,7 +3,7 @@
 ;; (load "package://control_tools/log-tools.l")
 ;; (require "package://control_tools/play-hrpsysfile.l")
 (require "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
-(require "/home/utaro/catkin_ws/jaxon_tutorial/src/jsk_control/eus_qp/optmotiongen/euslisp/inverse-kinematics-statics-wrapper.l")
+(require "~/catkin_ws/jaxon_tutorial/src/jsk_control/eus_qp/optmotiongen/euslisp/inverse-kinematics-statics-wrapper.l")
 
 (require "../../euslisp/save-log.l")
 (require "~/research/rm_debris/src/predict_from_multi_pose.l")
@@ -180,7 +180,16 @@
                  (post-process-func)
                  (stop 30)
                  )
+  (if (eq rleg nil)
+      (setq rleg  (send *coords* :get-rleg))
+    (format t "rleg ~A" rleg))
+  (if (eq lleg nil)
+      (setq lleg  (send *coords* :get-lleg)))
+  (if (eq cog nil)
+      (setq cog  (send *coords* :get-cog)))
 
+  ;; (send *robot* :torso-waist-p :joint-angle 30)
+  (setq *target-centroid-pos* (float-vector 300 0 0))  
     ;;ground rleg
   (setq *ground* (make-cube 3000 2000 5))  
   (send *ground* :newcoords
@@ -208,16 +217,26 @@
 
   (send *robot*
         :inverse-kinematics-optmotiongen
-        (list (send (send *robot* :rleg :end-coords) :copy-worldcoords)
-              (send (send *robot* :lleg :end-coords) :copy-worldcoords)
+        (list
+         ;; rleg
+         ;; lleg
+         (send (send *robot* :rleg :end-coords) :copy-worldcoords)
+         (send (send *robot* :lleg :end-coords) :copy-worldcoords)
+         ;; *floor1*
+         ;; *floor2*
+         ;; (send *coords* :get-rleg)
+         ;; (send *coords* :get-lleg)         
               rarm-coords
               larm-coords
+              ;; (make-coords :pos *target-centroid-pos*)              
               )
         :move-target
         (list (send *robot* :rleg :end-coords)
               (send *robot* :lleg :end-coords)
               (send *robot* :rarm :end-coords)
               (send *robot* :larm :end-coords)
+              ;; :cog
+
               )
         :link-list
         (list (send *robot* :link-list (send *robot* :rleg :end-coords :parent))
@@ -226,32 +245,33 @@
               (send *robot* :link-list (send *robot* :larm :end-coords :parent)))
         
         :contact-target-coords
-        (list ;; (send (send *robot* :rleg :end-coords) :copy-worldcoords)
-         ;; (send (send *robot* :lleg :end-coords) :copy-worldcoords)
-         *floor1* *floor2*
+        (list (send (send *robot* :rleg :end-coords) :copy-worldcoords)
+         (send (send *robot* :lleg :end-coords) :copy-worldcoords)
+         ;; *floor1*
+         ;; *floor2*
               )
         :contact-move-target
-        ;; (list (send *robot* :rleg :end-coords)
-        ;;       (send *robot* :lleg :end-coords)
-        ;;       )
-        (list (send *coords* :get-rleg )
-              (send *coords* :get-lleg )
+        (list (send *robot* :rleg :end-coords)
+              (send *robot* :lleg :end-coords)
               )
+        ;; (list (send *coords* :get-rleg )
+        ;;       (send *coords* :get-lleg )
+        ;;       )
                 
-        :contact-constraint
+        :CONTACT-constraint
         ;; (list
-        ;;  (instance default-contact-constraint
-        ;;            :init-from-support-polygon
-        ;;            :support-polygon (send  (send (send *robot* :rleg :end-coords) :parent) :get :support-polygon)
-        ;;            :support-polygon-coords (send (send *robot* :rleg :end-coords) :worldcoords)
-        ;;            )
-        ;;  (instance default-contact-constraint
-        ;;            :init-from-support-polygon
-        ;;            :support-polygon (send (send (send *robot* :lleg :end-coords) :parent) :get :support-polygon)
-        ;;            :support-polygon-coords (send (send *robot* :lleg :end-coords) :worldcoords)
-        ;;            )
+         ;; (instance default-contact-constraint
+         ;;           :init-from-support-polygon
+         ;;           :support-polygon (send  (send (send *robot* :rleg :end-coords) :parent) :get :support-polygon)
+         ;;           :support-polygon-coords (send (send *robot* :rleg :end-coords) :worldcoords)
+         ;;           )
+         ;; (instance default-contact-constraint
+         ;;           :init-from-support-polygon
+         ;;           :support-polygon (send (send (send *robot* :lleg :end-coords) :parent) :get :support-polygon)
+         ;;           :support-polygon-coords (send (send *robot* :lleg :end-coords) :worldcoords)
+         ;;           )
 
-        ;;  )
+         ;; )
         (list
          (instance default-contact-constraint
                    :init-from-support-polygon
@@ -270,7 +290,7 @@
         ;; :rotation-axis (list t t)
         :translation-axis (list :xy :xy t t)
         :rotation-axis (list t t t t)
-        :debug-view t
+        ;; :debug-view t
         :root-virtual-mode :6dof
         :optimize-torque? optimize-torque?
         :stop stop
@@ -278,10 +298,15 @@
         :pre-process-func pre-process-func
         :post-process-func post-process-func
         ;;cog関係は無視されてそう
-        :target-centroid-pos (v+ (midpoint 0.5 (send rleg :worldpos) (send lleg :worldpos))
-                                 cog)
-        :cog-translation-axis move-root-link        
+        ;; :target-centroid-pos (v+ (midpoint 0.5 (send rleg :worldpos) (send lleg :worldpos))
+        ;;                          cog)
+        :target-centroid-pos (v+ (midpoint 0.5 (send (send (send *robot* :rleg :end-coords) :copy-worldcoords) :worldpos)
+                                           (send (send (send *robot* :lleg :end-coords) :copy-worldcoords) :worldpos))
+                                 #f(300 0 0))
+
+        :cog-translation-axis move-root-link     
         )
+  
   )
 
 (defun ik-st
@@ -465,15 +490,31 @@
   ;; (setq rleg-coords  (send *coords* :get-rleg)
   ;;       lleg-coords  (send *coords* :get-lleg))
   
-  
+  ;;load した状態でmy-ikを使うとセグフォ
+  ;; (my-ik rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog cog)  
   (ik-walk rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog cog)
+
+  (send *coords* :set-rleg (send *robot* :rleg :end-coords :copy-worldcoords))
+  (send *coords* :set-lleg (send *robot* :rleg :end-coords :copy-worldcoords))
+  ;; (ik-walk rarm-coords larm-coords :cog cog)
+  (move-on-foot rleg-coords (send *robot* :lleg :end-coords :copy-worldcoords)   (send *robot* :rleg :end-coords :copy-worldcoords))
+
   (send-pose movetime :force-move flag-simulator)
   (setq rarm-ref-f (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
   (setq larm-ref-f (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
-  (check-while-still rarm-ref-f larm-ref-f )
+  ;; (check-while-still rarm-ref-f larm-ref-f )
+
+
   ;; (check rarm-coords larm-coords (list 80 80) 5)
 
   )
+
+(defun move-on-foot(initial-pos next-pos  nextnext-pos)
+  (send *ri* :set-foot-steps
+        (list (make-coords :coords initial-pos :name :rleg)
+              (make-coords :coords next-pos :name :lleg)
+              (make-coords :coords nextnext-pos :name :rleg)
+)))
 ;; (setq waiting nil)
 ;;静止時の以上検知
 ;;前の動作終了時の力をref-fとして与えておｓ子から外れると落としたと判断
@@ -676,7 +717,7 @@
   ;; (reach #f(360 0 -700) #f(360 0 -700))
   ;; (reach #f(260 0 -700) #f(260 0 -700))
   ;; (reach #f(200 0 -710) #f(200 0 -710))
-  (init-pose)
+  (my-init-pose)
   ;; (send *ri* :set-impedance-controller-param :arms :D-p 400 :K-r 1e5 :D-r 1e5)
   ;; (send *ri* :start-impedance :arms :K-r 140.0 :D-r 200.0 :M-r 5.0 :K-p 300.0 :D-p 600.0 :M-p 10.0)
   
@@ -752,7 +793,7 @@
 (defun log (name ang)
   (send *ri* :start-log)
   (unix:sleep 3)
-  (init-pose)
+  (my-init-pose)
   (unix:sleep 2)
   (reach)
   (unix:sleep 2)
@@ -760,7 +801,7 @@
   (save-log :fname name)
   )
 
-(defun init-pose()
+(defun my-init-pose()
   ;; (send *robot* :fix-leg-to-coords (make-coords))
   (objects)
   (send *robot* :fix-leg-to-coords (make-coords))
@@ -774,7 +815,7 @@
                  
 ;;   (send *ri* :save-log (format nil "~A/~A" path name) :make-directory t)
 ;; )
-(print "init-pose")
+(print "my-init-pose")
 (print "(reach #f(260 0 -700) #f(260 0 -700))")
 
 ;;(prepare-ex)
@@ -795,14 +836,14 @@
       ;; ) 
 
 
-;;;(progn (load "~/research/rm_debris/rm_board/euslisp/heave.l") (prepare-simulator) (init-pose) (reach) (heave #f(100 0 0) #f( 100 0 0)) (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500) (send *ri* :set-ref-force (float-vector 0 0 (* 9.8 4 -1)) 2000 :arms) (heave #f(0 -50 0) #f(0 50 0)))
+;;;(progn (load "~/research/rm_debris/rm_board/euslisp/heave.l") (prepare-simulator) (my-init-pose) (reach) (heave #f(100 0 0) #f( 100 0 0)) (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500) (send *ri* :set-ref-force (float-vector 0 0 (* 9.8 4 -1)) 2000 :arms) (heave #f(0 -50 0) #f(0 50 0)))
 ;;heave #f(0 -200 0) #f(0 200 0)
 ;;(send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500)
 
 (defun dem-simulator()
   ;; (load "~/research/rm_debris/rm_board/euslisp/heave.l")
   ;; (prepare-simulator)
-  (init-pose)
+  (my-init-pose)
   (reach)
   (heave #f(100 0 0) #f( 100 0 0) :cog #f(100 0 700))
   (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500)
@@ -841,7 +882,7 @@
   )
 
 (defun dem-pre()
-  (init-pose)
+  (my-init-pose)
   (unix::sleep 3)
   (reach)
   (unix::sleep 3)
