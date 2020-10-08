@@ -180,17 +180,18 @@
                  (post-process-func)
                  (stop 30)
                  )
+
   
   (send *robot*
-        :inverse-kinematics-statics-optmotiongen
-        (list (send (send *robot* :rleg :end-coords) :copy-worldcoords)
-              (send (send *robot* :lleg :end-coords) :copy-worldcoords)
+        :inverse-kinematics-optmotiongen
+        (list ;; (send (send *robot* :rleg :end-coords) :copy-worldcoords)
+              ;; (send (send *robot* :lleg :end-coords) :copy-worldcoords)
               rarm-coords
               larm-coords
               )
         :move-target
-        (list (send *robot* :rleg :end-coords)
-              (send *robot* :lleg :end-coords)
+        (list ;; (send *robot* :rleg :end-coords)
+              ;; (send *robot* :lleg :end-coords)
               (send *robot* :rarm :end-coords)
               (send *robot* :larm :end-coords)
               )
@@ -216,10 +217,12 @@
                    )
 
          )
-        :translation-axis (list t t t t)
-        :rotation-axis (list t t t t)
+        :translation-axis (list t t)
+        :rotation-axis (list t t)
+        ;; :translation-axis (list t t t t)
+        ;; :rotation-axis (list t t t t)
         :debug-view t
-        :root-virtual-mode :6dof
+        :root-virtual-mode :planar
         :optimize-torque? optimize-torque?
         :stop stop
         :min-loop 30
@@ -409,7 +412,7 @@
   ;;       lleg-coords  (send *coords* :get-lleg))
   
   
-  (ik rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog cog)
+  (ik-tes rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog cog)
   (send-pose movetime :force-move flag-simulator)
   (setq rarm-ref-f (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
   (setq larm-ref-f (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
