@@ -1,11 +1,11 @@
 (require "irteus/demo/sample-robot-model.l")
 (require "models/arrow-object.l")
-;; (load "package://control_tools/log-tools.l")
-;; (require "package://control_tools/play-hrpsysfile.l")
+;; (require "package://control_tools/log-tools.l")
+(require "package://control_tools/play-hrpsysfile.l")
 (require "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
-(require "/home/utaro/catkin_ws/jaxon_tutorial/src/jsk_control/eus_qp/optmotiongen/euslisp/inverse-kinematics-statics-wrapper.l")
+;; (require "/home/utaro/catkin_ws/jaxon_tutorial/src/jsk_control/eus_qp/optmotiongen/euslisp/inverse-kinematics-statics-wrapper.l")
 
-(require "../../euslisp/save-log.l")
+;; (require "../../euslisp/save-log.l")
 (require "~/research/rm_debris/src/predict_from_multi_pose.l")
 
 (unless (and (boundp '*robot*) (boundp '*ri*))
@@ -401,8 +401,8 @@
   )
 (defun reach()
   (send *robot* :fix-leg-to-coords (make-coords))
-  (create-support-polygon *robot* (send (send *robot* :rleg :end-coords) :parent))
-  (create-support-polygon *robot* (send (send *robot* :lleg :end-coords) :parent))
+  ;; (create-support-polygon *robot* (send (send *robot* :rleg :end-coords) :parent))
+  ;; (create-support-polygon *robot* (send (send *robot* :lleg :end-coords) :parent))
   (send *robot* :reset-manip-pose)
   (send *coords* :set-rleg (send *robot* :rleg :end-coords :copy-worldcoords))
   (send *coords* :set-lleg (send *robot* :lleg :end-coords :copy-worldcoords))
@@ -432,8 +432,8 @@
   ;; (my-ik rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog #f(0 0 1000) :move-root-link :z)
 
   ;;  もどす
-  ;; (my-ik rarm-coords larm-coords :cog #f(0 0 1000) :move-root-link :z)
-  (ik-walk rarm-coords larm-coords :cog #f(0 0 1000) :move-root-link :z)  
+  (my-ik rarm-coords larm-coords :cog #f(0 0 1000) :move-root-link :z)
+  ;; (ik-walk rarm-coords larm-coords :cog #f(0 0 1000) :move-root-link :z)  
   ;; (ik-st rarm-coords larm-coords :cog #f(0 0 1000) :move-root-link :z)  
 
 ;  (my-ik rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog #f(0 0 1000))
@@ -465,22 +465,76 @@
   ;; (setq rleg-coords  (send *coords* :get-rleg)
   ;;       lleg-coords  (send *coords* :get-lleg))
   
-  
-  (ik-walk rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog cog)
+  (my-ik rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog cog)
+  ;; (ik-walk rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog cog)
   (send-pose movetime :force-move flag-simulator)
-  (setq rarm-ref-f (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
-  (setq larm-ref-f (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
-  (check-while-still rarm-ref-f larm-ref-f )
+  ;; (setq rarm-ref-f (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
+  ;; (setq larm-ref-f (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
+  ;; (check-while-still rarm-ref-f larm-ref-f )
   ;; (check rarm-coords larm-coords (list 80 80) 5)
 
   )
 ;; (setq waiting nil)
-;;静止時の以上検知
-;;前の動作終了時の力をref-fとして与えておｓ子から外れると落としたと判断
-(defun check-while-still (rarm-ref-f larm-ref-f &key (waiting-time 4) (sleep-time 20000) (thre-list (list 10 10)) (fin 3))
-  (setq pre-angle (send *ri* :state :angle-vector))
 
-  (dotimes (/ (* waiting-time 1000000) sleep-time)
+;;progn (load "heave.l ") (prepare-simulator)
+;;progn (my-init-pose)   (send *robot* :fix-leg-to-coords (make-coords))
+;;reach
+;;progn   (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working)
+;;これを繰り返すして200ずつ上げていくと途中で腕が外れる
+(defun check-while-working
+    (&key (checking-time 4) (sleep-time 20000) (thre-list (list 20 20)) (fin 3))
+  (setq initial (send *robot* :angle-vector)
+        rarm-f-pre  (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil)
+        larm-f-pre  (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil)
+        angle-pre (send *ri* :state :angle-vector))
+  (dotimes (/ (* checking-time 1000000) sleep-time)
+    (setq rarm-f  (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
+    (setq larm-f  (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
+    ;; (setq rarm-f-dif (abs (norm (v- rarm-f rarm-f-pre) )))
+    ;; (setq larm-f-dif (abs (norm (v- larm-f larm-f-pre) )))
+    (setq rarm-f-dif (abs (elt (v- rarm-f rarm-f-pre) 2)))
+    (setq larm-f-dif (abs (elt (v- larm-f larm-f-pre) 2)))
+    (setq drop (list nil nil))
+    (format t "rarm-f-dif = ~A~%" rarm-f-dif)
+    (format t "larm-f-dif = ~A~%" larm-f-dif)
+
+    (if (> rarm-f-dif (elt thre-list 0))
+        (setq drop (list-insert t 0 drop)))
+
+    (if (>  larm-f-dif (elt thre-list 1))
+        (setq drop (list-insert t 1 drop)))
+
+    (if (or (elt drop 0) (elt drop 1))  
+        (progn
+          (print "drop")
+          (if (< larm-f-dif rarm-f-dif)
+              (print "drop rarm")
+            (print "drop larm"))
+          (return)))
+
+    ;;動作終了判定
+    (setq tmp (send *ri* :reference-vector))
+    (setq angle-vector-dif (abs (norm (v- initial tmp))))
+    (format t "angle-vector-dif = ~A~%" angle-vector-dif)
+    (if (< angle-vector-dif 0.5)
+        (progn
+          (print "goal")
+          (return angle-vector-dif))
+      )
+    
+    (setq angle-pre (send *ri* :state :angle-vector))
+    (unix:usleep sleep-time)
+    )
+  (if (or (elt drop 0) (elt drop 0))
+      angle-pre
+      (print "time over"))
+  )
+;;静止時の異常検知
+;;前の動作終了時の力をref-fとして与えておｓ子から外れると落としたと判断
+(defun check-while-still (rarm-ref-f larm-ref-f &key (checking-time 5) (sleep-time 20000) (thre-list (list 10 10)) (fin 3))
+  (setq angle-pre (send *ri* :state :angle-vector))
+
+  (dotimes (/ (* checking-time 1000000) sleep-time)
     (setq rarm-f  (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
     (setq larm-f  (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
     ;; (setq rarm-dif (norm (v- rarm-ref-f rarm-f) ))
@@ -497,16 +551,17 @@
     (if (or (elt drop 0) (elt drop 0))  
         (progn
           (print "drop")          
-          (return pre-angle)))
+          (return angle-pre)))
     (if (and (< rarm-dif fin) (< larm-dif fin))
         (progn
           (print "goal")
           (return t)))
 
-    (setq pre-angle (send *ri* :state :angle-vector))
-    (unix:usleep 20000)
+    (setq angle-pre (send *ri* :state :angle-vector))
+    (unix:usleep sleep-time)
     )
-  
+  (if (not (or (elt drop 0) (elt drop 0)))
+      (print "time over"))
   )
 
 ;;もとの姿勢に戻すか、正常なハンドの位置に合わせて戻すか
@@ -676,7 +731,7 @@
   ;; (reach #f(360 0 -700) #f(360 0 -700))
   ;; (reach #f(260 0 -700) #f(260 0 -700))
   ;; (reach #f(200 0 -710) #f(200 0 -710))
-  (init-pose)
+  (my-init-pose)
   ;; (send *ri* :set-impedance-controller-param :arms :D-p 400 :K-r 1e5 :D-r 1e5)
   ;; (send *ri* :start-impedance :arms :K-r 140.0 :D-r 200.0 :M-r 5.0 :K-p 300.0 :D-p 600.0 :M-p 10.0)
   
@@ -752,7 +807,7 @@
 (defun log (name ang)
   (send *ri* :start-log)
   (unix:sleep 3)
-  (init-pose)
+  (my-init-pose)
   (unix:sleep 2)
   (reach)
   (unix:sleep 2)
@@ -760,7 +815,7 @@
   (save-log :fname name)
   )
 
-(defun init-pose()
+(defun my-init-pose()
   ;; (send *robot* :fix-leg-to-coords (make-coords))
   (objects)
   (send *robot* :fix-leg-to-coords (make-coords))
@@ -774,7 +829,7 @@
                  
 ;;   (send *ri* :save-log (format nil "~A/~A" path name) :make-directory t)
 ;; )
-(print "init-pose")
+(print "my-init-pose")
 (print "(reach #f(260 0 -700) #f(260 0 -700))")
 
 ;;(prepare-ex)
@@ -795,14 +850,14 @@
       ;; ) 
 
 
-;;;(progn (load "~/research/rm_debris/rm_board/euslisp/heave.l") (prepare-simulator) (init-pose) (reach) (heave #f(100 0 0) #f( 100 0 0)) (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500) (send *ri* :set-ref-force (float-vector 0 0 (* 9.8 4 -1)) 2000 :arms) (heave #f(0 -50 0) #f(0 50 0)))
+;;;(progn (load "~/research/rm_debris/rm_board/euslisp/heave.l") (prepare-simulator) (my-init-pose) (reach) (heave #f(100 0 0) #f( 100 0 0)) (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500) (send *ri* :set-ref-force (float-vector 0 0 (* 9.8 4 -1)) 2000 :arms) (heave #f(0 -50 0) #f(0 50 0)))
 ;;heave #f(0 -200 0) #f(0 200 0)
 ;;(send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500)
 
 (defun dem-simulator()
   ;; (load "~/research/rm_debris/rm_board/euslisp/heave.l")
   ;; (prepare-simulator)
-  (init-pose)
+  (my-init-pose)
   (reach)
   (heave #f(100 0 0) #f( 100 0 0) :cog #f(100 0 700))
   (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500)
@@ -841,7 +896,7 @@
   )
 
 (defun dem-pre()
-  (init-pose)
+  (my-init-pose)
   (unix::sleep 3)
   (reach)
   (unix::sleep 3)
@@ -894,3 +949,6 @@
   
   (progn (setq theta 80) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms))
 )
+;;progn (send *ri* :set-log-maxlength 30)(unix:sleep 2) (send *ri* :start-log)(heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (unix:sleep 2)  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (save-log :fname "check")
+
+;progn  (send *ri* :start-log) (unix:sleep 2) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (unix:sleep 2)  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (save-log :fname "check")
