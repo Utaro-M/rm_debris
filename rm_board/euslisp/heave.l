@@ -496,24 +496,37 @@
     (setq rarm-f-dif (abs (elt (v- rarm-f rarm-f-pre) 2)))
     (setq larm-f-dif (abs (elt (v- larm-f larm-f-pre) 2)))
     (setq drop (list nil nil))
-    (format t "rarm-f-dif = ~A~%" rarm-f-dif)
-    (format t "larm-f-dif = ~A~%" larm-f-dif)
+    (format t "rarm-f-dif       = ~A~%" rarm-f-dif)
+    (format t "larm-f-dif       = ~A~%" larm-f-dif)
 
+
+    ;;drop判定
     (if (> rarm-f-dif (elt thre-list 0))
         (setq drop (list-insert t 0 drop)))
 
     (if (>  larm-f-dif (elt thre-list 1))
         (setq drop (list-insert t 1 drop)))
 
-    (if (or (elt drop 0) (elt drop 1))  
+    (if (or (elt drop 0) (elt drop 1))
         (progn
           (print "drop")
           (send *ri* :stop-motion)
           (print "stop motion")
-          (if (< larm-f-dif rarm-f-dif)
-              (print "drop rarm")
-            (print "drop larm"))
-          (return)))
+          (if (and (elt drop 0) (elt drop 1))
+              (progn
+                (print "drop both arm")
+                (setq flag 0)
+                (return 0))
+            (progn
+              (if (< larm-f-dif rarm-f-dif)
+                  (progn
+                    (print "drop rarm")
+                    (setq flag 1)
+                    (return 1))
+                (progn
+                  (print "drop larm")
+                  (setq flag 2)
+                  (return 2)))))))
 
     ;;動作終了判定
     (setq tmp (send *ri* :reference-vector))
@@ -522,16 +535,28 @@
     (if (< angle-vector-dif 0.5)
         (progn
           (print "goal")
+          (setq flag 10)
           (return angle-vector-dif))
       )
     
     (setq angle-pre (send *ri* :state :angle-vector))
     (unix:usleep sleep-time)
     )
-  (if (or (elt drop 0) (elt drop 1))
-      angle-pre
-      (print "time over"))
+  (format t "flag = ~A~%" flag)
+  flag
+  ;; (if (or (elt drop 0) (elt drop 1))
+  ;;     (if (and (elt drop 0) (elt drop 1))
+  ;;         t
+  ;;       (if (< larm-f-dif rarm-f-dif)
+  ;;           1)
+  ;;       2)
+  ;;   (progn
+  ;;     (print "time over")
+  ;;     nil))
   )
+
+
+  
 ;;静止時の異常検知
 ;;前の動作終了時の力をref-fとして与えておｓ子から外れると落としたと判断
 (defun check-while-still (rarm-ref-f larm-ref-f &key (checking-time 6) (sleep-time 20000) (thre-list (list 10 10)) (fin 3))
@@ -545,8 +570,8 @@
     (setq rarm-dif (abs (elt (v- rarm-ref-f rarm-f) 2)))
     (setq larm-dif (abs (elt (v- larm-ref-f larm-f) 2)))
     (setq drop (list nil nil))
-    (format t "rarm-dif = ~A~%" rarm-dif)
-    (format t "larm-dif = ~A~%" larm-dif)
+    (format t "rarm-dif      = ~A~%" rarm-dif)
+    (format t "larm-dif      = ~A~%" larm-dif)
     (if (> rarm-dif (elt thre-list 0))
         (setq drop (list-insert t 0 drop)))
     (if (>  larm-dif (elt thre-list 1))
@@ -570,7 +595,7 @@
   )
 
 ;;もとの姿勢に戻すか、正常なハンドの位置に合わせて戻すか
-(defun retry-while-still (drop-arm &key (offset 140) (same-pose nil) (cog #f(100 0 0)))
+(defun retry-while-working (drop-arm &key (offset 140) (same-pose nil) (cog #f(100 0 0)))
   ;;一度手を引っ込める
   (if (eq drop-arm :rarm)
       (progn
@@ -600,11 +625,12 @@
         (setq larm-coodrs (send *rbt* :larm :end-coords :copy-worldcoords))
         (my-ik rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog cog))
     (progn
-      (format t "return to other arm pos")
+      (format t "return to other arm's pos~%")
       (if (eq drop-arm :rarm)
           (setq hold-arm :larm)
         (setq hold-arm :rarm))
 
+      (format t "regrasp ~A ~%" drop-arm)
       (setq hold-arm-coords (send *robot* hold-arm :end-coords :copy-worldcoords))
       (format t "hold-arm-coords = ~A~%" hold-arm-coords)
       ;;現在姿勢を利用（実機では余り腕がたれないかもその時はriを使う必要はない
@@ -628,7 +654,50 @@
   (send-pose movetime :force-move flag-simulator)
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   )
+(defun dem-with-check-simulator()
+  (heave #f(0 -200 0) #f(100 200 0) :cog #f(100 0 700))
+  (unix:sleep 4)
+  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700))
+  (setq flag  (check-while-working))
+  (cond
+   ((eq 1 flag)
+    (retry-while-working :rarm ))
+   ((eq 2 flag)
+         (retry-while-working :larm ))
+   (t
+    (print "do nothing")))
+  (unix:sleep 2)
+  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700))
+  (setq flag  (check-while-working))
+  (cond
+   ((eq 1 flag)
+    (retry-while-working :rarm ))
+   ((eq 2 flag)
+         (retry-while-working :larm ))
+   (t
+    (print "do nothing")))
+  (unix:sleep 2)
+  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700))
+  (setq flag  (check-while-working))
+  (cond
+   ((eq 1 flag)
+    (retry-while-working :rarm ))
+   ((eq 2 flag)
+         (retry-while-working :larm ))
+   (t
+    (print "do nothing")))
+  (unix:sleep 2)
+  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700))
+  (setq flag  (check-while-working))
+  (cond
+   ((eq 1 flag)
+    (retry-while-working :rarm ))
+   ((eq 2 flag)
+         (retry-while-working :larm ))
+   (t
+    (print "do nothing")))
 
+  )
 ;;   (setq  (send *robot* :angle-vector))
 ;;   (setq rarm-coords (send *robot* arm :end-coords))
 ;;   (unix:sleep 3)
