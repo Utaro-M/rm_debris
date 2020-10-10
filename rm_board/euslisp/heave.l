@@ -1,7 +1,7 @@
 (require "irteus/demo/sample-robot-model.l")
 (require "models/arrow-object.l")
 ;; (require "package://control_tools/log-tools.l")
-(require "package://control_tools/play-hrpsysfile.l")
+;; (require "package://control_tools/play-hrpsysfile.l")
 (require "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
 ;; (require "/home/utaro/catkin_ws/jaxon_tutorial/src/jsk_control/eus_qp/optmotiongen/euslisp/inverse-kinematics-statics-wrapper.l")
 
@@ -448,7 +448,7 @@
 (defun heave
     (rarm-move larm-move &key (cog #f(0 0 700)) (degree 0))
   ;; (send *robot* :move-coords (make-coords :pos #f(0 0 600) :rpy (float-vector 0 (deg2rad 50) 0)) (car (send *robot* :links)))
-  ;; (send *robot* :fix-leg-to-coords (make-coords))
+  (send *robot* :fix-leg-to-coords (make-coords))
   ;; (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate rarm-move))
   ;; (setq larm-coords (send (send *robot* :larm :end-coords :copy-worldcoords) :translate larm-move))
 
@@ -483,7 +483,7 @@
 ;;これを繰り返すして200ずつ上げていくと途中で腕が外れる
 ;;progn  (send *ri* :start-log) (unix:sleep 2) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (unix:sleep 2)  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (unix:sleep 2)  (send *ri* :save-log "/tmp/check-while-working")
 (defun check-while-working
-    (&key (checking-time 4) (sleep-time 20000) (thre-list (list 20 20)) (fin 3))
+    (&key (checking-time 6) (sleep-time 20000) (thre-list (list 20 20)) (fin 3))
   (setq initial (send *robot* :angle-vector)
         rarm-f-pre  (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil)
         larm-f-pre  (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil)
@@ -508,6 +508,8 @@
     (if (or (elt drop 0) (elt drop 1))  
         (progn
           (print "drop")
+          (send *ri* :stop-motion)
+          (print "stop motion")
           (if (< larm-f-dif rarm-f-dif)
               (print "drop rarm")
             (print "drop larm"))
@@ -532,7 +534,7 @@
   )
 ;;静止時の異常検知
 ;;前の動作終了時の力をref-fとして与えておｓ子から外れると落としたと判断
-(defun check-while-still (rarm-ref-f larm-ref-f &key (checking-time 5) (sleep-time 20000) (thre-list (list 10 10)) (fin 3))
+(defun check-while-still (rarm-ref-f larm-ref-f &key (checking-time 6) (sleep-time 20000) (thre-list (list 10 10)) (fin 3))
   (setq angle-pre (send *ri* :state :angle-vector))
 
   (dotimes (/ (* checking-time 1000000) sleep-time)
@@ -551,7 +553,9 @@
         (setq drop (list-insert t 1 drop)))
     (if (or (elt drop 0) (elt drop 0))  
         (progn
-          (print "drop")          
+          (print "drop")
+          (send *ri* :stop-motion)
+          (print "stop motion")          
           (return angle-pre)))
     (if (and (< rarm-dif fin) (< larm-dif fin))
         (progn
@@ -566,19 +570,34 @@
   )
 
 ;;もとの姿勢に戻すか、正常なハンドの位置に合わせて戻すか
-(defun retry-while-still (drop-arm &key (same-pose nil) (cog #f(100 0 0)))
-  ;; (send *robot* :angle-vector (send *poses* :get-fin-pose-ri))
-  (send *robot* :angle-vector (send *ri* :state :angle-vector))
+(defun retry-while-still (drop-arm &key (offset 140) (same-pose nil) (cog #f(100 0 0)))
+  ;;一度手を引っ込める
+  (if (eq drop-arm :rarm)
+      (progn
+        (heave (scale offset #f(-1 0.5 0)) #f(0 0 0))
+        )
+    (heave #f(0 0 0) (scale offset #f(-1 0.5 0) )))
+  (send-pose movetime :force-move flag-simulator)
+  (send *ri* :wait-interpolation)
+  (print "pull back once")
+  
+  ;;ロボットモデルを新しく作りriの現在姿勢をとる
+  (setq *rbt* (instance jaxon_red-robot :init))
+  (send *rbt* :angle-vector (send *ri* :state :angle-vector))
+  (send *rbt* :fix-leg-to-coords (make-coords))
+  (objects (list *robot* *rbt*))
+  
   (setq rleg-coords (make-coords :pos #f(0 -100 0))
         lleg-coords (make-coords :pos #f(0  100 0)))
-  
-  ;; (setq a b)
+
+
   ;;動作終了時
+  ;;もとの姿勢に戻るかどうか
   (if same-pose
       (progn
         (format t "retry to same pose~%")
-        (setq rarm-coodrs (send *robot* :rarm :end-coords :copy-worldcoords))
-        (setq larm-coodrs (send *robot* :larm :end-coords :copy-worldcoords))
+        (setq rarm-coodrs (send *rbt* :rarm :end-coords :copy-worldcoords))
+        (setq larm-coodrs (send *rbt* :larm :end-coords :copy-worldcoords))
         (my-ik rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog cog))
     (progn
       (format t "return to other arm pos")
@@ -587,21 +606,29 @@
         (setq hold-arm :rarm))
 
       (setq hold-arm-coords (send *robot* hold-arm :end-coords :copy-worldcoords))
-      (setq hold-arm-coords-tmp (send hold-arm-coords :copy-worldcoords))
+      (format t "hold-arm-coords = ~A~%" hold-arm-coords)
+      ;;現在姿勢を利用（実機では余り腕がたれないかもその時はriを使う必要はない
+      (setq hold-arm-coords-tmp (send *rbt* hold-arm :end-coords :copy-worldcoords))
+      (format t "hold-arm-coords-tmp = ~A~%" hold-arm-coords-tmp)
+      ;;y成分の符号を反転
       (aset (send hold-arm-coords-tmp  :worldpos) 1 (* -1 (elt (send hold-arm-coords-tmp :worldpos) 1)))
-      (setq drop-arm-target-coords (make-coords :pos (send hold-arm-coords-tmp :worldpos)  :rpy (car (send hold-arm-coords-tmp :rpy-angle ))))
+      ;;rpyのx，z成分の符号反転
+      (setq rpy-tmp (float-vector (* -1 (elt (car (send (send hold-arm-coords-tmp :worldcoords) :rpy-angle)) 0 )) (elt (car (send (send hold-arm-coords-tmp :worldcoords) :rpy-angle)) 1 ) (* -1 (elt (car (send (send hold-arm-coords-tmp :worldcoords) :rpy-angle)) 2 ))))
 
+      (setq drop-arm-target-coords (make-coords :pos (send hold-arm-coords-tmp :worldpos)  :rpy rpy-tmp))
+      (format t "drop-arm-target-coords = ~A~%" drop-arm-target-coords)
 
-      (if (eq drop-arm :rarm)
-          (my-ik drop-arm-target-coords hold-arm-coords :rleg rleg-coords :lleg lleg-coords :cog cog)
-        (my-ik hold-arm-coords drop-arm-target-coords :rleg rleg-coords :lleg lleg-coords :cog cog))
       
+      (if (eq drop-arm :rarm)
+          (progn
+            (my-ik drop-arm-target-coords hold-arm-coords :rleg rleg-coords :lleg lleg-coords :cog cog))
+            (progn              
+              (my-ik hold-arm-coords drop-arm-target-coords :rleg rleg-coords :lleg lleg-coords :cog cog)))
       ))
   (send-pose movetime :force-move flag-simulator)
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
   )
-  
-  
+
 ;;   (setq  (send *robot* :angle-vector))
 ;;   (setq rarm-coords (send *robot* arm :end-coords))
 ;;   (unix:sleep 3)
