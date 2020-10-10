@@ -110,7 +110,7 @@
                        ;; (create-support-polygon *robot* (send (send *robot* :lleg :end-coords) :parent))
                        ))
 
-(setq *pose* (instance poses :init
+(setq *poses* (instance poses :init
                        (send *robot* :angle-vector)
                        (send *ri* :state :angle-vector)))
 ;;(float-vector 0 0 (elt (send (car (send *robot* :links)) :worldpos) 2))
@@ -481,6 +481,7 @@
 ;;reach
 ;;progn   (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working)
 ;;これを繰り返すして200ずつ上げていくと途中で腕が外れる
+;;progn  (send *ri* :start-log) (unix:sleep 2) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (unix:sleep 2)  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (unix:sleep 2)  (send *ri* :save-log "/tmp/check-while-working")
 (defun check-while-working
     (&key (checking-time 4) (sleep-time 20000) (thre-list (list 20 20)) (fin 3))
   (setq initial (send *robot* :angle-vector)
@@ -525,7 +526,7 @@
     (setq angle-pre (send *ri* :state :angle-vector))
     (unix:usleep sleep-time)
     )
-  (if (or (elt drop 0) (elt drop 0))
+  (if (or (elt drop 0) (elt drop 1))
       angle-pre
       (print "time over"))
   )
@@ -566,14 +567,19 @@
 
 ;;もとの姿勢に戻すか、正常なハンドの位置に合わせて戻すか
 (defun retry-while-still (drop-arm &key (same-pose nil) (cog #f(100 0 0)))
-  (send *robot* :angle-vector (send *poses* :get-fin-pose-ri))
+  ;; (send *robot* :angle-vector (send *poses* :get-fin-pose-ri))
+  (send *robot* :angle-vector (send *ri* :state :angle-vector))
+  (setq rleg-coords (make-coords :pos #f(0 -100 0))
+        lleg-coords (make-coords :pos #f(0  100 0)))
+  
+  ;; (setq a b)
   ;;動作終了時
   (if same-pose
       (progn
         (format t "retry to same pose~%")
         (setq rarm-coodrs (send *robot* :rarm :end-coords :copy-worldcoords))
         (setq larm-coodrs (send *robot* :larm :end-coords :copy-worldcoords))
-        (my-ik rarm-coords larm-coords :cog cog))
+        (my-ik rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog cog))
     (progn
       (format t "return to other arm pos")
       (if (eq drop-arm :rarm)
@@ -582,11 +588,13 @@
 
       (setq hold-arm-coords (send *robot* hold-arm :end-coords :copy-worldcoords))
       (setq hold-arm-coords-tmp (send hold-arm-coords :copy-worldcoords))
-      (setq drop-arm-target-coords (make-coords :pos (aset (send (send hold-arm-coords-tmp :copy-worldcoords) :worldpos) 1 (* -1 (elt (send hold-arm-coords-tmp :worldpos) 1)))  :rpy (car (send hold-arm-coords-tmp :rpy-angle ))))
+      (aset (send hold-arm-coords-tmp  :worldpos) 1 (* -1 (elt (send hold-arm-coords-tmp :worldpos) 1)))
+      (setq drop-arm-target-coords (make-coords :pos (send hold-arm-coords-tmp :worldpos)  :rpy (car (send hold-arm-coords-tmp :rpy-angle ))))
+
 
       (if (eq drop-arm :rarm)
-          (my-ik drop-arm-target-coords hold-arm-coords :cog cog)
-        (my-ik hold-arm-coords drop-arm-target-coords :cog cog))
+          (my-ik drop-arm-target-coords hold-arm-coords :rleg rleg-coords :lleg lleg-coords :cog cog)
+        (my-ik hold-arm-coords drop-arm-target-coords :rleg rleg-coords :lleg lleg-coords :cog cog))
       
       ))
   (send-pose movetime :force-move flag-simulator)
