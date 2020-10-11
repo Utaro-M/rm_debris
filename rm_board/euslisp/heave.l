@@ -170,6 +170,7 @@
   
   (send rarm-coords :draw-on :flush nil :size 300)
   (send larm-coords :draw-on :flush t   :size 300)
+  nil
   )
 
 (defun ik-walk
@@ -487,28 +488,32 @@
 ;;progn  (send *ri* :start-log) (unix:sleep 2) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (unix:sleep 2)  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (unix:sleep 2)  (send *ri* :save-log "/tmp/check-while-working")
 (defun check-while-working
     (&key (checking-time 6) (sleep-time 20000) (thre-list (list 22 22)) (fin 3))
+  (format t "~%~%check while working~%")
   (setq initial (send *robot* :angle-vector)
         rarm-f-pre  (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil)
         larm-f-pre  (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil)
         angle-pre (send *ri* :state :angle-vector))
+
+  
   (dotimes (i (/ (* checking-time 1000000) sleep-time))
     (setq rarm-f  (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
     (setq larm-f  (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
-    絶対値バージョン
-    (setq rarm-f-dif (abs (elt (v- rarm-f rarm-f-pre) 2)))
-    (setq larm-f-dif (abs (elt (v- larm-f larm-f-pre) 2)))
-    ;; (setq rarm-f-dif (elt (v- rarm-f rarm-f-pre) 2))
-    ;; (setq larm-f-dif (elt (v- larm-f larm-f-pre) 2))
+    ;;絶対値バージョン
+    ;; (setq rarm-f-dif (abs (elt (v- rarm-f rarm-f-pre) 2)))
+    ;; (setq larm-f-dif (abs (elt (v- larm-f larm-f-pre) 2)))
+    (setq rarm-f-dif (elt (v- rarm-f rarm-f-pre) 2))
+    (setq larm-f-dif (elt (v- larm-f larm-f-pre) 2))
+
     (setq drop (list nil nil))
     (format t "rarm-f-dif       = ~A~%" rarm-f-dif)
     (format t "larm-f-dif       = ~A~%" larm-f-dif)
 
 
     ;;drop判定
-    (if (> rarm-f-dif (elt thre-list 0))
+    (if (>  rarm-f-dif (* +1 (elt thre-list 0)))
         (setq drop (list-insert t 0 drop)))
 
-    (if (>  larm-f-dif (elt thre-list 1))
+    (if (>  larm-f-dif (* +1 (elt thre-list 1)))
         (setq drop (list-insert t 1 drop)))
 
     (if (or (elt drop 0) (elt drop 1))
@@ -521,27 +526,28 @@
                 (print "drop both arm")
                 (setq flag 0)
                 (return 0))
-            ;; (progn
-            ;;   (cond ((elt drop 0)
-            ;;          (progn
-            ;;            (print "drop rarm")
-            ;;            (setq flag 1)
-            ;;            (return 1)))
-            ;;         ((elt drop 1)
-            ;;          (progn
-            ;;            (print "drop larm")
-            ;;            (setq flag 2)
-            ;;            (return 2))))))))
             (progn
-              (if (< larm-f-dif rarm-f-dif)
-                  (progn
-                    (print "drop rarm")
-                    (setq flag 1)
-                    (return 1))
-                (progn
-                  (print "drop larm")
-                  (setq flag 2)
-                  (return 2)))))))
+              (cond ((elt drop 0)
+                     (progn
+                       (print "drop rarm")
+                       (setq flag 1)
+                       (return 1)))
+                    ((elt drop 1)
+                     (progn
+                       (print "drop larm")
+                       (setq flag 2)
+                       (return 2))))))))
+            ;; (progn
+            ;;   (if (< larm-f-dif rarm-f-dif)
+            ;;       (progn
+            ;;         (print "drop rarm")
+            ;;         (setq flag 1)
+            ;;         (return 1))
+            ;;     (progn
+            ;;       (print "drop larm")
+            ;;       (setq flag 2)
+            ;;       (return 2))))
+            ;; )))
 
     ;;動作終了判定
     (setq tmp (send *ri* :reference-vector))
@@ -576,6 +582,8 @@
 ;;前の動作終了時の力をref-fとして与えておｓ子から外れると落としたと判断
 (defun check-while-still
     (rarm-ref-f larm-ref-f &key (checking-time 6) (sleep-time 100000) (thre-list (list 10 10)) (fin 3))
+
+  (format t "~%~%check while still~%")
   (setq angle-pre (send *ri* :state :angle-vector))
 
   (setq flag 10)
@@ -584,15 +592,22 @@
     (setq larm-f  (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
     ;; (setq rarm-f-dif (norm (v- rarm-ref-f rarm-f) ))
     ;; (setq larm-f-dif (norm (v- larm-ref-f larm-f) ))
-    (setq rarm-f-dif (abs (elt (v- rarm-ref-f rarm-f) 2)))
-    (setq larm-f-dif (abs (elt (v- larm-ref-f larm-f) 2)))
+    ;;絶対値バージョン
+    ;; (setq rarm-f-dif (abs (elt (v- rarm-ref-f rarm-f) 2)))
+    ;; (setq larm-f-dif (abs (elt (v- larm-ref-f larm-f) 2)))
+    (setq rarm-f-dif (elt (v- rarm-f rarm-f-pre) 2))
+    (setq larm-f-dif (elt (v- larm-f larm-f-pre) 2))
+      
     (setq drop (list nil nil))
     (format t "rarm-f-dif      = ~A~%" rarm-f-dif)
     (format t "larm-f-dif      = ~A~%" larm-f-dif)
-    (if (> rarm-f-dif (elt thre-list 0))
+
+    ;;drop判定
+    (if (> rarm-f-dif (* +1 (elt thre-list 0)))
         (setq drop (list-insert t 0 drop)))
-    (if (>  larm-f-dif (elt thre-list 1))
+    (if (>  larm-f-dif (* +1 (elt thre-list 1)))
         (setq drop (list-insert t 1 drop)))
+    
     (if (or (elt drop 0) (elt drop 1))  
         (progn
           (print "drop")
@@ -637,8 +652,8 @@
         (heave (scale offset #f(-1 0.5 0)) #f(0 0 0))
         )
     (heave #f(0 0 0) (scale offset #f(-1 0.5 0) )))
+  (print "pull back once")  
   (send-pose movetime :force-move flag-simulator)
-  (print "pull back once")
   
   ;;ロボットモデルを新しく作りriの現在姿勢をとる
   (setq *rbt* (instance jaxon_red-robot :init))
@@ -648,7 +663,6 @@
   
   (setq rleg-coords (make-coords :pos #f(0 -100 0))
         lleg-coords (make-coords :pos #f(0  100 0)))
-
 
   ;;動作終了時
   ;;もとの姿勢に戻るかどうか
@@ -663,13 +677,13 @@
       (if (eq drop-arm :rarm)
           (progn
             (setq hold-arm :larm)
-            (setq drop-arm-offset #f(50 -50 0)))
+            (setq drop-arm-offset #f(50 50 0)))
         (progn
           (setq hold-arm :rarm)
-          (setq drop-arm-offset #f(50 50 0)))
+          (setq drop-arm-offset #f(50 -50 0))))
       (format t "regrasp ~A ~%" drop-arm)
       (setq hold-arm-coords (send *robot* hold-arm :end-coords :copy-worldcoords))
-      (send hold-arm-coords :translate #f(50 0 0))
+      (send hold-arm-coords :translate #f(50 0 0) :local)
       (format t "hold-arm-coords = ~A~%" hold-arm-coords)
       ;;現在姿勢を利用（実機では余り腕がたれないかもその時はriを使う必要はない
       (setq hold-arm-coords-tmp (send *rbt* hold-arm :end-coords :copy-worldcoords))
@@ -680,20 +694,19 @@
       (setq rpy-tmp (float-vector (* -1 (elt (car (send (send hold-arm-coords-tmp :worldcoords) :rpy-angle)) 0 )) (elt (car (send (send hold-arm-coords-tmp :worldcoords) :rpy-angle)) 1 ) (* -1 (elt (car (send (send hold-arm-coords-tmp :worldcoords) :rpy-angle)) 2 ))))
 
       (setq drop-arm-target-coords (make-coords :pos (send hold-arm-coords-tmp :worldpos)  :rpy rpy-tmp))
-      (send drop-arm-target-coords :translate )
+      (send drop-arm-target-coords :translate drop-arm-offset :local)
       (format t "drop-arm-target-coords = ~A~%" drop-arm-target-coords)
 
       
       (if (eq drop-arm :rarm)
           (progn
             (my-ik drop-arm-target-coords hold-arm-coords :rleg rleg-coords :lleg lleg-coords :cog cog))
-            (progn              
+            (progn
               (my-ik hold-arm-coords drop-arm-target-coords :rleg rleg-coords :lleg lleg-coords :cog cog)))
       ))
   (send-pose movetime :force-move flag-simulator)
-  (send *ri* :wait-interpolation)
-      ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  ))
+
+  )
 
 (defun retry-flag-checker
     (flag)
@@ -711,7 +724,6 @@
 (defun dem-with-check-simulator()
 
   (heave #f(0 -200 0) #f(100 200 0) :cog #f(100 0 700))
-  (unix:sleep 4)
 
   (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700) :wait? nil)
   (setq flag  (check-while-working))
