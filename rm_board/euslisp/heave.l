@@ -392,11 +392,14 @@
         :post-process-func post-process-func
         )
   )
-(defun send-pose (time &key (force-move nil))
+(defun send-pose (time &key (force-move nil) (wait? t))
   (objects)
   (when (or force-move (y-or-n-p "Do you move real machine?"))
     (send *ri* :angle-vector (send *robot* :angle-vector) time)
-    ;; (send *ri* :wait-interpolation)
+    (if wait?
+        (progn
+          (print "wait-interpolation")
+          (send *ri* :wait-interpolation)))
     )
   )
 (defun reach()
@@ -446,7 +449,7 @@
 
 ;;持ち上げる
 (defun heave
-    (rarm-move larm-move &key (cog #f(0 0 700)) (degree 0))
+    (rarm-move larm-move &key (cog #f(0 0 700)) (degree 0) (wait? t))
   ;; (send *robot* :move-coords (make-coords :pos #f(0 0 600) :rpy (float-vector 0 (deg2rad 50) 0)) (car (send *robot* :links)))
   (send *robot* :fix-leg-to-coords (make-coords))
   ;; (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate rarm-move))
@@ -467,7 +470,7 @@
   
   (my-ik rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog cog)
   ;; (ik-walk rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog cog)
-  (send-pose movetime :force-move flag-simulator)
+  (send-pose movetime :force-move flag-simulator :wait? wait?)
   ;; (setq rarm-ref-f (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
   ;; (setq larm-ref-f (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
   ;; (check-while-still rarm-ref-f larm-ref-f )
@@ -491,10 +494,11 @@
   (dotimes (i (/ (* checking-time 1000000) sleep-time))
     (setq rarm-f  (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
     (setq larm-f  (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
-    ;; (setq rarm-f-dif (abs (norm (v- rarm-f rarm-f-pre) )))
-    ;; (setq larm-f-dif (abs (norm (v- larm-f larm-f-pre) )))
+    絶対値バージョン
     (setq rarm-f-dif (abs (elt (v- rarm-f rarm-f-pre) 2)))
     (setq larm-f-dif (abs (elt (v- larm-f larm-f-pre) 2)))
+    ;; (setq rarm-f-dif (elt (v- rarm-f rarm-f-pre) 2))
+    ;; (setq larm-f-dif (elt (v- larm-f larm-f-pre) 2))
     (setq drop (list nil nil))
     (format t "rarm-f-dif       = ~A~%" rarm-f-dif)
     (format t "larm-f-dif       = ~A~%" larm-f-dif)
@@ -517,27 +521,27 @@
                 (print "drop both arm")
                 (setq flag 0)
                 (return 0))
-            (progn
-              (cond ((elt drop 0)
-                     (progn
-                       (print "drop rarm")
-                       (setq flag 1)
-                       (return 1)))
-                    ((elt drop 1)
-                     (progn
-                       (print "drop larm")
-                       (setq flag 2)
-                       (return 2))))))))
             ;; (progn
-            ;;   (if (< larm-f-dif rarm-f-dif)
-            ;;       (progn
-            ;;         (print "drop rarm")
-            ;;         (setq flag 1)
-            ;;         (return 1))
-            ;;     (progn
-            ;;       (print "drop larm")
-            ;;       (setq flag 2)
-            ;;       (return 2)))))))
+            ;;   (cond ((elt drop 0)
+            ;;          (progn
+            ;;            (print "drop rarm")
+            ;;            (setq flag 1)
+            ;;            (return 1)))
+            ;;         ((elt drop 1)
+            ;;          (progn
+            ;;            (print "drop larm")
+            ;;            (setq flag 2)
+            ;;            (return 2))))))))
+            (progn
+              (if (< larm-f-dif rarm-f-dif)
+                  (progn
+                    (print "drop rarm")
+                    (setq flag 1)
+                    (return 1))
+                (progn
+                  (print "drop larm")
+                  (setq flag 2)
+                  (return 2)))))))
 
     ;;動作終了判定
     (setq tmp (send *ri* :reference-vector))
@@ -634,7 +638,6 @@
         )
     (heave #f(0 0 0) (scale offset #f(-1 0.5 0) )))
   (send-pose movetime :force-move flag-simulator)
-  (send *ri* :wait-interpolation)
   (print "pull back once")
   
   ;;ロボットモデルを新しく作りriの現在姿勢をとる
@@ -690,7 +693,7 @@
   (send-pose movetime :force-move flag-simulator)
   (send *ri* :wait-interpolation)
       ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-  )
+  ))
 
 (defun retry-flag-checker
     (flag)
@@ -710,7 +713,7 @@
   (heave #f(0 -200 0) #f(100 200 0) :cog #f(100 0 700))
   (unix:sleep 4)
 
-  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700))
+  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700) :wait? nil)
   (setq flag  (check-while-working))
   (retry-flag-checker flag)
   
@@ -719,7 +722,7 @@
   (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 1))
   (retry-flag-checker flag)
   
-  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700))
+  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700) :wait? nil)
   (setq flag  (check-while-working))
   (retry-flag-checker flag)
   
@@ -728,7 +731,7 @@
   (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 1))
   (retry-flag-checker flag)
   
-  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700))
+  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700) :wait? nil)
   (setq flag  (check-while-working))
   (retry-flag-checker flag)
 
@@ -737,7 +740,7 @@
   (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 1))
   (retry-flag-checker flag)
   
-  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700))
+  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700) :wait? nil)
   (setq flag  (check-while-working))
   (retry-flag-checker flag)
 
@@ -759,7 +762,8 @@
     ;;choreonoid
     (send *robot* arm :move-end-pos (scale offset #f(-1 0 0)) :local)
     (send-pose movetime :force-move flag-simulator)
-
+    (send *ri* :start-grasp arm)
+    
     ;;jikki
     ;; (if (eq arm :rarm)
     ;;     (send *robot* arm :move-end-pos (scale offset #f(0 2 0)) :local)
@@ -966,8 +970,10 @@
 (defun my-init-pose()
   ;; (send *robot* :fix-leg-to-coords (make-coords))
   (objects)
+  (print "init pose ")
   (send *robot* :fix-leg-to-coords (make-coords))
   (send *robot* :reset-manip-pose)
+  (send *ri* :hand-reset) ;;実機では必要？choreonoidでは不要？  
   (send-pose movetime :force-move flag-simulator)
   )
 
