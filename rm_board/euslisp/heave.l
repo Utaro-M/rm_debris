@@ -1,12 +1,12 @@
 (require "irteus/demo/sample-robot-model.l")
 (require "models/arrow-object.l")
 ;; (require "package://control_tools/log-tools.l")
-;; (require "package://control_tools/play-hrpsysfile.l")
+(require "package://control_tools/play-hrpsysfile.l")
 (require "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
 ;; (require "/home/utaro/catkin_ws/jaxon_tutorial/src/jsk_control/eus_qp/optmotiongen/euslisp/inverse-kinematics-statics-wrapper.l")
 
 ;; (require "../../euslisp/save-log.l")
-(require "~/research/rm_debris/src/predict_from_multi_pose.l")
+(require "../../src/predict_from_multi_pose.l")
 
 (unless (and (boundp '*robot*) (boundp '*ri*))
   (jaxon_red-init)
@@ -17,7 +17,7 @@
 (objects (list *robot*))
 (unless (boundp 'flag-simulator)
   (setq flag-simulator nil) ;;simulatorではｔ
-  (setq movetime 10000))
+  (setq movetime 18000))
 ;;(send *ri* :save-log "~/matsuura/log/testes" :make-directory t)
 
 (defun prepare-simulator()
@@ -769,35 +769,41 @@
     (offset arm)
 
   
-    (send *robot* :angle-vector (send *ri* :state :angle-vector))
-    ;; (send *robot* arm :move-end-pos (scale offset #f(-2 0 0)) :local)
-    ;;choreonoid
-    (send *robot* arm :move-end-pos (scale offset #f(-1 0 0)) :local)
-    (send-pose movetime :force-move flag-simulator)
-    (send *ri* :start-grasp arm)
-    
-    ;;jikki
-    ;; (if (eq arm :rarm)
-    ;;     (send *robot* arm :move-end-pos (scale offset #f(0 2 0)) :local)
-    ;;   (send *robot* arm :move-end-pos (scale offset #f(0 -2 0)) :local))
-    ;;choreonoid
-    (if (eq arm :rarm)
-        (send *robot* arm :move-end-pos (scale offset #f(0 1.5 0)) :local)
-      (send *robot* arm :move-end-pos (scale offset #f(0 -1.5 0)) :local))
+  (send *robot* :angle-vector (send *ri* :state :angle-vector))
+  
+  ;;腕を引く
+  ;;jikki
+  (send *robot* arm :move-end-pos (scale offset #f(-1.5 0 0)) :local)
+  ;; ;;choreonoid
+  ;; (send *robot* arm :move-end-pos (scale offset #f(-1 0 0)) :local)
 
-    (send-pose movetime :force-move flag-simulator)
+  (send-pose movetime :force-move flag-simulator)
+  (send *ri* :start-grasp arm)
 
-    ;; (send *robot* :angle-vector (send *ri* :state :angle-vector))
-    ;; (if (eq arm :rarm)
-    ;;     (send *robot* arm :move-end-pos (scale offset #f(1.5 -1.5 0)) :local)
-    ;;   (send *robot* arm :move-end-pos (scale offset #f(1.5 1.5 0)) :local))
+  ;;腕を下へ
+  ;;jikki
+  (if (eq arm :rarm)
+      (send *robot* arm :move-end-pos (scale offset #f(0 2 0)) :local)
+    (send *robot* arm :move-end-pos (scale offset #f(0 -2 0)) :local))
+  ;;choreonoid
+  ;; (if (eq arm :rarm)
+  ;;     (send *robot* arm :move-end-pos (scale offset #f(0 1.5 0)) :local)
+  ;;   (send *robot* arm :move-end-pos (scale offset #f(0 -1.5 0)) :local))
+  
+  (send-pose movetime :force-move flag-simulator)
 
-    ;;choreonoid
-    (if (eq arm :rarm)
-        (send *robot* arm :move-end-pos (scale offset #f(1.5 0 0)) :local)
-      (send *robot* arm :move-end-pos (scale offset #f(1.5 0 0)) :local))
+  ;;腕を戻す
+  ;; (send *robot* :angle-vector (send *ri* :state :angle-vector))
+  (if (eq arm :rarm)
+      (send *robot* arm :move-end-pos (scale offset #f(2 -0.5 0)) :local)
+    (send *robot* arm :move-end-pos (scale offset #f(2 -0.5 0)) :local))
 
-    (send-pose movetime :force-move flag-simulator)
+  ;;choreonoid
+  ;; (if (eq arm :rarm)
+  ;;     (send *robot* arm :move-end-pos (scale offset #f(1.5 0 0)) :local)
+  ;;   (send *robot* arm :move-end-pos (scale offset #f(1.5 0 0)) :local))
+  
+  (send-pose movetime :force-move flag-simulator)
   )
 
 
@@ -1062,6 +1068,7 @@
   )
 
 (defun dem-pre()
+  (setq movetime 18000)
   (my-init-pose)
   (unix::sleep 3)
   (reach)
@@ -1071,7 +1078,7 @@
 (defun dem-mid()  
   ;; (heave #f(100 0 0) #f( 100 0 0) :cog #f(100 0 700))
   ;; (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500)
-
+  (setq movetime 9000)
   (progn (setq theta 10) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms))
   (unix::sleep 3)
   
@@ -1096,8 +1103,8 @@
   (stand-up 1000  :cog #f(100 0 900))
   (unix::sleep 3)
   
-  (stand-up 1000  :cog #f(100 0 900))
-  (unix::sleep 3)
+  ;; (stand-up 1000  :cog #f(100 0 900))
+  ;; (unix::sleep 3)
   
   (heave #f(60 -100 0) #f(60 100 0) :cog #f(100 0 1000))
   (unix::sleep 3)
@@ -1106,6 +1113,7 @@
   (unix::sleep 3)
 
   )
+
 (defun dem-post()
   (progn (setq theta 80) (send *ri* :set-ref-force (scale 2 (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta))))) 2000 :larm) (change-arm 140 :rarm))
   (unix::sleep 3)
@@ -1118,3 +1126,6 @@
 ;;progn (send *ri* :set-log-maxlength 30)(unix:sleep 2) (send *ri* :start-log)(heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (unix:sleep 2)  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (save-log :fname "check")
 
 ;progn  (send *ri* :start-log) (unix:sleep 2) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (unix:sleep 2)  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (save-log :fname "check")
+
+
+;;(save-log :fname "rm_board" :log-dir "matsuura/log")
