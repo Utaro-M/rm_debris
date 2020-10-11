@@ -1122,7 +1122,92 @@
   (unix::sleep 3)
   
   (progn (setq theta 80) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms))
+  )
+
+
+(defun dem-with-check-pre()
+  (setq movetime 18000)
+  (my-init-pose)
+  (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
+  (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
+  (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 2))
+  ;; (unix::sleep 3)
+
+  (reach)
+  (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
+  (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
+  (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 2))
+  ;; (unix::sleep 3)
 )
+
+(defun dem-with-check-mid()  
+  ;; (heave #f(100 0 0) #f( 100 0 0) :cog #f(100 0 700))
+  ;; (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500)
+  (setq movetime 9000)
+  
+  (send *ri* :set-reference-force-updater-param :arms :motion-dir #f(0 0 -1) :p-gain 0.01 :update-time-ratio 1.0)
+  (send *ri* :start-reference-force-updater :arms)
+  (unix::sleep 3)
+
+  
+  (heave #f(50 -50 0) #f(50 50 0))
+  
+  (progn
+    (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
+    (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
+    (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 2)))
+
+  (progn 
+    (heave #f(60 -200 0) #f(60 200 0) :cog #f(100 0 700) :wait? nil)
+    (setq flag  (check-while-working)))
+
+  (progn
+    (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
+    (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
+    (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 2)))
+
+  (heave #f(60 -400 0) #f(60 400 0) :cog #f(100 0 800) :wait? nil)
+  (setq flag  (check-while-working))
+
+  (progn
+    (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
+    (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
+    (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 2)))
+
+  (stand-up 1000  :cog #f(100 0 900) :wait? nil)
+  (setq flag  (check-while-working))
+
+  (progn
+    (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
+    (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
+    (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 2)))
+
+  (stand-up 1000  :cog #f(100 0 900) :wait? nil)
+  (setq flag  (check-while-working))
+
+  (progn
+    (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
+    (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
+    (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 2)))
+  
+  ;; (stand-up 1000  :cog #f(100 0 900))
+  ;; (unix::sleep 3)
+  
+  (heave #f(60 -100 0) #f(60 100 0) :cog #f(100 0 1000) :wait? nil)
+  (setq flag  (check-while-working))
+
+  (progn
+    (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
+    (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
+    (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 2)))
+
+  )
+
+
+(defun dem-test()
+  (progn 
+    (heave #f(200 0 0) #f(200 0 0) :cog #f(100 0 700) :wait? nil)
+    (setq flag  (check-while-working))))
 ;;progn (send *ri* :set-log-maxlength 30)(unix:sleep 2) (send *ri* :start-log)(heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (unix:sleep 2)  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (save-log :fname "check")
 
 ;progn  (send *ri* :start-log) (unix:sleep 2) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (unix:sleep 2)  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (save-log :fname "check")
