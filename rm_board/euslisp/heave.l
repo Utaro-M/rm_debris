@@ -1214,6 +1214,7 @@
 
   )
 
+;;1011実機実験最終
 (defun dem-with-check-lift()
   (setq movetime 12000)
   (progn 
