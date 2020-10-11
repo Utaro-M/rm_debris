@@ -1206,7 +1206,7 @@
 
 (defun dem-test()
   (progn 
-    (heave #f(200 0 0) #f(200 0 0) :cog #f(100 0 700) :wait? nil)
+    (heave #f(200 -100 0) #f(200 100 0) :cog #f(100 0 700) :wait? nil)
     (setq flag  (check-while-working))))
 ;;progn (send *ri* :set-log-maxlength 30)(unix:sleep 2) (send *ri* :start-log)(heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (unix:sleep 2)  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (save-log :fname "check")
 
