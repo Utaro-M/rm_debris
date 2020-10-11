@@ -11,13 +11,13 @@
 (unless (and (boundp '*robot*) (boundp '*ri*))
   (jaxon_red-init)
   (setq *robot* *jaxon_red*)
-  )
+ ) 
 
 
 (objects (list *robot*))
 (unless (boundp 'flag-simulator)
   (setq flag-simulator nil) ;;simulatorではｔ
-  (setq movetime 18000))
+  (setq movetime 16000))
 ;;(send *ri* :save-log "~/matsuura/log/testes" :make-directory t)
 
 (defun prepare-simulator()
@@ -490,14 +490,14 @@
     (&key (checking-time 6) (sleep-time 20000) (thre-list (list 22 22)) (fin 3))
   (format t "~%~%check while working~%")
   (setq initial (send *robot* :angle-vector)
-        rarm-f-pre  (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil)
-        larm-f-pre  (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil)
+        rarm-f-pre  (low-pass-online "force" "absolute" :rarm :times 10 :sleep 100 :flag nil)
+        larm-f-pre  (low-pass-online "force" "absolute" :larm :times 10 :sleep 100 :flag nil)
         angle-pre (send *ri* :state :angle-vector))
 
   
   (dotimes (i (/ (* checking-time 1000000) sleep-time))
-    (setq rarm-f  (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
-    (setq larm-f  (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
+    (setq rarm-f  (low-pass-online "force" "absolute" :rarm :times 10 :sleep 100 :flag nil))
+    (setq larm-f  (low-pass-online "force" "absolute" :larm :times 10 :sleep 100 :flag nil))
     ;;絶対値バージョン
     ;; (setq rarm-f-dif (abs (elt (v- rarm-f rarm-f-pre) 2)))
     ;; (setq larm-f-dif (abs (elt (v- larm-f larm-f-pre) 2)))
@@ -561,6 +561,8 @@
       )
     
     (setq angle-pre (send *ri* :state :angle-vector))
+    (setq rarm-f-pre rarm-f)
+    (setq larm-f-pre larm-f)
     (unix:usleep sleep-time)
     )
   (format t "flag = ~A~%" flag)
@@ -595,8 +597,8 @@
     ;;絶対値バージョン
     ;; (setq rarm-f-dif (abs (elt (v- rarm-ref-f rarm-f) 2)))
     ;; (setq larm-f-dif (abs (elt (v- larm-ref-f larm-f) 2)))
-    (setq rarm-f-dif (elt (v- rarm-f rarm-f-pre) 2))
-    (setq larm-f-dif (elt (v- larm-f larm-f-pre) 2))
+    (setq rarm-f-dif (elt (v- rarm-ref-f rarm-f) 2))
+    (setq larm-f-dif (elt (v- larm-ref-f larm-f) 2))
       
     (setq drop (list nil nil))
     (format t "rarm-f-dif      = ~A~%" rarm-f-dif)
@@ -1130,84 +1132,112 @@
   (my-init-pose)
   (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
   (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
-  (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 2))
+  (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 1))
   ;; (unix::sleep 3)
 
   (reach)
   (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
   (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
-  (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 2))
+  (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 1))
   ;; (unix::sleep 3)
 )
 
 (defun dem-with-check-mid()  
   ;; (heave #f(100 0 0) #f( 100 0 0) :cog #f(100 0 700))
   ;; (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500)
-  (setq movetime 9000)
+  (setq movetime 10000)
   
   (send *ri* :set-reference-force-updater-param :arms :motion-dir #f(0 0 -1) :p-gain 0.01 :update-time-ratio 1.0)
   (send *ri* :start-reference-force-updater :arms)
-  (unix::sleep 3)
+  (unix::sleep 2)
 
   
-  (heave #f(50 -50 0) #f(50 50 0))
+  ;; (heave #f(50 -50 0) #f(50 50 0))
   
-  (progn
-    (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
-    (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
-    (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 2)))
+  ;; (progn
+  ;;   (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
+  ;;   (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
+  ;;   (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 1)))
 
   (progn 
     (heave #f(60 -200 0) #f(60 200 0) :cog #f(100 0 700) :wait? nil)
-    (setq flag  (check-while-working)))
+    (setq flag  (check-while-working :thre-list (list 40 40))))
 
   (progn
     (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
     (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
-    (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 2)))
+    (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 1)))
 
-  (heave #f(60 -400 0) #f(60 400 0) :cog #f(100 0 800) :wait? nil)
-  (setq flag  (check-while-working))
-
-  (progn
-    (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
-    (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
-    (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 2)))
-
-  (stand-up 1000  :cog #f(100 0 900) :wait? nil)
-  (setq flag  (check-while-working))
+  ;; (heave #f(60 -400 0) #f(60 400 0) :cog #f(100 0 800) :wait? nil)
+  (heave #f(0 -400 0) #f(0 400 0) :cog #f(100 0 800) :wait? nil)
+  (setq flag  (check-while-working :thre-list (list 40 40)))
 
   (progn
     (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
     (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
-    (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 2)))
+    (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 1)))
 
-  (stand-up 1000  :cog #f(100 0 900) :wait? nil)
-  (setq flag  (check-while-working))
+  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 800) :wait? nil)
+  (setq flag  (check-while-working :thre-list (list 40 40)))
 
   (progn
     (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
     (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
-    (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 2)))
+    (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 1)))
+
+  ;; (stand-up 1000  :cog #f(100 0 900))
+  ;; (setq flag  (check-while-working :thre-list (list 40 40)))
+
+  ;; (progn
+  ;;   (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
+  ;;   (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
+  ;;   (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 1)))
+
+  ;; (stand-up 1000  :cog #f(100 0 900) )
+  ;; (setq flag  (check-while-working :thre-list (list 40 40)))
+
+  ;; (progn
+  ;;   (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
+  ;;   (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
+  ;;   (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 1)))
   
   ;; (stand-up 1000  :cog #f(100 0 900))
   ;; (unix::sleep 3)
   
-  (heave #f(60 -100 0) #f(60 100 0) :cog #f(100 0 1000) :wait? nil)
-  (setq flag  (check-while-working))
+  ;; (heave #f(60 -100 0) #f(60 100 0) :cog #f(100 0 1000) :wait? nil)
+  ;; (setq flag  (check-while-working :thre-list (list 40 40)))
+
+  ;; (progn
+  ;;   (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
+  ;;   (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
+  ;;   (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 1)))
+
+  )
+
+(defun dem-with-check-lift()
+  (setq movetime 12000)
+  (progn 
+    (heave #f(60 -200 0) #f(60 200 0) :cog #f(100 0 700)))
+  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700))
+
+  (send *ri* :start-log) (unix::sleep 1)
+  (heave #f(0 -400 0) #f(0 400 0) :cog #f(100 0 800) :wait? nil)
+  (setq flag  (check-while-working :thre-list (list 10 10)))
 
   (progn
     (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
     (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
-    (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 2)))
-
-  )
-
+    (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 1)))
+  (save-log :fname "check-while-lifting" :log-dir "matsuura/log")
+  (seq movetime 18000)
+)
 
 (defun dem-test()
   (progn 
     (heave #f(200 -100 0) #f(200 100 0) :cog #f(100 0 700) :wait? nil)
     (setq flag  (check-while-working))))
+
+
 ;;progn (send *ri* :set-log-maxlength 30)(unix:sleep 2) (send *ri* :start-log)(heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (unix:sleep 2)  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (save-log :fname "check")
 
 ;progn  (send *ri* :start-log) (unix:sleep 2) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (unix:sleep 2)  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (save-log :fname "check")
