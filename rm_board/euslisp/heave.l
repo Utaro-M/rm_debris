@@ -654,7 +654,7 @@
         (heave (scale offset #f(-1 0.5 0)) #f(0 0 0))
         )
     (heave #f(0 0 0) (scale offset #f(-1 0.5 0) )))
-  (print "pull back once")  
+  (print "pull back once")
   (send-pose movetime :force-move flag-simulator)
   
   ;;ロボットモデルを新しく作りriの現在姿勢をとる
@@ -1062,8 +1062,8 @@
 
   ;; (progn (setq theta 80) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms))
 
-  (send *ri* :go-pos 0.3 0 0)
-  (send *ri* :go-pos 0.3 0 0)
+  ;; (send *ri* :go-pos 0.3 0 0)
+  ;; (send *ri* :go-pos 0.3 0 0)
 
   ;; (setq theta 80) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms)
   
