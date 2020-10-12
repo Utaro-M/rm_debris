@@ -237,20 +237,27 @@
     (send jnt :set-val 'joint-min-max-target nil)
     )
   ;;set narrow limit of min/max angle instead of min-max table
-  (send (send *robot* :joint "RLEG_JOINT0") :min-angle -35)
-  (send (send *robot* :joint "LLEG_JOINT0") :max-angle 35)
-  (send (send *robot* :joint "RLEG_JOINT2") :min-angle -70)
-  (send (send *robot* :joint "LLEG_JOINT2") :min-angle -70)
-  (send (send *robot* :joint "CHEST_JOINT1") :min-angle -1)
-  (send (send *robot* :joint "CHEST_JOINT1") :max-angle 42)
-  (send (send *robot* :joint "RARM_JOINT5") :min-angle -50)
-  (send (send *robot* :joint "RARM_JOINT5") :max-angle 50)
-  (send (send *robot* :joint "RARM_JOINT6") :min-angle -50)
-  (send (send *robot* :joint "RARM_JOINT6") :max-angle 50)
-  (send (send *robot* :joint "LARM_JOINT5") :min-angle -50)
-  (send (send *robot* :joint "LARM_JOINT5") :max-angle 50)
-  (send (send *robot* :joint "LARM_JOINT6") :min-angle -50)
-  (send (send *robot* :joint "LARM_JOINT6") :max-angle 50)
+  ;; (send (send *robot* :joint "RLEG_JOINT0") :min-angle -35)
+  ;; (send (send *robot* :joint "LLEG_JOINT0") :max-angle 35)
+  ;; (send (send *robot* :joint "RLEG_JOINT2") :min-angle -70)
+  ;; (send (send *robot* :joint "LLEG_JOINT2") :min-angle -70)
+  (send (send *robot* :joint "CHEST_JOINT1") :min-angle 0)
+  (send (send *robot* :joint "CHEST_JOINT1") :max-angle 20)
+  (send (send *robot* :joint "RARM_JOINT1") :min-angle -100)
+  (send (send *robot* :joint "RARM_JOINT1") :max-angle 60)
+  (send (send *robot* :joint "LARM_JOINT1") :min-angle -100)
+  (send (send *robot* :joint "LARM_JOINT1") :max-angle 60)
+  (send (send *robot* :joint "RARM_JOINT0") :min-angle 0)
+  (send (send *robot* :joint "RARM_JOINT0") :max-angle 40)
+  (send (send *robot* :joint "LARM_JOINT0") :min-angle -40)
+  (send (send *robot* :joint "LARM_JOINT0") :max-angle 0)  
+
+  ;; (send (send *robot* :joint "RARM_JOINT6") :min-angle -50)
+  ;; (send (send *robot* :joint "RARM_JOINT6") :max-angle 50)
+  ;; (send (send *robot* :joint "LARM_JOINT5") :min-angle -50)
+  ;; (send (send *robot* :joint "LARM_JOINT5") :max-angle 50)
+  ;; (send (send *robot* :joint "LARM_JOINT6") :min-angle -50)
+  ;; (send (send *robot* :joint "LARM_JOINT6") :max-angle 50)
 
   ;; (send (send *robot* :joint "RARM_JOINT6") :min-angle -50)
   ;; (send (send *robot* :joint "RARM_JOINT6") :max-angle 50)
@@ -280,23 +287,35 @@
   ;; (setq *ground-lleg* (make-cube 400 400 20))
   (setq *ground-rleg* (make-cube 800 400 20))
   (setq *ground-lleg* (make-cube 800 400 20))  
-  (setq *ground-larm* (make-cube 500 500 20))
+  ;; (setq *ground-larm* (make-cube 500 500 20))
 
   (send *ground-rleg* :newcoords
         (make-coords :pos (float-vector 0 -250 0) :rpy (list 0 0 0))
         )
   (send *ground-lleg* :newcoords
-        (make-coords :pos (float-vector -100 200 0) :rpy (list 0 0 0))
+        (make-coords :pos (float-vector 0 250 0) :rpy (list 0 0 0))
         )
   
-  (send *ground-larm* :newcoords
-        (make-coords :pos (float-vector 900 500 1000) :rpy (list 0 (deg2rad -45) (deg2rad 45))))
-  (setq *env-list* (list *ground-rleg* *ground-lleg* *ground-larm*))
+  ;; (send *ground-larm* :newcoords
+  ;;       (make-coords :pos (float-vector 900 500 1000) :rpy (list 0 (deg2rad -45) (deg2rad 45))))
+  ;; (setq *env-list* (list *ground-rleg* *ground-lleg* *ground-larm*))
+  (setq *env-list* (list *ground-rleg* *ground-lleg*))
   (send-all *env-list* :worldcoords)
   (send-all *env-list* :set-color (float-vector 0.5 0.5 0.25))
   (setq *rarm-coords* (instance arrow-object :init))
   (send *rarm-coords* :newcoords
-        (make-coords :pos (float-vector 1050 -500 1100) :rpy (list (deg2rad -45) -pi/2 0)))
+        ;; (make-coords :pos (float-vector 1050 -500 1100) :rpy (list (deg2rad -45) -pi/2 0))
+        ;; (make-coords :pos (float-vector 1050 -500 1100) :rpy (list (deg2rad -45) 0 0))
+        (make-coords :pos (float-vector 290 -400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad -90)))        
+        )
+
+  (setq *larm-coords* (instance arrow-object :init))
+  (send *larm-coords* :newcoords
+        ;; (make-coords :pos (float-vector 1050 500 1100) :rpy (list (deg2rad -45) -pi/2 0))
+        ;; (make-coords :pos (float-vector 1050 500 1100) :rpy (list (deg2rad -45) 0 0))
+        (make-coords :pos (float-vector 290  400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad  90)))
+        )
+
   (when avoid-collision?
     (setq *obst* (make-cube 200 200 500))
     (send *obst* :translate (float-vector 500 0 250))
@@ -312,15 +331,15 @@
          (setq *contact-list*
                (list (instance 2d-planar-contact :init :name "rleg")
                      (instance 2d-planar-contact :init :name "lleg")
-                     (instance 2d-planar-contact :init :name "larm")
+                     ;; (instance 2d-planar-contact :init :name "larm")
                      ))
          (setq *robot-env*
                (instance robot-environment :init :robot *robot* :contact-list *contact-list*))
          (send *robot-env* :contact "rleg" :set-from-face :face (elt (send *ground-rleg* :faces) 1))
          (send *robot-env* :contact "lleg" :set-from-face :face (elt (send *ground-lleg* :faces) 1))
-         (send *robot-env* :contact "larm" :set-from-face :face (elt (send *ground-larm* :faces) 1))
-         (send *robot-env* :contact "rleg" :rotate pi :z :local)
-         (send *robot-env* :contact "lleg" :rotate pi :z :local)
+         ;; (send *robot-env* :contact "larm" :set-from-face :face (elt (send *ground-larm* :faces) 1))
+         ;; (send *robot-env* :contact "rleg" :rotate pi :z :local)
+         ;; (send *robot-env* :contact "lleg" :rotate pi :z :local)
          ))
   ;; draw
   (unless (boundp '*irtviewer*)
@@ -329,7 +348,7 @@
     (send *irtviewer* :draw-floor 500)
     (send *irtviewer* :floor-color (float-vector 0 0 0))
     )
-  (objects (append (list *robot* *rarm-coords*) *env-list* (if avoid-collision? (list *obst*))))
+  (objects (append (list *robot* *rarm-coords* *larm-coords* ) *env-list* (if avoid-collision? (list *obst*))))
 
   (setq *instant-config-task*
         (instance instant-configuration-task :init
@@ -347,14 +366,16 @@
                          (list (send *ground-rleg* :copy-worldcoords)
                                (send *ground-lleg* :copy-worldcoords)
                                (send *rarm-coords* :copy-worldcoords)
-                               (send *ground-larm* :copy-worldcoords)
+                               (send *larm-coords* :copy-worldcoords)                               
+                               ;; (send *ground-larm* :copy-worldcoords)
                                )
                          )
                         (t
                          (list (send *robot-env* :contact "rleg" :contact-coords)
                                (send *robot-env* :contact "lleg" :contact-coords)
                                (send *rarm-coords* :copy-worldcoords)
-                               (send *robot-env* :contact "larm" :contact-coords)
+                               (send *larm-coords* :copy-worldcoords)
+                               ;; (send *robot-env* :contact "larm" :contact-coords)
                                )
                          ))
                   :kin-attention-coords-list
@@ -368,20 +389,20 @@
                       (cond (fix-contact?
                              (list (send *ground-rleg* :copy-worldcoords)
                                    (send *ground-lleg* :copy-worldcoords)
-                                   (send *ground-larm* :copy-worldcoords)
+                                   ;; (send *ground-larm* :copy-worldcoords)
                                    )
                              )
                             (t
                              (list (send *robot-env* :contact "rleg" :contact-coords)
                                    (send *robot-env* :contact "lleg" :contact-coords)
-                                   (send *robot-env* :contact "larm" :contact-coords)
+                                   ;; (send *robot-env* :contact "larm" :contact-coords)
                                    )
                              )))
                   :contact-attention-coords-list
                   (if (not only-kinematics?)
                       (list (send *robot-env* :robot :get :rleg-contact-coords)
                             (send *robot-env* :robot :get :lleg-contact-coords)
-                            (send *robot-env* :robot :get :larm-contact-coords)
+                            ;; (send *robot-env* :robot :get :larm-contact-coords)
                             ))
                   :contact-constraint-list
                   (if (not only-kinematics?)
@@ -426,15 +447,15 @@
                                           :l-max-y (- (elt (find-extream vs #'(lambda (v) (elt v 1)) #'>) 1) 20)
                                           ))
                                   )
-                       (instance default-contact-constraint
-                                 :init
-                                 :mu-trans 0.2
-                                 :mu-rot 0.01
-                                 :max-fz 200
-                                 :contact-face
-                                        ;                                 (send *robot-env* :robot :get :larm_link6-support-polygon)
-                                 (send *robot-env* :robot :get :larm_link7-support-polygon)                                 
-                                 )
+                       ;; (instance default-contact-constraint
+                       ;;           :init
+                       ;;           :mu-trans 0.2
+                       ;;           :mu-rot 0.01
+                       ;;           :max-fz 200
+                       ;;           :contact-face
+                       ;;                  ;                                 (send *robot-env* :robot :get :larm_link6-support-polygon)
+                       ;;           (send *robot-env* :robot :get :larm_link7-support-polygon)                                 
+                       ;;           )
                        ))
                   :kin-scale-list
                   (if set-kin-scale?
@@ -444,14 +465,21 @@
                             (list 1 2 3 4 5 6)
                             ))
                   :collision-pair-list
+                  ;; (list
+                  ;;  (send *robot* :link "RLEG_LINK3")
+                  ;;  (send *robot* :link "LLEG_LINK3"))
                   (if avoid-collision?
-                      (mapcar #'(lambda (l) (list l *obst*)) (flatten (send *robot-env* :robot :legs :links))))
+                      (mapcar #'(lambda (l) (list l *obst*)) (flatten (send *robot-env* :robot :legs :links)))
+                  )
+                  ;; (list  (send *robot-env* :robot :rleg :links)  (send *robot-env* :robot :lleg :links))
                   :external-wrench-list
                   (if (and (not only-kinematics?) apply-external-force?)
                       (list (float-vector 0 100 0 0 0 0)))
                   :external-coords-list
                   (if (and (not only-kinematics?) apply-external-force?)
-                      (list (send *robot-env* :robot :get :rarm-contact-coords)))
+                      (progn
+                        (list (send *robot-env* :robot :get :rarm-contact-coords))
+                        (list (send *robot-env* :robot :get :larm-contact-coords))))
                   ))
 
   (setq *sqp-opt*
