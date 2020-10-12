@@ -1,4 +1,4 @@
-(require "irteus/demo/sample-robot-model.l")
+;; (require "irteus/demo/sample-robot-model.l")
 (require "models/arrow-object.l")
 ;; (load "package://control_tools/log-tools.l")
 ;; (require "package://control_tools/play-hrpsysfile.l")
