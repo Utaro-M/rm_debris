@@ -5,6 +5,8 @@
 (require "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
 (require "~/catkin_ws/jaxon_tutorial/src/jsk_control/eus_qp/optmotiongen/euslisp/inverse-kinematics-statics-wrapper.l")
 
+(require "./class.l")
+(load "./my-ik.l")
 (require "../../euslisp/save-log.l")
 (require "~/research/rm_debris/src/predict_from_multi_pose.l")
 
@@ -13,92 +15,11 @@
   (setq *robot* *jaxon_red*)
   )
 
-
 (objects (list *robot*))
 (unless (boundp 'flag-simulator)
   (setq flag-simulator nil) ;;simulatorではｔ
   (setq movetime 10000))
 ;;(send *ri* :save-log "~/matsuura/log/testes" :make-directory t)
-
-(defun prepare-simulator()
-  
-  (setq flag-simulator t) ;;simulatorではｔ
-  (setq movetime 4000)
-  (unless (= (send (send *ri* :get-st-param) :emergency_check_mode) 0)
-    (warn "disable emergency-check~%")
-    ;;COPのemergencyをきる
-    (send *ri* :stop-st)
-    (send *ri* :set-st-param :emergency-check-mode 0)
-    (send *ri* :start-st))
-
-  )
-
-(defclass my-coords
-  :super propertied-object
-  :slots (rarm-coords larm-coords rleg-coords lleg-coords cog rleg-support-polygon lleg-support-polygon)
-  )
-
-(defmethod my-coords
-  (:init (rarm-val larm-val rleg-val lleg-val cg) ;;rleg-support-polygon lleg-support-polygon)
-         (progn
-           (send self :set-rarm rarm-val)
-           (send self :set-larm larm-val)
-           (send self :set-rleg rleg-val)
-           (send self :set-lleg lleg-val)
-           (send self :set-cog cg)
-           )
-         self)
-  (:set-rarm (val)
-             (setq rarm-coords val))
-  (:set-larm (val)
-             (setq larm-coords val))
-  (:set-rleg (val)
-             (setq rleg-coords val))
-  (:set-lleg (val)
-             (setq lleg-coords val))
-  (:set-cog (val)
-            (setq cog val))
-  (:set-rleg-support-polygon (val)
-                             (setq rleg-support-polygon val))
-  (:set-lleg-support-polygon (val)
-                             (setq lleg-support-polygon val))
- 
-  (:get-rarm ()
-             rarm-coords)
-  (:get-larm ()
-             larm-coords)
-  (:get-rleg ()
-             rleg-coords)
-  (:get-lleg ()
-             lleg-coords)
-  (:get-cog ()
-            cog)
-  (:get-rleg-polygon ()
-                     rleg-support-polygon)
-  (:get-lleg-polygon ()
-             lleg-support-polygon)    
-  )
-
-(defclass poses
-  :super propertied-object
-  :slots (fin-pose-ri fin-pose-robot )
-  )
-(defmethod poses
-  (:init (pose-robot pose-ri)
-         (send self :set-fin-pose-robot pose-robot)
-         (send self :set-fin-pose-ri pose-ri)
-         self
-         )
-  (:set-fin-pose-ri (val)
-                    (setq fin-pose-ri val))
-  (:set-fin-pose-robot (val)
-                 (setq fin-pose-robot val))  
-  (:get-fin-pose-ri ()
-                    fin-pose-ri )
-  (:get-fin-pose-robot ()
-                    fin-pose-robot )
-    
-  )
 
 (setq *coords* (instance my-coords :init
                        (copy-object (send *robot* :rarm :end-coords :copy-worldcoords))
@@ -113,335 +34,23 @@
 (setq *pose* (instance poses :init
                        (send *robot* :angle-vector)
                        (send *ri* :state :angle-vector)))
+
+(defun prepare-simulator()
+  
+  (setq flag-simulator t) ;;simulatorではｔ
+  (setq movetime 4000)
+  (unless (= (send (send *ri* :get-st-param) :emergency_check_mode) 0)
+    (warn "disable emergency-check~%")
+    ;;COPのemergencyをきる
+    (send *ri* :stop-st)
+    (send *ri* :set-st-param :emergency-check-mode 0)
+    (send *ri* :start-st))
+
+  )
+
+
 ;;(float-vector 0 0 (elt (send (car (send *robot* :links)) :worldpos) 2))
-(defun my-ik
-    (rarm-coords larm-coords &key rleg lleg cog (move-root-link :z) (virtual-joint-weight #f(0.5 0.5 0.5  1 1 1)))
 
-  (if (eq rleg nil)
-      (setq rleg  (send *coords* :get-rleg))
-    (format t "rleg ~A" rleg))
-  (if (eq lleg nil)
-      (setq lleg  (send *coords* :get-lleg)))
-  (if (eq cog nil)
-      (setq cog  (send *coords* :get-cog)))
-
-  ;; (setq rleg-aaa  (send (send *coords* :get-rleg) :copy-worldcoords))
-  ;; (setq lleg  (send (send *coords* :get-lleg) :copy-worldcoords))
-  ;; (setq cog  (send *coords* :get-cog))
-
-  ;; (setq a b)
-  ;; (setq rleg  (send *robot* :rleg :end-coords :copy-worldcoords))
-        
-  (send *robot* :fullbody-inverse-kinematics
-        (list rleg
-              lleg
-              rarm-coords
-              larm-coords)
-          
-        :move-target
-        (list (send *robot* :rleg :end-coords)
-              (send *robot* :lleg :end-coords)
-              (send *robot* :rarm :end-coords)
-              (send *robot* :larm :end-coords))
-        :link-list
-        (list (send *robot* :link-list (send *robot* :rleg :end-coords :parent))
-              (send *robot* :link-list (send *robot* :lleg :end-coords :parent))
-              (send *robot* :link-list (send *robot* :rarm :end-coords :parent))                 
-              (send *robot* :link-list (send *robot* :larm :end-coords :parent)))
-        :root-link-virtual-joint-weight virtual-joint-weight
-        ;; :root-link-virtual-joint-weight #f(0.5 0.5 0.5 0.0 0.0 0.0)
-        
-        :additional-weight-list (list (list (send *robot* :torso :waist-y :child-link) 0.0)
-                                      (list (send *robot* :torso :waist-p :child-link) 0.0)
-                                      (list (send *robot* :torso :waist-r :child-link) 0.0)
-                                      )
-        
-        ;; :translation-axis (list t t t)
-        ;; :rotation-axis (list t t t)
-        :translation-axis (list t t t t)
-        :rotation-axis (list t t t t)
-        :target-centroid-pos (v+ (midpoint 0.5 (send rleg :worldpos) (send lleg :worldpos))
-                                 cog)
-        :debug-view nil
-        ;; :revert-if-fail t
-        ;; :cog-translation-axis move-root-link
-        :cog-translation-axis move-root-link
-        )
-  
-  (send rarm-coords :draw-on :flush nil :size 300)
-  (send larm-coords :draw-on :flush t   :size 300)
-  )
-
-(defun ik-walk
-    (rarm-coords larm-coords
-                 &key rleg lleg cog (move-root-link :z) (virtual-joint-weight #f(0.5 0.5 0.5  1 1 1))
-                 (optimize-torque? t)
-                 (pre-process-func)
-                 (post-process-func)
-                 (stop 50)
-                 )
-  (if (eq rleg nil)
-      (setq rleg  (send *coords* :get-rleg))
-    (format t "rleg ~A" rleg))
-  (if (eq lleg nil)
-      (setq lleg  (send *coords* :get-lleg)))
-  (if (eq cog nil)
-      (setq cog  (send *coords* :get-cog)))
-
-  (send *robot* :torso-waist-p :joint-angle 30)
-  (setq *target-centroid-pos* (float-vector 300 0 0))  
-    ;;ground rleg
-  (setq *ground* (make-cube 3000 2000 5))  
-  (send *ground* :newcoords
-        (make-coords :pos (float-vector 0 -1200 0))); -923.285)));(- (- 0 (elt (send *robot* :body_lk :worldpos ) 2)) 2.5))))
-                                        ;        (send (send *pull_target* :copy-worldcoords) :translate #f(0 -200 0))) ;;thickness of door
-        
-  (send *ground* :set-color (float-vector 1.0 0 0))
-
-  (setq *floor1* (elt (send *ground* :faces) 3)) ;;elt 3 :normal-move-target-axis :z)  が見た感じ最適？ 
-  (print (send *ground* :faces))
-  (send *floor1* :put :margin 20) ;; [mm]
-  (send *floor1* :put :normal-move-target-axis :z)  
-  (send *floor1* :name :face-rleg)
-
-  ;;ground2 lleg
-  (setq *ground2* (make-cube 3000 2000 5))  
-  (send *ground2* :newcoords
-        (make-coords :pos (float-vector 0 1200 0)));;-923.285))); (- (- 0 (elt (send *robot* :body_lk :worldpos ) 2)) 2.5))))
-  (send *ground2* :set-color (float-vector 0 0 1.0))  
-  (setq *floor2* (elt (send *ground2* :faces) 3)) ;;elt 3 :normal-move-target-axis :z)  が見た感じ最適？ 
-  (print (send *ground2* :faces))
-  (send *floor2* :put :margin 20) ;; [mm]
-  (send *floor2* :put :normal-move-target-axis :z)  
-  (send *floor2* :name :face-lleg)
-
-  (send *robot*
-        :inverse-kinematics-optmotiongen
-
-        (list
-         ;; rleg
-         ;; lleg
-         (send (send *robot* :rleg :end-coords) :copy-worldcoords)
-         (send (send *robot* :lleg :end-coords) :copy-worldcoords)
-         ;; *floor1*
-         ;; *floor2*
-         ;; (send *coords* :get-rleg)
-         ;; (send *coords* :get-lleg)         
-
-              rarm-coords
-              larm-coords
-              ;; (make-coords :pos *target-centroid-pos*)              
-              )
-        :move-target
-        (list (send *robot* :rleg :end-coords)
-              (send *robot* :lleg :end-coords)
-              (send *robot* :rarm :end-coords)
-              (send *robot* :larm :end-coords)
-              ;; :cog
-
-              )
-        :link-list
-        (list (send *robot* :link-list (send *robot* :rleg :end-coords :parent))
-              (send *robot* :link-list (send *robot* :lleg :end-coords :parent))
-              (send *robot* :link-list (send *robot* :rarm :end-coords :parent))                 
-              (send *robot* :link-list (send *robot* :larm :end-coords :parent)))
-        
-        :contact-target-coords
-        (list ;; (send (send *robot* :rleg :end-coords) :copy-worldcoords)
-         ;; (send (send *robot* :lleg :end-coords) :copy-worldcoords)
-         *floor1*
-         *floor2*
-              )
-        :contact-move-target
-        (list (send *robot* :rleg :end-coords)
-              (send *robot* :lleg :end-coords)
-              )
-        ;; (list (send *coords* :get-rleg )
-        ;;       (send *coords* :get-lleg )
-        ;;       )
-                
-
-        :contact-constraint
-        ;; (list
-         ;; (instance default-contact-constraint
-         ;;           :init-from-support-polygon
-         ;;           :support-polygon (send  (send (send *robot* :rleg :end-coords) :parent) :get :support-polygon)
-         ;;           :support-polygon-coords (send (send *robot* :rleg :end-coords) :worldcoords)
-         ;;           )
-         ;; (instance default-contact-constraint
-         ;;           :init-from-support-polygon
-         ;;           :support-polygon (send (send (send *robot* :lleg :end-coords) :parent) :get :support-polygon)
-         ;;           :support-polygon-coords (send (send *robot* :lleg :end-coords) :worldcoords)
-         ;;           )
-
-         ;; )
-
-        (list
-         (instance default-contact-constraint
-                   :init-from-support-polygon
-                   :support-polygon (send  (send (send *robot* :rleg :end-coords) :parent) :get :support-polygon)
-                   :support-polygon-coords (send (send *robot* :rleg :end-coords) :worldcoords)
-                   )
-         (instance default-contact-constraint
-                   :init-from-support-polygon
-                   :support-polygon (send (send (send *robot* :lleg :end-coords) :parent) :get :support-polygon)
-                   :support-polygon-coords (send (send *robot* :lleg :end-coords) :worldcoords)
-                   )
-
-         )
-        ;; (list
-        ;;  (instance default-contact-constraint
-        ;;            :init-from-support-polygon
-        ;;            :support-polygon (send (send (send *robot* :rleg :end-coords) :parent) :get :support-polygon)
-        ;;            :support-polygon-coords (send (send *coords* :get-rleg) :worldcoords)
-        ;;            )
-        ;;  (instance default-contact-constraint
-        ;;            :init-from-support-polygon
-        ;;            :support-polygon (send (send (send *robot* :lleg :end-coords) :parent) :get :support-polygon)
-        ;;            :support-polygon-coords (send (send *coords* :get-lleg) :worldcoords)
-        ;;            )
-
-        ;;  )
-        
-        ;; :translation-axis (list t t)
-        ;; :rotation-axis (list t t)
-        :translation-axis (list :xy :xy t t)
-        :rotation-axis (list t t t t)
-        ;; :debug-view t
-        :root-virtual-mode :6dof
-        :collision-avoidance-link-pair
-        (list
-         (list 
-         (elt (send *robot* :lleg :links) 5)
-         (elt (send *robot* :rleg :links) 5)
-         )
-         )
-        :collision-distance-margin 100
-        :optimize-torque? optimize-torque?
-        :stop stop
-        :min-loop 30
-        :pre-process-func pre-process-func
-        :post-process-func post-process-func
-        ;;cog関係は無視されてそう
-        ;; :target-centroid-pos (v+ (midpoint 0.5 (send rleg :worldpos) (send lleg :worldpos))
-        ;;                          cog)
-        :target-centroid-pos (v+ (midpoint 0.5 (send (send (send *robot* :rleg :end-coords) :copy-worldcoords) :worldpos)
-                                           (send (send (send *robot* :lleg :end-coords) :copy-worldcoords) :worldpos))
-                                 #f(1000 0 0))
-
-        :cog-translation-axis move-root-link     
-        )
-  
-  )
-
-(defun ik-st
-    (rarm-coords larm-coords
-                 &key rleg lleg cog (move-root-link :z) (virtual-joint-weight #f(0.5 0.5 0.5  1 1 1))
-                 (optimize-torque? t)
-                 (pre-process-func)
-                 (post-process-func)
-                 (stop 30)
-                 )
-
-  (if (eq rleg nil)
-      (setq rleg  (send *coords* :get-rleg))
-    (format t "rleg ~A" rleg))
-  (if (eq lleg nil)
-      (setq lleg  (send *coords* :get-lleg)))
-  (if (eq cog nil)
-      (setq cog  (send *coords* :get-cog)))
-
-  ;; (create-support-polygon *robot* (send (send *coords* :get-rleg) :parent))
-  ;; (create-support-polygon *robot* (send (send *robot* :lleg :end-coords) :parent))  
-
-  ;;ground rleg
-  (setq *ground* (make-cube 3000 2000 5))  
-  (send *ground* :newcoords
-        (make-coords :pos (float-vector 0 0 0))); -923.285)));(- (- 0 (elt (send *robot* :body_lk :worldpos ) 2)) 2.5))))
-                                        ;        (send (send *pull_target* :copy-worldcoords) :translate #f(0 -200 0))) ;;thickness of door
-        
-  (send *ground* :set-color (float-vector 1.0 0 0))
-
-  (setq *floor1* (elt (send *ground* :faces) 1)) ;;elt 3 :normal-move-target-axis :z)  が見た感じ最適？ 
-  (print (send *ground* :faces))
-  (send *floor1* :put :margin 20) ;; [mm]
-  (send *floor1* :put :normal-move-target-axis :z)  
-  (send *floor1* :name :face-rleg)
-
-  ;;ground2 lleg
-  (setq *ground2* (make-cube 3000 2000 5))  
-  (send *ground2* :newcoords
-        (make-coords :pos (float-vector 0 0 0)));;-923.285))); (- (- 0 (elt (send *robot* :body_lk :worldpos ) 2)) 2.5))))
-  (send *ground2* :set-color (float-vector 0 0 1.0))  
-  (setq *floor2* (elt (send *ground2* :faces) 1)) ;;elt 3 :normal-move-target-axis :z)  が見た感じ最適？ 
-  (print (send *ground2* :faces))
-  (send *floor2* :put :margin 20) ;; [mm]
-  (send *floor2* :put :normal-move-target-axis :z)  
-  (send *floor2* :name :face-lleg)
-
-
-  (send *robot*
-        :inverse-kinematics-statics-optmotiongen
-        ;;:inverse-kinematics-trajectory-optmotiongen
-        (list
-         rleg
-         lleg
-         ;; *floor1*
-         ;; *floor2*
-              rarm-coords
-              larm-coords
-              )
-        :move-target
-        (list (send *robot* :rleg :end-coords)
-              (send *robot* :lleg :end-coords)
-              (send *robot* :rarm :end-coords)
-              (send *robot* :larm :end-coords)
-              )
-        :contact-target-coords
-        (list (send (send *robot* :rleg :end-coords) :copy-worldcoords)
-              (send (send *robot* :lleg :end-coords) :copy-worldcoords)
-              )
-        ;; (list *floor1* *floor2*)
-        :contact-move-target
-        (list (send *robot* :rleg :end-coords)
-              (send *robot* :lleg :end-coords)
-              )
-        :contact-constraint
-        (list
-         (instance default-contact-constraint
-                   :init-from-support-polygon
-                   :support-polygon (send (send (send *robot* :rleg :end-coords) :parent) :get :support-polygon)
-                   :support-polygon-coords (send (send *robot* :rleg :end-coords) :worldcoords)
-                   )
-         (instance default-contact-constraint
-                   :init-from-support-polygon
-                   :support-polygon (send (send (send *robot* :lleg :end-coords) :parent) :get :support-polygon)
-                   :support-polygon-coords (send (send *robot* :lleg :end-coords) :worldcoords)
-                   )
-         )
-
-        ;; :additional-weight-list (list (list (send *robot* :torso :waist-y :child-link) 0.0)
-        ;;                               (list (send *robot* :torso :waist-p :child-link) 0.0)
-        ;;                               (list (send *robot* :torso :waist-r :child-link) 0.0)
-        ;;                               )
-        ;; :cog-translation-axis move-root-link
-        
-        :translation-axis (list t t t t)
-        :rotation-axis (list t t t t)
-        ;; :translation-axis (list t t )
-        ;; :rotation-axis (list t t )
-        
-        :debug-view t
-;;        :root-virtual-mode :6dof ;;root fix version
-        :root-virtual-mode :6dof ;:planar  ;;virtual joint version
-        :optimize-torque? optimize-torque?
-        :stop stop
-        :min-loop 30
-;;??        :root-virtual-joint-invariant? t        
-        :pre-process-func pre-process-func
-        :post-process-func post-process-func
-        )
-  )
 (defun send-pose (time &key (force-move nil))
   (objects)
   (when (or force-move (y-or-n-p "Do you move real machine?"))
@@ -534,12 +143,6 @@
 
   )
 
-(defun move-on-foot(initial-pos next-pos  nextnext-pos)
-  (send *ri* :set-foot-steps
-        (list (make-coords :coords initial-pos :name :rleg)
-              (make-coords :coords next-pos :name :lleg)
-              (make-coords :coords nextnext-pos :name :rleg)
-)))
 ;; (setq waiting nil)
 ;;静止時の以上検知
 ;;前の動作終了時の力をref-fとして与えておｓ子から外れると落としたと判断
