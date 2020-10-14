@@ -110,7 +110,7 @@
 
 ;;持ち上げる
 (defun heave
-    (rarm-move larm-move &key (cog #f(0 0 700)) (degree 0) (wait? t))
+    (rarm-move larm-move &key (move-on-foot? nil) (fix-contact? t) (cog #f(0 0 700)) (degree 0) (wait? t))
   ;; (send *robot* :move-coords (make-coords :pos #f(0 0 600) :rpy (float-vector 0 (deg2rad 50) 0)) (car (send *robot* :links)))
   ;; (send *robot* :fix-leg-to-coords (make-coords))
   ;; (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate rarm-move))
@@ -134,8 +134,9 @@
   ;; (ik-walk rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog cog)
 
   (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))  
-  (ik-opt rarm-coords larm-coords :only-kinematics t :avoid-collision nil :optimize-torque? nil)
-  (move-on-foot rleg-coords (send *robot* :lleg :end-coords :copy-worldcoords)   (send *robot* :rleg :end-coords :copy-worldcoords))  
+  (ik-opt rarm-coords larm-coords :only-kinematics t :avoid-collision nil :optimize-torque? nil :fix-contact? fix-contact?)
+  (if move-on-foot?
+      (move-on-foot rleg-coords (send *robot* :lleg :end-coords :copy-worldcoords)   (send *robot* :rleg :end-coords :copy-worldcoords)))
   (send-pose movetime :force-move flag-simulator :wait? wait?)
   ;; (setq rarm-ref-f (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
   ;; (setq larm-ref-f (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
@@ -679,7 +680,7 @@
   ;; (send *robot* :fix-leg-to-coords (make-coords))
   (objects)
   (print "init pose ")
-  (send *robot* :fix-leg-to-coords (make-coords))
+  ;; (send *robot* :fix-leg-to-coords (make-coords))
   (send *robot* :reset-manip-pose)
   ;; (send *ri* :hand-reset) ;;実機では必要？choreonoidでは不要？  
   (send-pose movetime :force-move flag-simulator)
