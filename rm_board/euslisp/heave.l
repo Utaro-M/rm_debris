@@ -61,7 +61,7 @@
     )
   )
 
-(defun reach()
+(defun reach(&key (fix-contact? t))
   ;; (send *robot* :fix-leg-to-coords (make-coords))
   ;; (create-support-polygon *robot* (send (send *robot* :rleg :end-coords) :parent))
   ;; (create-support-polygon *robot* (send (send *robot* :lleg :end-coords) :parent))
@@ -98,7 +98,7 @@
   ;; (ik-walk rarm-coords larm-coords :cog #f(0 0 1000) :move-root-link :z)  
   ;; (ik-st rarm-coords larm-coords :cog #f(0 0 1000) :move-root-link :z)
   (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))  
-  (ik-opt rarm-coords larm-coords :only-kinematics t :avoid-collision nil :optimize-torque? nil)
+  (ik-opt rarm-coords larm-coords :only-kinematics t :avoid-collision nil :optimize-torque? nil :fix-contact? fix-contact?)
   (move-on-foot rleg-coords (send *robot* :lleg :end-coords :copy-worldcoords)   (send *robot* :rleg :end-coords :copy-worldcoords))
 ;  (my-ik rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog #f(0 0 1000))
 
@@ -110,7 +110,7 @@
 
 ;;持ち上げる
 (defun heave
-    (rarm-move larm-move &key (move-on-foot? nil) (fix-contact? t) (cog #f(0 0 700)) (degree 0) (wait? t))
+    (rarm-move larm-move &key  (fix-contact? t) (cog #f(0 0 700)) (degree 0) (wait? t))
   ;; (send *robot* :move-coords (make-coords :pos #f(0 0 600) :rpy (float-vector 0 (deg2rad 50) 0)) (car (send *robot* :links)))
   ;; (send *robot* :fix-leg-to-coords (make-coords))
   ;; (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate rarm-move))
@@ -133,9 +133,9 @@
   ;; (my-ik rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog cog)
   ;; (ik-walk rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog cog)
 
-  (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))  
+  (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
   (ik-opt rarm-coords larm-coords :only-kinematics t :avoid-collision nil :optimize-torque? nil :fix-contact? fix-contact?)
-  (if move-on-foot?
+  (if (not fix-contact?)
       (move-on-foot rleg-coords (send *robot* :lleg :end-coords :copy-worldcoords)   (send *robot* :rleg :end-coords :copy-worldcoords)))
   (send-pose movetime :force-move flag-simulator :wait? wait?)
   ;; (setq rarm-ref-f (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
@@ -936,3 +936,4 @@
 
 
 ;;(save-log :fname "rm_board" :log-dir "matsuura/log")
+;heave #f(0 -200 0) #f(0 200 0) :move-on-foot? nil :fix-contact? t
