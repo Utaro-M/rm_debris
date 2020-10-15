@@ -54,7 +54,7 @@
 
 ;;(float-vector 0 0 (elt (send (car (send *robot* :links)) :worldpos) 2))
 
-(defun send-pose (time &key (force-move nil))
+(defun send-pose (time &key (force-move nil) (wait? t))
 
   (objects)
   (when (or force-move (y-or-n-p "Do you move real machine?"))
