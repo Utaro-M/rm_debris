@@ -343,7 +343,7 @@
         (heave (scale offset #f(-1 0.5 0)) #f(0 0 0))
         )
     (heave #f(0 0 0) (scale offset #f(-1 0.5 0) )))
-  (print "pull back once")  
+  (print "pull back once")
   (send-pose movetime :force-move flag-simulator)
   
   ;;ロボットモデルを新しく作りriの現在姿勢をとる
