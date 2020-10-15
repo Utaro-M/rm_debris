@@ -164,15 +164,15 @@
   ;; setup environment
   ;; (setq *ground-rleg* (make-cube 400 400 20))
   ;; (setq *ground-lleg* (make-cube 400 400 20))
-  (setq *ground-rleg* (make-cube 1000 420 20))
-  (setq *ground-lleg* (make-cube 1000 420 20))  
+  (setq *ground-rleg* (make-cube 1000 500 20))
+  (setq *ground-lleg* (make-cube 1000 500 20))  
   ;; (setq *ground-larm* (make-cube 500 500 20))
 
   (send *ground-rleg* :newcoords
-        (make-coords :pos (float-vector 0 -250 -10) :rpy (list 0 0 0))
+        (make-coords :pos (float-vector 0 -260 -10) :rpy (list 0 0 0))
         )
   (send *ground-lleg* :newcoords
-        (make-coords :pos (float-vector 0 250 -10) :rpy (list 0 0 0))
+        (make-coords :pos (float-vector 0 260 -10) :rpy (list 0 0 0))
         )
   
   ;; (send *ground-larm* :newcoords
@@ -401,7 +401,7 @@
                         ;; (validate-jacobian :config-task (send sqp :config-task))
                         ))
                   ))
-  (send *sqp-opt* :optimize :loop-num 50)
+  (send *sqp-opt* :optimize :loop-num 80)
   )
 (warn "(jaxon_red-sqp-optimization-instant)~%")
 
