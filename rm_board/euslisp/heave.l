@@ -1049,7 +1049,7 @@
   (print "init pose ")
   (send *robot* :fix-leg-to-coords (make-coords))
   (send *robot* :reset-manip-pose)
-  (send *ri* :hand-reset) ;;実機では必要？choreonoidでは不要？  
+  ;; (send *ri* :hand-reset) ;;実機では必要？choreonoidでは不要？  
   (send-pose movetime :force-move flag-simulator)
   )
 
