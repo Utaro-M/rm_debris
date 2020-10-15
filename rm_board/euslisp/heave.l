@@ -1,21 +1,20 @@
 ;; (require "irteus/demo/sample-robot-model.l")
 (require "models/arrow-object.l")
 ;; (require "package://control_tools/log-tools.l")
-(require "package://control_tools/play-hrpsysfile.l")
+;; (require "package://control_tools/play-hrpsysfile.l")
 (require "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
 
-(require "~/catkin_ws/jaxon_tutorial/src/jsk_control/eus_qp/optmotiongen/euslisp/inverse-kinematics-statics-wrapper.l")
+;; (require "~/catkin_ws/jaxon_tutorial/src/jsk_control/eus_qp/optmotiongen/euslisp/inverse-kinematics-statics-wrapper.l")
 
 (require "./class.l")
 (load "./my-ik.l")
 (require "../../euslisp/save-log.l")
 (require "~/research/rm_debris/src/predict_from_multi_pose.l")
 
-
 (unless (and (boundp '*robot*) (boundp '*ri*))
   (jaxon_red-init)
   (setq *robot* *jaxon_red*)
- ) 
+ )
 
 (objects (list *robot*))
 (unless (boundp 'flag-simulator)
@@ -38,7 +37,6 @@
                        (send *ri* :state :angle-vector)))
 
 (defun prepare-simulator()
-  
 
   (setq flag-simulator t) ;;simulatorではｔ
   (setq movetime 4000)
@@ -48,14 +46,11 @@
     (send *ri* :stop-st)
     (send *ri* :set-st-param :emergency-check-mode 0)
     (send *ri* :start-st))
-
   )
-
 
 ;;(float-vector 0 0 (elt (send (car (send *robot* :links)) :worldpos) 2))
 
 (defun send-pose (time &key (force-move nil) (wait? t))
-
   (objects)
   (when (or force-move (y-or-n-p "Do you move real machine?"))
     (send *ri* :angle-vector (send *robot* :angle-vector) time)
@@ -65,8 +60,9 @@
           (send *ri* :wait-interpolation)))
     )
   )
-(defun reach()
-  (send *robot* :fix-leg-to-coords (make-coords))
+
+(defun reach(&key (fix-contact? nil) (send? t))
+  ;; (send *robot* :fix-leg-to-coords (make-coords))
   ;; (create-support-polygon *robot* (send (send *robot* :rleg :end-coords) :parent))
   ;; (create-support-polygon *robot* (send (send *robot* :lleg :end-coords) :parent))
   (send *robot* :reset-manip-pose)
@@ -76,11 +72,13 @@
   ;; (send (car (send *robot* :links)) :newcoords (make-coords :pos #f(0 0 600) :rpy (float-vector 0 (deg2rad 50) 0)))
 
   ;;もどす
-  (send *robot* :move-coords (make-coords :pos #f(0 0 600) :rpy (float-vector 0 (deg2rad 50) 0)) (car (send *robot* :links)))
+  ;; (send *robot* :move-coords (make-coords :pos #f(0 0 600) :rpy (float-vector 0 (deg2rad 50) 0)) (car (send *robot* :links)))
   
   
-  (setq rarm-coords (make-coords :pos (float-vector 290 -400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad -90))))
-  (setq larm-coords (make-coords :pos (float-vector 290  400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad  90))))
+  ;; (setq rarm-coords (make-coords :pos (float-vector 290 -400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad -90))))
+  ;; (setq larm-coords (make-coords :pos (float-vector 290  400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad  90))))
+  (setq rarm-coords (make-coords :pos (float-vector 390 -400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad -90))))
+  (setq larm-coords (make-coords :pos (float-vector 390  400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad  90))))
 
   ;; (setq rarm-coords (make-coords :pos (float-vector 390 -400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad -90))))
   ;; (setq larm-coords (make-coords :pos (float-vector 390  400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad  90))))
@@ -98,23 +96,32 @@
   ;; (my-ik rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog #f(0 0 1000) :move-root-link :z)
 
   ;;  もどす
-  (my-ik rarm-coords larm-coords :cog #f(0 0 1000) :move-root-link :z)
+  ;; (my-ik rarm-coords larm-coords :cog #f(0 0 1000) :move-root-link :z)
   ;; (ik-walk rarm-coords larm-coords :cog #f(0 0 1000) :move-root-link :z)  
-  ;; (ik-st rarm-coords larm-coords :cog #f(0 0 1000) :move-root-link :z)  
-
+  ;; (ik-st rarm-coords larm-coords :cog #f(0 0 1000) :move-root-link :z)
+  (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))  
+  (ik-opt rarm-coords larm-coords :only-kinematics t :avoid-collision nil :optimize-torque? nil :fix-contact? fix-contact?)
+  (if send?
+      (progn 
+        (if (not fix-contact?)
+            (move-on-foot rleg-coords (send *robot* :lleg :end-coords :copy-worldcoords)   (send *robot* :rleg :end-coords :copy-worldcoords)))
 ;  (my-ik rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog #f(0 0 1000))
 
-  ;;もどす
-  (send-pose movetime :force-move flag-simulator)
+        ;;もどす
+        (send-pose movetime :force-move flag-simulator)))
   ;; (my-ik #f(0 0 40) #f(0 0 40))
 
   )
 
+(defun start-coords()
+  (send *robot* :move-coords (make-coords :pos #f(0 100 100) :rpy #f(0 0 0) ) (send *robot* :link "LLEG_LINK5"))
+  (objects))
+
 ;;持ち上げる
 (defun heave
-    (rarm-move larm-move &key (cog #f(0 0 700)) (degree 0) (wait? t))
+    (rarm-move larm-move &key  (fix-contact? t) (send? t) (cog #f(0 0 700)) (degree 0) (wait? t) (reset? t))
   ;; (send *robot* :move-coords (make-coords :pos #f(0 0 600) :rpy (float-vector 0 (deg2rad 50) 0)) (car (send *robot* :links)))
-  (send *robot* :fix-leg-to-coords (make-coords))
+  ;; (send *robot* :fix-leg-to-coords (make-coords))
   ;; (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate rarm-move))
   ;; (setq larm-coords (send (send *robot* :larm :end-coords :copy-worldcoords) :translate larm-move))
 
@@ -132,9 +139,17 @@
   ;;       lleg-coords  (send *coords* :get-lleg))
 
 
-  (my-ik rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog cog)
+  ;; (my-ik rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog cog)
   ;; (ik-walk rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog cog)
-  (send-pose movetime :force-move flag-simulator :wait? wait?)
+
+  (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
+  (ik-opt rarm-coords larm-coords :only-kinematics t :avoid-collision nil :optimize-torque? nil :fix-contact? fix-contact? :reset? reset?)
+  (if send?
+      (progn 
+        (if (not fix-contact?)
+            (move-on-foot rleg-coords (send *robot* :lleg :end-coords :copy-worldcoords)   (send *robot* :rleg :end-coords :copy-worldcoords)))
+        (send-pose movetime :force-move flag-simulator :wait? wait?)))
+  
   ;; (setq rarm-ref-f (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
   ;; (setq larm-ref-f (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
   ;; (check-while-still rarm-ref-f larm-ref-f )
@@ -673,14 +688,30 @@
   (save-log :fname name)
   )
 
-(defun my-init-pose()
+(defun my-init-pose
+    (&key (foot-reset? nil))
   ;; (send *robot* :fix-leg-to-coords (make-coords))
   (objects)
   (print "init pose ")
-  (send *robot* :fix-leg-to-coords (make-coords))
+  ;; (send *robot* :fix-leg-to-coords (make-coords))
+  (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
+  (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))  
   (send *robot* :reset-manip-pose)
-  ;; (send *ri* :hand-reset) ;;実機では必要？choreonoidでは不要？  
-  (send-pose movetime :force-move flag-simulator)
+  (send-pose movetime :force-move flag-simulator) 
+  ;; (send *ri* :hand-reset) ;;実機では必要？choreonoidでは不要？
+  (format t "left or right ?  ~A" (elt (send (car (send *robot* :torso)) :worldpos) 1))
+  (if foot-reset?
+      (progn
+        (if (< 0 (elt (send (car (send *robot* :torso)) :worldpos) 1))
+            (progn
+              (start-coords)
+              (move-on-foot rleg-coords (send *robot* :lleg :end-coords :copy-worldcoords) (send *robot* :rleg :end-coords :copy-worldcoords)))
+          (progn
+              (start-coords)
+              (move-on-foot lleg-coords (send *robot* :rleg :end-coords :copy-worldcoords) (send *robot* :lleg :end-coords :copy-worldcoords)))
+          )
+        ))
+        
   )
 
 ;; (defun save(&key (fname "emergency"))
@@ -755,6 +786,20 @@
   
   )
 
+(defun dem-step-simulator()
+  (setq flag-simulator nil)
+  (my-init-pose :foot-reset? t)
+  (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500)
+
+  (send *ri* :set-reference-force-updater-param :arms :motion-dir #f(0 0 -1) :p-gain 0.01 :update-time-ratio 1.0)
+  (send *ri* :start-reference-force-updater :arms)
+  (reach :fix-contact? nil)
+  (heave #f(100 -200 0) #f(100 200 0) :reset? nil :fix-contact? nil)
+  (heave #f(100 -200 0) #f(100 200 0) :reset? nil :fix-contact? t)
+  (heave #f(100 -200 0) #f(100 200 0) :reset? nil :fix-contact? t)
+  (heave #f(100 -200 0) #f(100 200 0) :reset? nil :fix-contact? nil)
+  (setq flag-simulator t)
+)
 (defun dem-pre()
 
   (setq movetime 18000)
@@ -933,3 +978,4 @@
 
 
 ;;(save-log :fname "rm_board" :log-dir "matsuura/log")
+;heave #f(0 -200 0) #f(0 200 0) :move-on-foot? nil :fix-contact? t
