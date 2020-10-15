@@ -192,7 +192,9 @@
         ;; (make-coords :pos (float-vector 290  400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad  90)))
         larm-coords
         )
-
+  (setq rleg-now (send *robot* :rleg :end-coords :copy-worldcoords))
+  (setq lleg-now (send *robot* :lleg :end-coords :copy-worldcoords))
+ 
   (when avoid-collision?
     (setq *obst* (make-cube 200 200 500))
     (send *obst* :translate (float-vector 500 0 250))
@@ -261,8 +263,8 @@
                                )
                          )
                         (t
-                         (list (send *robot* :rleg :end-coords :copy-worldcoords)
-                               (send *robot* :lleg :end-coords :copy-worldcoords)
+                         (list rleg-now
+                               lleg-now
                                (send *rarm-coords* :copy-worldcoords)
                                (send *larm-coords* :copy-worldcoords)
                                ;; (send *robot-env* :contact "larm" :contact-coords)
@@ -291,9 +293,10 @@
                                    )
                              )
                             (t
-                             (list (send *robot* :rleg :end-coords :copy-worldcoords)
-                                   (send *robot* :lleg :end-coords :copy-worldcoords)
-                                   )
+                             (list
+                              rleg-now
+                              lleg-now
+                              )
                          )))
                   :contact-attention-coords-list
                   (if (not only-kinematics?)

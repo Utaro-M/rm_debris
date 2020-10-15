@@ -52,16 +52,23 @@
 
 (defun send-pose (time &key (force-move nil) (wait? t))
   (objects)
-  (when (or force-move (y-or-n-p "Do you move real machine?"))
+  (setq vec-tmp (send *robot* :angle-vector))
+  (when (or force-move (setq ans (y-or-n-p "Do you move real machine?")))
     (send *ri* :angle-vector (send *robot* :angle-vector) time)
     (if wait?
         (progn
           (print "wait-interpolation")
           (send *ri* :wait-interpolation)))
+    (if (not force-move) 
+        (progn
+          (send *robot* :angle-vector vec-tmp)
+          (print "pre pose"))
+      )
     )
   )
 
-(defun reach(&key (fix-contact? nil) (send? t))
+(defun reach
+    (&key (fix-contact? nil) (send? t) (wait? t))
   ;; (send *robot* :fix-leg-to-coords (make-coords))
   ;; (create-support-polygon *robot* (send (send *robot* :rleg :end-coords) :parent))
   ;; (create-support-polygon *robot* (send (send *robot* :lleg :end-coords) :parent))
@@ -99,16 +106,17 @@
   ;; (my-ik rarm-coords larm-coords :cog #f(0 0 1000) :move-root-link :z)
   ;; (ik-walk rarm-coords larm-coords :cog #f(0 0 1000) :move-root-link :z)  
   ;; (ik-st rarm-coords larm-coords :cog #f(0 0 1000) :move-root-link :z)
-  (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))  
+  (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
   (ik-opt rarm-coords larm-coords :only-kinematics t :avoid-collision nil :optimize-torque? nil :fix-contact? fix-contact?)
+  
   (if send?
       (progn 
         (if (not fix-contact?)
-            (move-on-foot rleg-coords (send *robot* :lleg :end-coords :copy-worldcoords)   (send *robot* :rleg :end-coords :copy-worldcoords)))
+            (move-on-foot rleg-coords (send *robot* :lleg :end-coords :copy-worldcoords)   (send *robot* :rleg :end-coords :copy-worldcoords)))))
 ;  (my-ik rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog #f(0 0 1000))
 
         ;;もどす
-        (send-pose movetime :force-move flag-simulator)))
+        (send-pose movetime :force-move flag-simulator)
   ;; (my-ik #f(0 0 40) #f(0 0 40))
 
   )
@@ -147,7 +155,7 @@
   (if send?
       (progn 
         (if (not fix-contact?)
-            (move-on-foot rleg-coords (send *robot* :lleg :end-coords :copy-worldcoords)   (send *robot* :rleg :end-coords :copy-worldcoords)))
+            (move-on-foot rleg-coords (send *robot* :lleg :end-coords :copy-worldcoords)   (send *robot* :rleg :end-coords :copy-worldcoornds)))
         (send-pose movetime :force-move flag-simulator :wait? wait?)))
   
   ;; (setq rarm-ref-f (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
