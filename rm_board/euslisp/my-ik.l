@@ -1,4 +1,6 @@
 (load "~/catkin_ws/jaxon_tutorial/src/jsk_control/eus_qp/optmotiongen/euslisp/sqp-optimization.l")
+(load "~/catkin_ws/jaxon_tutorial/src/jsk_control/eus_qp/optmotiongen/euslisp/instant-configuration-task.l")
+(load "~/catkin_ws/jaxon_tutorial/src/jsk_control/eus_qp/optmotiongen/euslisp/validate-jacobian.l")
 
 (defun my-ik
     (rarm-coords larm-coords &key rleg lleg cog (move-root-link :z) (virtual-joint-weight #f(0.5 0.5 0.5  1 1 1)))
@@ -161,8 +163,8 @@
   ;; setup environment
   ;; (setq *ground-rleg* (make-cube 400 400 20))
   ;; (setq *ground-lleg* (make-cube 400 400 20))
-  (setq *ground-rleg* (make-cube 1000 400 20))
-  (setq *ground-lleg* (make-cube 1000 400 20))  
+  (setq *ground-rleg* (make-cube 2000 400 20))
+  (setq *ground-lleg* (make-cube 2000 400 20))  
   ;; (setq *ground-larm* (make-cube 500 500 20))
 
   (send *ground-rleg* :newcoords
