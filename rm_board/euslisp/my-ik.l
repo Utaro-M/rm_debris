@@ -2,6 +2,7 @@
 (load "~/catkin_ws/jaxon_tutorial/src/jsk_control/eus_qp/optmotiongen/euslisp/instant-configuration-task.l")
 (load "~/catkin_ws/jaxon_tutorial/src/jsk_control/eus_qp/optmotiongen/euslisp/validate-jacobian.l")
 
+(print "load my-ik.l")
 (defun my-ik
     (rarm-coords larm-coords &key rleg lleg cog (move-root-link :z) (virtual-joint-weight #f(0.5 0.5 0.5  1 1 1)))
 
@@ -196,12 +197,12 @@
   (setq lleg-now (send *robot* :lleg :end-coords :copy-worldcoords))
  
   (when avoid-collision?
-    (setq *obst* (make-cube 200 200 500))
-    (send *obst* :translate (float-vector 500 0 250))
+    (setq *obst* (make-cube 160 600 500))
+    (send *obst* :translate (float-vector (- (elt (send rarm-coords :worldpos) 0) 100) 0 250))
     (send *obst* :set-color (float-vector 1 0 0) 0.5)
     )
   ;; setup robot
-  (setup-jaxon_redjsknts-for-sample-sqp-optimization :only-kinematics? only-kinematics?)
+  (setup-jaxon_redjsknts-for-sample-sqp-optimization :only-kinematics? only-kinematics? )
   (cond (fix-contact?
          (setq *robot-env*
                (instance robot-environment :init :robot *robot*))
@@ -231,7 +232,7 @@
     (send *irtviewer* :draw-floor 500)
     (send *irtviewer* :floor-color (float-vector 0 0 0))
     )
-  (objects (append (list *robot* *rarm-coords* *larm-coords* ) *env-list* ;; (if avoid-collision? (list *obst*))
+  (objects (append (list *robot* *rarm-coords* *larm-coords* ) *env-list*  (if avoid-collision? (list *obst*))
                    ))
 
   (setq *instant-config-task*
@@ -406,12 +407,16 @@
 (warn "(jaxon_red-sqp-optimization-instant)~%")
 
 
-(defun move-on-foot(initial-pos next-pos  nextnext-pos)
+(defun move-on-foot(init-rcoords init-lcoords next-rcoords  next-lcoords)
   (send *ri* :set-foot-steps
-        (list (make-coords :coords initial-pos :name :rleg)
-              (make-coords :coords next-pos :name :lleg)
-              (make-coords :coords nextnext-pos :name :rleg)
-              )))
+        (list ;; (make-coords :coords initial-pos :name :rleg)
+         (make-coords :coords (send init-lcoords :transformation init-lcoords) :name :lleg)
+         (make-coords :coords (send init-rcoords :transformation next-rcoords) :name :rleg)
+         (make-coords :coords (send init-lcoords :transformation next-lcoords) :name :lleg)
+         ))
+  (format t "rleg ~A~%" (make-coords :coords (send init-rcoords :transformation next-rcoords) :name :rleg))
+  (format t "lleg ~A~%" (make-coords :coords (send init-lcoords :transformation next-rcoords) :name :lleg))
+  )
 
 (defun ik-walk
     (rarm-coords larm-coords
