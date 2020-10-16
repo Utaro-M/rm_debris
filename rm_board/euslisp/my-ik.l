@@ -121,11 +121,15 @@
   (send (send *robot* :joint "RARM_JOINT0") :max-angle 40)
   (send (send *robot* :joint "LARM_JOINT0") :min-angle -40)
   (send (send *robot* :joint "LARM_JOINT0") :max-angle 0)
-  (send (send *robot* :joint "RARM_JOINT1") :min-angle -100)
-  (send (send *robot* :joint "RARM_JOINT1") :max-angle 80)
-  (send (send *robot* :joint "LARM_JOINT1") :min-angle -100)
-  (send (send *robot* :joint "LARM_JOINT1") :max-angle 80)
-
+  ;;方の特異点問題
+  ;; (send (send *robot* :joint "RARM_JOINT1") :min-angle -100)
+  ;; (send (send *robot* :joint "RARM_JOINT1") :max-angle 80)
+  ;; (send (send *robot* :joint "LARM_JOINT1") :min-angle -100)
+  ;; (send (send *robot* :joint "LARM_JOINT1") :max-angle 80)
+  (send (send *robot* :joint "RARM_JOINT1") :min-angle -120)
+  (send (send *robot* :joint "RARM_JOINT1") :max-angle 120)
+  (send (send *robot* :joint "LARM_JOINT1") :min-angle -120)
+  (send (send *robot* :joint "LARM_JOINT1") :max-angle 120)
 
 
   ;; (send (send *robot* :joint "RARM_JOINT6") :min-angle -50)
@@ -408,14 +412,26 @@
 
 
 (defun move-on-foot(init-rcoords init-lcoords next-rcoords  next-lcoords)
+  (setq ldif (send (send init-lcoords :copy-worldcoords) :transformation init-lcoords))
+  (setq rdif (send (send init-rcoords :copy-worldcoords) :transformation next-rcoords))
   (send *ri* :set-foot-steps
-        (list ;; (make-coords :coords initial-pos :name :rleg)
-         (make-coords :coords (send init-lcoords :transformation init-lcoords) :name :lleg)
-         (make-coords :coords (send init-rcoords :transformation next-rcoords) :name :rleg)
-         (make-coords :coords (send init-lcoords :transformation next-lcoords) :name :lleg)
-         ))
-  (format t "rleg ~A~%" (make-coords :coords (send init-rcoords :transformation next-rcoords) :name :rleg))
-  (format t "lleg ~A~%" (make-coords :coords (send init-lcoords :transformation next-rcoords) :name :lleg))
+        ;; (list
+        ;;  (make-coords :coords init-rcoords :name :rleg)
+        ;;  (make-coords :coords (send (send init-lcoords :copy-worldcoords) :translate (send ldif :worldpos) :rpy (car (send ldif :rpy-angle))) :name :lleg)
+        ;;  (make-coords :coords (send (send init-rcoords :copy-worldcoords) :translate (send rdif :worldpos) :rpy (car (send rdif :rpy-angle))) :name :rleg)
+        ;;  ;; (make-coords :coords (send (send init-rcoords :copy-worldcoords) :transformation next-rcoords) :name :rleg)
+        ;;  ;; (make-coords :coords (send (send init-lcoords :copy-worldcoords) :transformation next-lcoords) :name :lleg)
+        ;;  )
+        (list
+         (make-coords :coords init-rcoords :name :rleg)
+         (make-coords :coords  next-lcoords :name :lleg)
+         (make-coords :coords  next-rcoords :name :rleg)
+         
+        )
+  ;; (format t "rleg init ~A~%" init-rcoords)
+  ;; (format t "lleg init ~A~%" init-lcoords)
+  ;; (format t "rleg ~A~%" (make-coords :coords (send init-rcoords :transformation next-rcoords) :name :rleg))
+  ;; (format t "lleg ~A~%" (make-coords :coords (send init-lcoords :transformation next-lcoords) :name :lleg))
   )
 
 (defun ik-walk

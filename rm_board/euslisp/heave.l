@@ -112,7 +112,7 @@
   ;; (ik-walk rarm-coords larm-coords :cog #f(0 0 1000) :move-root-link :z)  
   ;; (ik-st rarm-coords larm-coords :cog #f(0 0 1000) :move-root-link :z)
   (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
-  (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))  
+  (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
   (setq pre-pose (send *robot* :angle-vector))
   (setq pre-lleg (send *robot* :lleg :end-coords :copy-worldcoords))
   (ik-opt rarm-coords larm-coords :only-kinematics t :avoid-collision nil :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision?)
@@ -563,14 +563,16 @@
   (format t "left or right ?  ~A" (elt (send (car (send *robot* :torso)) :worldpos) 1))
   (if move-foot?
       (progn
-        (if (< 0 (elt (send (car (send *robot* :torso)) :worldpos) 1))
-            (progn
-              (start-coords)
-              (move-on-foot rleg-coords lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords) (send *robot* :rleg :end-coords :copy-worldcoords)))
-          (progn
-              (start-coords)
-              (move-on-foot rleg-coords lleg-coords (send *robot* :rleg :end-coords :copy-worldcoords) (send *robot* :lleg :end-coords :copy-worldcoords)))
-          )
+        ;; (if (< 0 (elt (send (car (send *robot* :torso)) :worldpos) 1))
+        ;;     (progn
+        ;;       (start-coords)
+        ;;       (move-on-foot rleg-coords lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords) (send *robot* :rleg :end-coords :copy-worldcoords)))
+        ;;   (progn
+        ;;       (start-coords)
+        ;;       (move-on-foot rleg-coords lleg-coords (send *robot* :rleg :end-coords :copy-worldcoords) (send *robot* :lleg :end-coords :copy-worldcoords)))
+        ;;   )
+        (start-coords)
+        (move-on-foot rleg-coords lleg-coords (send *robot* :rleg :end-coords :copy-worldcoords) (send *robot* :lleg :end-coords :copy-worldcoords)))
         ))
         
   )
