@@ -157,21 +157,22 @@
      (set-kin-scale? nil)
      (only-kinematics? nil)
      (pre-process-func)
+     (reset? t)
      &allow-other-keys
      )
 
   ;; setup environment
   ;; (setq *ground-rleg* (make-cube 400 400 20))
   ;; (setq *ground-lleg* (make-cube 400 400 20))
-  (setq *ground-rleg* (make-cube 2000 400 20))
-  (setq *ground-lleg* (make-cube 2000 400 20))  
+  (setq *ground-rleg* (make-cube 1000 500 20))
+  (setq *ground-lleg* (make-cube 1000 500 20))  
   ;; (setq *ground-larm* (make-cube 500 500 20))
 
   (send *ground-rleg* :newcoords
-        (make-coords :pos (float-vector 0 -250 0) :rpy (list 0 0 0))
+        (make-coords :pos (float-vector 0 -260 -10) :rpy (list 0 0 0))
         )
   (send *ground-lleg* :newcoords
-        (make-coords :pos (float-vector 0 250 0) :rpy (list 0 0 0))
+        (make-coords :pos (float-vector 0 260 -10) :rpy (list 0 0 0))
         )
   
   ;; (send *ground-larm* :newcoords
@@ -191,7 +192,9 @@
         ;; (make-coords :pos (float-vector 290  400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad  90)))
         larm-coords
         )
-
+  (setq rleg-now (send *robot* :rleg :end-coords :copy-worldcoords))
+  (setq lleg-now (send *robot* :lleg :end-coords :copy-worldcoords))
+ 
   (when avoid-collision?
     (setq *obst* (make-cube 200 200 500))
     (send *obst* :translate (float-vector 500 0 250))
@@ -218,7 +221,8 @@
          (send *robot-env* :contact "lleg" :rotate pi :z :local)
          ))
 
-  (send *robot-env* :robot :reset-manip-pose)
+  (if reset?
+      (send *robot-env* :robot :reset-manip-pose))
   ;; (send *robot* :torso-waist-p :joint-angle 30)
   ;; draw
   (unless (boundp '*irtviewer*)
@@ -242,7 +246,7 @@
                   :posture-joint-angle-list
                   (send-all (send *robot-env* :robot :joint-list) :joint-angle)
                   :kin-target-coords-list ;;幾何到達目標位置姿勢リスト
-                  (cond (fix-contact?
+                  (cond ((eq fix-contact? t)
                          (list (send *ground-rleg* :copy-worldcoords)
                                (send *ground-lleg* :copy-worldcoords)
                                (send *rarm-coords* :copy-worldcoords)
@@ -250,9 +254,17 @@
                                ;; (send *ground-larm* :copy-worldcoords)
                                )
                          )
-                        (t
+                        ((eq fix-contact? nil)
                          (list (send *robot-env* :contact "rleg" :contact-coords)
                                (send *robot-env* :contact "lleg" :contact-coords)
+                               (send *rarm-coords* :copy-worldcoords)
+                               (send *larm-coords* :copy-worldcoords)
+                               ;; (send *robot-env* :contact "larm" :contact-coords)
+                               )
+                         )
+                        (t
+                         (list rleg-now
+                               lleg-now
                                (send *rarm-coords* :copy-worldcoords)
                                (send *larm-coords* :copy-worldcoords)
                                ;; (send *robot-env* :contact "larm" :contact-coords)
@@ -268,18 +280,24 @@
                         )
                   :contact-target-coords-list
                   (if (not only-kinematics?)
-                      (cond (fix-contact?
+                      (cond ((eq fix-contact? t)
                              (list (send *ground-rleg* :copy-worldcoords)
                                    (send *ground-lleg* :copy-worldcoords)
                                    ;; (send *ground-larm* :copy-worldcoords)
                                    )
                              )
-                            (t
+                            ((eq fix-contact? nil)
                              (list (send *robot-env* :contact "rleg" :contact-coords)
                                    (send *robot-env* :contact "lleg" :contact-coords)
                                    ;; (send *robot-env* :contact "larm" :contact-coords)
                                    )
-                             )))
+                             )
+                            (t
+                             (list
+                              rleg-now
+                              lleg-now
+                              )
+                         )))
                   :contact-attention-coords-list
                   (if (not only-kinematics?)
                       (list (send *robot-env* :robot :get :rleg-contact-coords)
@@ -383,7 +401,7 @@
                         ;; (validate-jacobian :config-task (send sqp :config-task))
                         ))
                   ))
-  (send *sqp-opt* :optimize :loop-num 50)
+  (send *sqp-opt* :optimize :loop-num 80)
   )
 (warn "(jaxon_red-sqp-optimization-instant)~%")
 
