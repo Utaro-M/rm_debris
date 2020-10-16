@@ -50,18 +50,29 @@
 
 ;;(float-vector 0 0 (elt (send (car (send *robot* :links)) :worldpos) 2))
 
-(defun send-pose (time &key (force-move nil) (wait? t))
+(defun send-pose
+    (time &key (pre-pose (send *robot* :angle-vector)) (pre-lleg  (send *robot* :lleg :end-coords :copy-worldcoords) ) (force-move nil) (wait? t))
   (objects)
-  (when (or force-move (y-or-n-p "Do you move real machine?"))
-    (send *ri* :angle-vector (send *robot* :angle-vector) time)
-    (if wait?
-        (progn
-          (print "wait-interpolation")
-          (send *ri* :wait-interpolation)))
-    )
-  )
+  (if (or force-move (setq ans (y-or-n-p "Do you move real machine?")))
+      (progn
+        (send *ri* :angle-vector (send *robot* :angle-vector) time)
+        
+        (if wait?
+            (progn
+              (print "wait-interpolation")
+              (send *ri* :wait-interpolation)))
+        )
+    (progn
+      (send *robot* :angle-vector pre-pose)
+      (send *robot* :move-coords (send pre-lleg :translate #f(0 0 100)) (send *robot* :link "LLEG_LINK5"))
+      (objects)
+      (print "pre pose")
+      )
+    ))
 
-(defun reach(&key (fix-contact? t))
+
+(defun reach
+    (&key (rarm-coords (make-coords :pos (float-vector 390 -400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad -90)))) ( larm-coords (make-coords :pos (float-vector 390  400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad  90)))) (fix-contact? nil) (send? t) (wait? t))
   ;; (send *robot* :fix-leg-to-coords (make-coords))
   ;; (create-support-polygon *robot* (send (send *robot* :rleg :end-coords) :parent))
   ;; (create-support-polygon *robot* (send (send *robot* :lleg :end-coords) :parent))
@@ -75,8 +86,11 @@
   ;; (send *robot* :move-coords (make-coords :pos #f(0 0 600) :rpy (float-vector 0 (deg2rad 50) 0)) (car (send *robot* :links)))
   
   
-  (setq rarm-coords (make-coords :pos (float-vector 290 -400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad -90))))
-  (setq larm-coords (make-coords :pos (float-vector 290  400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad  90))))
+  ;; (setq rarm-coords (make-coords :pos (float-vector 290 -400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad -90))))
+  ;; (setq larm-coords (make-coords :pos (float-vector 290  400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad  90))))
+  
+  ;; (setq rarm-coords (make-coords :pos (float-vector 390 -400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad -90))))
+  ;; (setq larm-coords (make-coords :pos (float-vector 390  400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad  90))))
 
   ;; (setq rarm-coords (make-coords :pos (float-vector 390 -400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad -90))))
   ;; (setq larm-coords (make-coords :pos (float-vector 390  400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad  90))))
@@ -97,20 +111,30 @@
   ;; (my-ik rarm-coords larm-coords :cog #f(0 0 1000) :move-root-link :z)
   ;; (ik-walk rarm-coords larm-coords :cog #f(0 0 1000) :move-root-link :z)  
   ;; (ik-st rarm-coords larm-coords :cog #f(0 0 1000) :move-root-link :z)
-  (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))  
+  (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
+  (setq pre-pose (send *robot* :angle-vector))
+  (setq pre-lleg (send *robot* :lleg :end-coords :copy-worldcoords))
   (ik-opt rarm-coords larm-coords :only-kinematics t :avoid-collision nil :optimize-torque? nil :fix-contact? fix-contact?)
-  (move-on-foot rleg-coords (send *robot* :lleg :end-coords :copy-worldcoords)   (send *robot* :rleg :end-coords :copy-worldcoords))
+  
+  (if send?
+      (progn 
+        (if (not fix-contact?)
+            (move-on-foot rleg-coords (send *robot* :lleg :end-coords :copy-worldcoords)   (send *robot* :rleg :end-coords :copy-worldcoords)))
 ;  (my-ik rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog #f(0 0 1000))
 
-  ;;もどす
-  (send-pose movetime :force-move flag-simulator)
+        ;;もどす
+        (send-pose movetime :force-move flag-simulator :pre-pose pre-pose :pre-lleg pre-lleg)))
   ;; (my-ik #f(0 0 40) #f(0 0 40))
 
   )
 
+(defun start-coords()
+  (send *robot* :move-coords (make-coords :pos #f(0 100 100) :rpy #f(0 0 0) ) (send *robot* :link "LLEG_LINK5"))
+  (objects))
+
 ;;持ち上げる
 (defun heave
-    (rarm-move larm-move &key  (fix-contact? t) (cog #f(0 0 700)) (degree 0) (wait? t))
+    (rarm-move larm-move &key  (fix-contact? t) (send? t) (cog #f(0 0 700)) (degree 0) (wait? t) (reset? t))
   ;; (send *robot* :move-coords (make-coords :pos #f(0 0 600) :rpy (float-vector 0 (deg2rad 50) 0)) (car (send *robot* :links)))
   ;; (send *robot* :fix-leg-to-coords (make-coords))
   ;; (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate rarm-move))
@@ -134,10 +158,15 @@
   ;; (ik-walk rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog cog)
 
   (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
-  (ik-opt rarm-coords larm-coords :only-kinematics t :avoid-collision nil :optimize-torque? nil :fix-contact? fix-contact?)
-  (if (not fix-contact?)
-      (move-on-foot rleg-coords (send *robot* :lleg :end-coords :copy-worldcoords)   (send *robot* :rleg :end-coords :copy-worldcoords)))
-  (send-pose movetime :force-move flag-simulator :wait? wait?)
+  (setq pre-pose (send *robot* :angle-vector))
+  (setq pre-lleg (send *robot* :lleg :end-coords :copy-worldcoords))
+  (ik-opt rarm-coords larm-coords :only-kinematics t :avoid-collision nil :optimize-torque? nil :fix-contact? fix-contact? :reset? reset?)
+  (if send?
+      (progn 
+        (if (not fix-contact?)
+            (move-on-foot rleg-coords (send *robot* :lleg :end-coords :copy-worldcoords)   (send *robot* :rleg :end-coords :copy-worldcoords)))
+        (send-pose movetime :force-move flag-simulator :wait? wait? :pre-pose pre-pose :pre-lleg pre-lleg)))
+  
   ;; (setq rarm-ref-f (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
   ;; (setq larm-ref-f (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
   ;; (check-while-still rarm-ref-f larm-ref-f )
@@ -409,52 +438,7 @@
    (t
     (print "do nothing"))))
 
-;;(progn (my-init-pose)   (send *robot* :fix-leg-to-coords (make-coords)) (unix:sleep1) (reach) (unix:sleep 1) (dem-with-check-simulator))
-;;(reach)
-;;(dem-with-check-simulator)
-(defun dem-with-check-simulator()
 
-  (heave #f(0 -200 0) #f(100 200 0) :cog #f(100 0 700))
-
-  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700) :wait? nil)
-  (setq flag  (check-while-working))
-  (retry-flag-checker flag)
-  
-  (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
-  (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
-  (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 1))
-  (retry-flag-checker flag)
-  
-  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700) :wait? nil)
-  (setq flag  (check-while-working))
-  (retry-flag-checker flag)
-  
-  (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
-  (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
-  (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 1))
-  (retry-flag-checker flag)
-  
-  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700) :wait? nil)
-  (setq flag  (check-while-working))
-  (retry-flag-checker flag)
-
-  (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
-  (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
-  (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 1))
-  (retry-flag-checker flag)
-  
-  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700) :wait? nil)
-  (setq flag  (check-while-working))
-  (retry-flag-checker flag)
-
-  )
-;;   (setq  (send *robot* :angle-vector))
-;;   (setq rarm-coords (send *robot* arm :end-coords))
-;;   (unix:sleep 3)
-;;   (send *robot* :angle-vector (send *ri* :state :angle-vector))
-;;   (setq rarm-coords-drop (send *robot* arm :end-coords))
-;;   (my-ik rarm-retry-coords larm-retry-coords :rleg rleg-coords :lleg lleg-coords :cog cog)
-;; )
 
 (defun change-arm
     (offset arm)
@@ -527,120 +511,7 @@
   )
   
 
-;;#f(-10.2571 2.48265 -119.158 121.041 -23.7349 -2.51195 -10.0688 2.94909 -119.142 115.161 -17.879 -3.01482 -5.32426 12.8033 -17.6559 0.0 30.0 29.4087 -133.23 -41.5248 10.8825 -14.2435 111.379 53.7101 -33.4791 -16.9189 -143.345 22.992 5.13361 -7.01039 -144.568 -56.239 -30.3203)
-(defun change-arm-developing
-    (putback-offset &key (cog #f(0 0 700)) (degree 0) (move-root-link :z))
-  (send *robot* :angle-vector (send *ri* :state :angle-vector))
-  (send *robot* :fix-leg-to-coords (make-coords))
-  (setq rarm-coords (send *robot* :rarm :end-coords :copy-worldcoords))
-  (setq larm-coords (send *robot* :larm :end-coords :copy-worldcoords))
-  (setq rleg-coords  (send *robot* :rleg :end-coords :copy-worldcoords)
-        lleg-coords  (send *robot* :lleg :end-coords :copy-worldcoords))
 
-
-  ;;put back r-hand
-  ;; (setq rarm-coords-putback (send rarm-coords :translate (scale (* -1 putback-offset) (send  (send (send *robot* :rarm :end-coords) :copy-worldcoords) :x-axis))))
-  ;; (setq rarm-coords-putback (send (send *robot* :rarm :end-coords :copy-worldcoords) :transform-vector (scale (* -1 putback-offset) #f(1 0 0)) ))
-  (setq rarm-coords (send *robot* :rarm :end-coords :copy-worldcoords))
-  (setq larm-coords (send *robot* :larm :end-coords :copy-worldcoords))
-  (setq rarm-coords-putback (send (send rarm-coords :copy-worldcoords) :translate (v- (send (send rarm-coords :copy-worldcoords) :transform-vector (scale putback-offset #f(-1 0 0))) (send rarm-coords :worldpos))))
-  (my-ik rarm-coords-putback larm-coords :rleg rleg-coords :lleg lleg-coords  :move-root-link move-root-link)
-  (send-pose movetime :force-move flag-simulator)
-
-  (send *robot* :angle-vector (send *ri* :state :angle-vector))
-  (setq rarm-coords (send *robot* :rarm :end-coords :copy-worldcoords))
-  (setq larm-coords (send *robot* :larm :end-coords :copy-worldcoords))
-  (setq rarm-coords-slide (send (send rarm-coords :copy-worldcoords) :translate (v- (send (send rarm-coords :copy-worldcoords) :transform-vector (scale putback-offset #f(0 1 0))) (send rarm-coords :worldpos))))
-  (my-ik rarm-coords-slide larm-coords :rleg rleg-coords :lleg lleg-coords :move-root-link move-root-link)
-  (send-pose movetime :force-move flag-simulator)
-
-  (send *robot* :angle-vector (send *ri* :state :angle-vector))
-  (setq rarm-coords (send *robot* :rarm :end-coords :copy-worldcoords))
-  (setq larm-coords (send *robot* :larm :end-coords :copy-worldcoords))
-  (setq rarm-coords-push (send (send rarm-coords :copy-worldcoords) :translate (v- (send (send rarm-coords :copy-worldcoords) :transform-vector (scale putback-offset #f(1 0 0))) (send rarm-coords :worldpos))))
-  (my-ik rarm-coords-push larm-coords :rleg rleg-coords :lleg lleg-coords  :move-root-link move-root-link)
-  (send-pose movetime :force-move flag-simulator)
-
-  
-  ;; (setq rarm-coords-slide (send rarm-coords :translate (scale (* -1 putback-offset) (send  (send (send *robot* :rarm :end-coords) :copy-worldcoords) :x-axis))))
-  ;; (my-ik rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog cog :move-root-link move-root-link)
-
-  )
-
-(defun arm
-    (putback-offset)
-    (send *robot* :angle-vector (send *ri* :state :angle-vector))
-  (send *robot* :fix-leg-to-coords (make-coords))
-  (setq rarm-coords (send *robot* :rarm :end-coords :copy-worldcoords))
-  (setq larm-coords (send *robot* :larm :end-coords :copy-worldcoords))
-  (setq rleg-coords  (send *robot* :rleg :end-coords :copy-worldcoords)
-        lleg-coords  (send *robot* :lleg :end-coords :copy-worldcoords))
-
-  (send *robot* :rarm :move-end-pos (v- (send (send rarm-coords :copy-worldcoords) :transform-vector (scale putback-offset #f(-1 0 0))) (send rarm-coords :worldpos)))
-  (send-pose movetime :force-move flag-simulator)
-
-  (send *robot* :angle-vector (send *ri* :state :angle-vector))
-  (setq rarm-coords (send *robot* :rarm :end-coords :copy-worldcoords))
-  (send *robot* :rarm :move-end-pos (v- (send (send rarm-coords :copy-worldcoords) :transform-vector (scale putback-offset #f(0 1 0))) (send rarm-coords :worldpos)))
-  (send-pose movetime :force-move flag-simulator)
-
-  )
-
-
-
-(defun demo ()
-  ;; (reach #f(360 0 -700) #f(360 0 -700))
-  ;; (reach #f(260 0 -700) #f(260 0 -700))
-  ;; (reach #f(200 0 -710) #f(200 0 -710))
-  (my-init-pose)
-  ;; (send *ri* :set-impedance-controller-param :arms :D-p 400 :K-r 1e5 :D-r 1e5)
-  ;; (send *ri* :start-impedance :arms :K-r 140.0 :D-r 200.0 :M-r 5.0 :K-p 300.0 :D-p 600.0 :M-p 10.0)
-  
-  (reach)
-
-  ;; (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate #f(0  300 0)))
-  ;; (setq larm-coords (send (send *robot* :larm :end-coords :copy-worldcoords) :translate #f(0 -300 0)))
-  ;; ;; (my-ik #f(0 -280 0) #f( 0 280 0))
-  ;; (my-ik rarm-coords larm-coords)
-  ;; ;; (send-pose 3000 :force-move t)
-  ;; (send-pose 3000 :force-move nil)
-
-  ;; (heave #f(40  -400 0) #f(40  400 0))
-  ;; (heave #f(40  -300 0) #f(40  300 0))
-  ;; (heave #f(60  -700 0) #f(60  700 0) :degree 10)
-  (heave #f(100  -400 0) #f(100  400 0))
-  (heave #f(100  -300 0) #f(100  300 0))
-  ;; (setq flag-simulator nil) ;;simulatorではｔ
-
-  ;; (heave #f(10 0 0) #f(10 0 0) :cog #f(0 0 900) )
-  ;; (heave #f(40  -100 0) #f(40  100 0))
-
-  ;; (send *ri* :start-impedance :arms :K-r 140.0 :D-r 200.0 :M-r 5.0 :K-p 340.0 :D-p 600.0 :M-p 10.0)
-
-  ;; (send *ri* :go-pos 0.3 0 0)
-  ;; (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate #f(40  200 0)))
-  ;; (setq larm-coords (send (send *robot* :larm :end-coords :copy-worldcoords) :translate #f(40 -200 0)))
-  ;; (my-ik rarm-coords larm-coords)
-  ;; ;; (my-ik #f(0 -100 0) #f( 0 100 0))
-  ;; ;; (send-pose 3000 :force-move t)
-  ;; (send-pose 3000 :force-move nil)
-  ;; (heave #f(40  200 0) #f(40  -200 0))
-  
-  ;; (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate #f(0  100 0)))
-  ;; (setq larm-coords (send (send *robot* :larm :end-coords :copy-worldcoords) :translate #f(0 -100 0)))
-  ;; ;; (my-ik #f(0 -280 60) #f( 0 280 60))
-  ;; ;; (send-pose 3000 :force-move t)
-  ;; (send-pose 3000 :force-move nil)
-  ;; (heave #f(0  100 0) #f(0  -100 0))
-  
-  ;; (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate #f(0  100 0)))
-  ;; (setq larm-coords (send (send *robot* :larm :end-coords :copy-worldcoords) :translate #f(0 -100 0)))
-  ;; (send-pose 3000 :force-move nil)
-
-  ;; (my-ik #f(0 -100 0) #f( 0 100 0))
-  ;; (send-pose 3000 :force-move t)  
-
-  )
 
 (defun push-board ()
   (if auto-detect-p
@@ -676,14 +547,30 @@
   (save-log :fname name)
   )
 
-(defun my-init-pose()
+(defun my-init-pose
+    (&key (move-foot? nil))
   ;; (send *robot* :fix-leg-to-coords (make-coords))
   (objects)
   (print "init pose ")
   ;; (send *robot* :fix-leg-to-coords (make-coords))
+  (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
+  (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
   (send *robot* :reset-manip-pose)
-  ;; (send *ri* :hand-reset) ;;実機では必要？choreonoidでは不要？  
-  (send-pose movetime :force-move flag-simulator)
+  (send-pose movetime :force-move flag-simulator) 
+  ;; (send *ri* :hand-reset) ;;実機では必要？choreonoidでは不要？
+  (format t "left or right ?  ~A" (elt (send (car (send *robot* :torso)) :worldpos) 1))
+  (if move-foot?
+      (progn
+        (if (< 0 (elt (send (car (send *robot* :torso)) :worldpos) 1))
+            (progn
+              (start-coords)
+              (move-on-foot rleg-coords (send *robot* :lleg :end-coords :copy-worldcoords) (send *robot* :rleg :end-coords :copy-worldcoords)))
+          (progn
+              (start-coords)
+              (move-on-foot lleg-coords (send *robot* :rleg :end-coords :copy-worldcoords) (send *robot* :lleg :end-coords :copy-worldcoords)))
+          )
+        ))
+        
   )
 
 ;; (defun save(&key (fname "emergency"))
@@ -717,217 +604,7 @@
 ;;heave #f(0 -200 0) #f(0 200 0)
 ;;(send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500)
 
-(defun dem-simulator()
-  ;; (load "~/research/rm_debris/rm_board/euslisp/heave.l")
-  ;; (prepare-simulator)
-  (my-init-pose)
-  (reach)
-  (heave #f(100 0 0) #f( 100 0 0) :cog #f(100 0 700))
-  (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500)
 
-  (send *ri* :set-reference-force-updater-param :arms :motion-dir #f(0 0 -1) :p-gain 0.01 :update-time-ratio 1.0)
-  (send *ri* :start-reference-force-updater :arms)
-  
-  (heave #f(0 -50 0) #f(0 50 0))
-
-  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700))
-
-  ;; (progn (setq theta 40) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms))
-
-  (heave #f(60 -400 0) #f(60 400 0) :cog #f(100 0 800))
-
-  ;; (progn (setq theta 60) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms))
-
-  (stand-up 1000  :cog #f(100 0 900))
-
-  (stand-up 1000  :cog #f(100 0 900))
-
-  (heave #f(60 -100 0) #f(60 100 0) :cog #f(100 0 1000))
-
-  ;; (progn (setq theta 80) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms))
-
-  ;; (progn (setq theta 80) (send *ri* :set-ref-force (scale 2 (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta))))) 2000 :larm) (change-arm 140 :rarm))
-  ;; (progn (setq theta 80) (send *ri* :set-ref-force (scale 2 (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta))))) 2000 :rarm) (change-arm 140 :larm))
-
-  ;; (progn (setq theta 80) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms))
-
-  ;; (send *ri* :go-pos 0.3 0 0)
-  ;; (send *ri* :go-pos 0.3 0 0)
-
-  ;; (setq theta 80) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms)
-  
-  )
-
-(defun dem-pre()
-
-  (setq movetime 18000)
-
-  (my-init-pose)
-  (unix::sleep 3)
-  (reach)
-  (unix::sleep 3)
-)
-
-(defun dem-mid()  
-  ;; (heave #f(100 0 0) #f( 100 0 0) :cog #f(100 0 700))
-  ;; (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500)
-  (setq movetime 9000)
-  (progn (setq theta 10) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms))
-  (unix::sleep 3)
-  
-  (heave #f(50 -50 0) #f(50 50 0))
-  (unix::sleep 3)
-  
-  (heave #f(60 -200 0) #f(60 200 0) :cog #f(100 0 700))
-  (unix::sleep 3)
-  
-  (progn (setq theta 40) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms))
-  (unix::sleep 3)
-  
-  (heave #f(60 -400 0) #f(60 400 0) :cog #f(100 0 800))
-  (unix::sleep 3)
-  
-  (progn (setq theta 60) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms))
-  (unix::sleep 3)
-  
-  (stand-up 1000  :cog #f(100 0 900))
-  (unix::sleep 3)
-  
-  (stand-up 1000  :cog #f(100 0 900))
-  (unix::sleep 3)
-  
-  ;; (stand-up 1000  :cog #f(100 0 900))
-  ;; (unix::sleep 3)
-  
-  (heave #f(60 -100 0) #f(60 100 0) :cog #f(100 0 1000))
-  (unix::sleep 3)
-  
-  (progn (setq theta 80) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms))
-  (unix::sleep 3)
-
-  )
-
-(defun dem-post()
-  (progn (setq theta 80) (send *ri* :set-ref-force (scale 2 (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta))))) 2000 :larm) (change-arm 140 :rarm))
-  (unix::sleep 3)
-  
-  (progn (setq theta 80) (send *ri* :set-ref-force (scale 2 (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta))))) 2000 :rarm) (change-arm 140 :larm))
-  (unix::sleep 3)
-  
-  (progn (setq theta 80) (send *ri* :set-ref-force (float-vector  (* (* -4 9.8) (* (cos (deg2rad theta)) (sin (deg2rad theta)))) 0  (* (* -4 9.8) (cos (deg2rad theta)))) 2000 :arms))
-  )
-
-
-(defun dem-with-check-pre()
-  (setq movetime 18000)
-  (my-init-pose)
-  (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
-  (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
-  (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 1))
-  ;; (unix::sleep 3)
-
-  (reach)
-  (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
-  (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
-  (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 1))
-  ;; (unix::sleep 3)
-)
-
-(defun dem-with-check-mid()  
-  ;; (heave #f(100 0 0) #f( 100 0 0) :cog #f(100 0 700))
-  ;; (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500)
-  (setq movetime 10000)
-  
-  (send *ri* :set-reference-force-updater-param :arms :motion-dir #f(0 0 -1) :p-gain 0.01 :update-time-ratio 1.0)
-  (send *ri* :start-reference-force-updater :arms)
-  (unix::sleep 2)
-
-  
-  ;; (heave #f(50 -50 0) #f(50 50 0))
-  
-  ;; (progn
-  ;;   (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
-  ;;   (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
-  ;;   (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 1)))
-
-  (progn 
-    (heave #f(60 -200 0) #f(60 200 0) :cog #f(100 0 700) :wait? nil)
-    (setq flag  (check-while-working :thre-list (list 40 40))))
-
-  (progn
-    (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
-    (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
-    (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 1)))
-
-  ;; (heave #f(60 -400 0) #f(60 400 0) :cog #f(100 0 800) :wait? nil)
-  (heave #f(0 -400 0) #f(0 400 0) :cog #f(100 0 800) :wait? nil)
-  (setq flag  (check-while-working :thre-list (list 40 40)))
-
-  (progn
-    (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
-    (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
-    (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 1)))
-
-  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 800) :wait? nil)
-  (setq flag  (check-while-working :thre-list (list 40 40)))
-
-  (progn
-    (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
-    (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
-    (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 1)))
-
-  ;; (stand-up 1000  :cog #f(100 0 900))
-  ;; (setq flag  (check-while-working :thre-list (list 40 40)))
-
-  ;; (progn
-  ;;   (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
-  ;;   (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
-  ;;   (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 1)))
-
-  ;; (stand-up 1000  :cog #f(100 0 900) )
-  ;; (setq flag  (check-while-working :thre-list (list 40 40)))
-
-  ;; (progn
-  ;;   (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
-  ;;   (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
-  ;;   (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 1)))
-  
-  ;; (stand-up 1000  :cog #f(100 0 900))
-  ;; (unix::sleep 3)
-  
-  ;; (heave #f(60 -100 0) #f(60 100 0) :cog #f(100 0 1000) :wait? nil)
-  ;; (setq flag  (check-while-working :thre-list (list 40 40)))
-
-  ;; (progn
-  ;;   (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
-  ;;   (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
-  ;;   (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 1)))
-
-  )
-
-;;1011実機実験最終
-(defun dem-with-check-lift()
-  (setq movetime 12000)
-  (progn 
-    (heave #f(60 -200 0) #f(60 200 0) :cog #f(100 0 700)))
-  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700))
-
-  (send *ri* :start-log) (unix::sleep 1)
-  (heave #f(0 -400 0) #f(0 400 0) :cog #f(100 0 800) :wait? nil)
-  (setq flag  (check-while-working :thre-list (list 10 10)))
-
-  (progn
-    (setq rarm-f-ref (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
-    (setq larm-f-ref (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
-    (setq flag (check-while-still rarm-f-ref larm-f-ref :checking-time 1)))
-  (save-log :fname "check-while-lifting" :log-dir "matsuura/log")
-  (seq movetime 18000)
-)
-
-(defun dem-test()
-  (progn 
-    (heave #f(200 -100 0) #f(200 100 0) :cog #f(100 0 700) :wait? nil)
-    (setq flag  (check-while-working))))
 
 
 ;;progn (send *ri* :set-log-maxlength 30)(unix:sleep 2) (send *ri* :start-log)(heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (unix:sleep 2)  (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700)) (check-while-working) (save-log :fname "check")
