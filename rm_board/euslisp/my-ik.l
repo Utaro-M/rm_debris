@@ -411,10 +411,11 @@
 (warn "(jaxon_red-sqp-optimization-instant)~%")
 
 
-(defun move-on-foot(init-rcoords init-lcoords next-rcoords  next-lcoords)
-  (setq ldif (send (send init-lcoords :copy-worldcoords) :transformation init-lcoords))
-  (setq rdif (send (send init-rcoords :copy-worldcoords) :transformation next-rcoords))
-  (send *ri* :set-foot-steps
+(defun move-on-foot(init-rcoords init-lcoords next-rcoords  next-lcoords &key (which? :lleg))
+  ;; (setq ldif (send (send init-lcoords :copy-worldcoords) :transformation init-lcoords))
+  ;; (setq rdif (send (send init-rcoords :copy-worldcoords) :transformation next-rcoords))
+  (if (eq which? :lleg)
+      (send *ri* :set-foot-steps
         ;; (list
         ;;  (make-coords :coords init-rcoords :name :rleg)
         ;;  (make-coords :coords (send (send init-lcoords :copy-worldcoords) :translate (send ldif :worldpos) :rpy (car (send ldif :rpy-angle))) :name :lleg)
@@ -427,7 +428,22 @@
          (make-coords :coords  next-lcoords :name :lleg)
          (make-coords :coords  next-rcoords :name :rleg)
          
-        )
+         ))
+    (send *ri* :set-foot-steps
+        ;; (list
+        ;;  (make-coords :coords init-rcoords :name :rleg)
+        ;;  (make-coords :coords (send (send init-lcoords :copy-worldcoords) :translate (send ldif :worldpos) :rpy (car (send ldif :rpy-angle))) :name :lleg)
+        ;;  (make-coords :coords (send (send init-rcoords :copy-worldcoords) :translate (send rdif :worldpos) :rpy (car (send rdif :rpy-angle))) :name :rleg)
+        ;;  ;; (make-coords :coords (send (send init-rcoords :copy-worldcoords) :transformation next-rcoords) :name :rleg)
+        ;;  ;; (make-coords :coords (send (send init-lcoords :copy-worldcoords) :transformation next-lcoords) :name :lleg)
+        ;;  )
+        (list
+         (make-coords :coords init-lcoords :name :lleg)
+         (make-coords :coords  next-rcoords :name :rleg)
+         (make-coords :coords  next-lcoords :name :lleg)
+         
+         ))
+    )
   ;; (format t "rleg init ~A~%" init-rcoords)
   ;; (format t "lleg init ~A~%" init-lcoords)
   ;; (format t "rleg ~A~%" (make-coords :coords (send init-rcoords :transformation next-rcoords) :name :rleg))
