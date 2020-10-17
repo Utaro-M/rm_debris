@@ -201,8 +201,11 @@
   (setq lleg-now (send *robot* :lleg :end-coords :copy-worldcoords))
  
   (when avoid-collision?
-    (setq *obst* (make-cube 160 600 500))
-    (send *obst* :translate (float-vector (- (elt (send rarm-coords :worldpos) 0) 100) 0 250))
+    ;; (setq *obst* (make-cube 160 600 500))
+    ;; (send *obst* :translate (float-vector (- (elt (send rarm-coords :worldpos) 0) 100) 0 250))
+    ;;big board version
+    (setq *obst* (make-cube 100 1000 200)) 
+    (send *obst* :translate (float-vector (- (elt (send rarm-coords :worldpos) 0) 50) 0 100))
     (send *obst* :set-color (float-vector 1 0 0) 0.5)
     )
   ;; setup robot

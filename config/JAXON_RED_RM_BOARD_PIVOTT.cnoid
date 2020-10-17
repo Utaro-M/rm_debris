@@ -1,0 +1,562 @@
+items: 
+  id: 0
+  name: "Root"
+  plugin: Base
+  class: RootItem
+  children: 
+    - 
+      id: 1
+      name: "World"
+      plugin: Body
+      class: WorldItem
+      data: 
+        collisionDetection: false
+        collisionDetector: AISTCollisionDetector
+        materialTableFile: "${SHARE}/default/materials.yaml"
+      children: 
+        - 
+          id: 2
+          name: "JAXON_RED"
+          plugin: Body
+          class: BodyItem
+          data: 
+            modelFile: "/home/utaro/catkin_ws/jaxon_tutorial/src/rtmros_choreonoid/jvrc_models/JAXON_JVRC/JAXON_JVRCmain_hrpsys_bush.wrl"
+            currentBaseLink: "WAIST"
+            rootPosition: [ 0.0299242917, 0.227756962, 0.953688741 ]
+            rootAttitude: [ 
+              0.112140717, -0.94588992, 0.3044942, 
+              0.927350656, 0.209706648, 0.309909474, 
+              -0.356994705, 0.247619426, 0.900688292 ]
+            jointPositions: [ 
+              -0.117933, -0.578172, -0.880280,  0.440178,  0.016216,  0.328358,  0.153966, -0.235976, -0.644637,  0.547519, 
+              -0.230821, -0.080965, -0.055528,  0.112991,  0.196863,  0.042904,  0.539765,  0.016409,  0.301461, -1.937554, 
+               0.616891, -1.432447, -0.402244,  0.772973, -1.174574, -0.242252,  1.004612,  0.796493,  0.294664, -1.609040, 
+              -0.363344,  0.288680, -0.264741,  0.000233,  0.000466,  0.013196, -0.000107,  3450.080244,  0.000605, -0.000535, 
+               0.006334,  0.000523, -0.000721,  0.006332 ]
+            initialRootPosition: [ 0.00548713107, -0.00975428003, 0.975026203 ]
+            initialRootAttitude: [ 
+              -0.00384769871, -0.999992425, 0.00058633272, 
+              0.999946519, -0.00385314944, -0.00959748841, 
+              0.00959967495, 0.000549373114, 0.999953771 ]
+            initialJointPositions: [ 
+               0.000011,  0.003210, -0.301548,  0.702013, -0.400226, -0.004265, -0.000339,  0.000233, -0.303264,  0.701841, 
+              -0.398325,  0.000406, -0.000005, -0.000799,  0.000000,  0.000000,  0.000207,  0.068524,  0.698841, -0.470890, 
+               0.117473, -1.341774, -0.222926, -0.209035, -0.413582, -0.068500,  0.698818,  0.470862, -0.117930, -1.342015, 
+               0.222970,  0.209565, -0.413404,  0.000066,  0.000133,  0.000066,  0.000132,  3380.580496,  0.000582, -0.000122, 
+               0.008892,  0.000592, -0.000195,  0.008954 ]
+            zmp: [ 0, 0, 0 ]
+            collisionDetection: true
+            selfCollisionDetection: false
+            isEditable: true
+          children: 
+            - 
+              id: 3
+              name: "BodyRTC"
+              plugin: OpenRTM
+              class: BodyRTCItem
+              data: 
+                isNoDelayMode: true
+                controllerOptions: ""
+                moduleName: "/home/utaro/catkin_ws/jaxon_tutorial/src/rtmros_choreonoid/hrpsys_choreonoid/PDcontroller"
+                confFileName: "${PROJECT_DIR}/SensorReaderRTC_JAXON_RED.PD.conf"
+                configurationMode: "Use Configuration File"
+                autoConnect: false
+                instanceName: "JAXON_RED(Robot)0"
+                bodyPeriodicRate: 0.002
+                baseDirectory: "RTC directory"
+        - 
+          id: 4
+          name: "floor"
+          plugin: Body
+          class: BodyItem
+          data: 
+            modelFile: "${SHARE}/model/misc/floor.body"
+            currentBaseLink: ""
+            rootPosition: [ 0, 0, -0.1 ]
+            rootAttitude: [ 
+              1, 0, 0, 
+              0, 1, 0, 
+              0, 0, 1 ]
+            jointPositions: [  ]
+            initialRootPosition: [ 0, 0, -0.1 ]
+            initialRootAttitude: [ 
+              1, 0, 0, 
+              0, 1, 0, 
+              0, 0, 1 ]
+            zmp: [ 0, 0, 0 ]
+            collisionDetection: true
+            selfCollisionDetection: false
+            isEditable: true
+        - 
+          id: 5
+          name: "AISTSimulator"
+          plugin: Body
+          class: AISTSimulatorItem
+          data: 
+            realtimeSync: true
+            recording: "full"
+            timeRangeMode: "Active control period"
+            timeLength: 12000
+            allLinkPositionOutputMode: false
+            deviceStateOutput: true
+            controllerThreads: true
+            recordCollisionData: false
+            controllerOptions: ""
+            dynamicsMode: "Forward dynamics"
+            integrationMode: "Runge Kutta"
+            gravity: [ 0, 0, -9.80665 ]
+            staticFriction: 1
+            dynamicFriction: 1
+            cullingThresh: 0.005
+            contactCullingDepth: 0.03
+            errorCriterion: 0.001
+            maxNumIterations: 1000
+            contactCorrectionDepth: 0.0001
+            contactCorrectionVelocityRatio: 1
+            kinematicWalking: false
+            2Dmode: false
+            oldAccelSensorMode: false
+          children: 
+            - 
+              id: 6
+              name: "GLVisionSimulator"
+              plugin: Body
+              class: GLVisionSimulatorItem
+              data: 
+                enabled: true
+                targetBodies: [ JAXON_RED ]
+                targetSensors: [ HEAD_LEFT_CAMERA ]
+                maxFrameRate: 1000
+                maxLatency: 1
+                recordVisionData: false
+                threadMode: Screen
+                bestEffort: false
+                allSceneObjects: false
+                rangeSensorPrecisionRatio: 2
+                depthError: 0
+                enableHeadLight: true
+                enableAdditionalLights: true
+                antiAliasing: false
+            - 
+              id: 7
+              name: "GLVisionSimulator"
+              plugin: Body
+              class: GLVisionSimulatorItem
+              data: 
+                enabled: true
+                targetBodies: [ JAXON_RED ]
+                targetSensors: [ HEAD_RIGHT_CAMERA ]
+                maxFrameRate: 1000
+                maxLatency: 1
+                recordVisionData: false
+                threadMode: Screen
+                bestEffort: false
+                allSceneObjects: false
+                rangeSensorPrecisionRatio: 2
+                depthError: 0
+                enableHeadLight: true
+                enableAdditionalLights: true
+                antiAliasing: false
+            - 
+              id: 8
+              name: "GLVisionSimulator"
+              plugin: Body
+              class: GLVisionSimulatorItem
+              data: 
+                enabled: true
+                targetBodies: [ JAXON_RED ]
+                targetSensors: [ HEAD_RANGE ]
+                maxFrameRate: 1000
+                maxLatency: 1
+                recordVisionData: false
+                threadMode: Screen
+                bestEffort: false
+                allSceneObjects: false
+                rangeSensorPrecisionRatio: 2
+                depthError: 0
+                enableHeadLight: true
+                enableAdditionalLights: true
+                antiAliasing: false
+        - 
+          id: 9
+          name: "box1"
+          plugin: Body
+          class: BodyItem
+          data: 
+            modelFile: "${SHARE}/model/misc/box1.body"
+            currentBaseLink: "body"
+            rootPosition: [ 0.449958065, 0.800964566, 0.0999208937 ]
+            rootAttitude: [ 
+              -0.00119106544, -0.999999291, 2.2674388e-07, 
+              0.999999269, -0.00119106546, -0.000208823756, 
+              0.000208823878, -2.19790328e-08, 0.999999978 ]
+            jointPositions: [  ]
+            initialRootPosition: [ 0.449957716, 0.800821328, 0.0999707189 ]
+            initialRootAttitude: [ 
+              -0.000825253788, -0.999999659, -2.32386686e-05, 
+              0.999999475, -0.000825239507, -0.000607990327, 
+              0.000607970942, -2.37404027e-05, 0.999999815 ]
+            zmp: [ 0, 0, 0 ]
+            collisionDetection: true
+            selfCollisionDetection: false
+            isEditable: true
+        - 
+          id: 10
+          name: "ros_service_server.py"
+          plugin: Python
+          class: PythonScriptItem
+          data: 
+            file: "/home/utaro/catkin_ws/jaxon_tutorial/src/rtmros_choreonoid/hrpsys_choreonoid/scripts/ros_service_server.py"
+            executionOnLoading: true
+            backgroundExecution: false
+        - 
+          id: 11
+          name: "stopper-pivot"
+          plugin: Body
+          class: BodyItem
+          data: 
+            modelFile: "${SHARE}/model/misc/stopper_pivot.body"
+            currentBaseLink: "body"
+            rootPosition: [ 0.449767345, 0.539146909, 0.153634783 ]
+            rootAttitude: [ 
+              -0.00315786372, -0.999994989, 0.000222830305, 
+              0.996348766, -0.00316536086, -0.0853177467, 
+              0.0853180245, -4.74051028e-05, 0.996353769 ]
+            jointPositions: [  ]
+            initialRootPosition: [ 0.44985577, 0.5523179, 0.179754937 ]
+            initialRootAttitude: [ 
+              -0.00191254119, -0.999997583, 0.00108470079, 
+              0.999998162, -0.00191268744, -0.000133807319, 
+              0.000135881689, 0.00108444288, 0.999999403 ]
+            zmp: [ 0, 0, 0 ]
+            collisionDetection: true
+            selfCollisionDetection: false
+            isEditable: true
+        - 
+          id: 12
+          name: "board-pivot"
+          plugin: Body
+          class: BodyItem
+          data: 
+            modelFile: "${SHARE}/model/misc/board_pivot.body"
+            currentBaseLink: "body"
+            rootPosition: [ 0, 0.5675, 0.4428 ]
+            rootAttitude: [ 
+              0.999996888, 0.000472251129, 0.0024494952, 
+              0.00249126895, -0.239810457, -0.970816532, 
+              0.000128945359, 0.970819614, -0.239810887 ]
+            jointPositions: [  ]
+            initialRootPosition: [ 0, 0.5675, 0.4428 ]
+            initialRootAttitude: [ 
+              0.999996888, 0.000472251129, 0.0024494952, 
+              0.00249126895, -0.239810457, -0.970816532, 
+              0.00012894536, 0.970819614, -0.239810887 ]
+            zmp: [ 0, 0, 0 ]
+            collisionDetection: true
+            selfCollisionDetection: false
+            isEditable: true
+views: 
+  - 
+    id: 0
+    name: "CameraImage"
+    plugin: Base
+    class: ImageView
+    mounted: true
+  - 
+    id: 1
+    plugin: Base
+    class: ItemPropertyView
+    mounted: true
+  - 
+    id: 2
+    plugin: Base
+    class: ItemTreeView
+    mounted: true
+    state: 
+      selected: [ 12 ]
+      checked: [ 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 ]
+      expanded: [ 1, 2, 3, 9, 11, 12 ]
+  - 
+    id: 3
+    plugin: Base
+    class: MessageView
+    mounted: true
+  - 
+    id: 4
+    plugin: Base
+    class: SceneView
+    mounted: true
+    state: 
+      editMode: false
+      viewpointControlMode: thirdPerson
+      collisionLines: false
+      polygonMode: fill
+      cullingMode: enabled
+      defaultHeadLight: true
+      defaultHeadLightIntensity: 0.75
+      headLightLightingFromBack: false
+      worldLight: true
+      worldLightIntensity: 0.5
+      worldLightAmbient: 0.3
+      additionalLights: true
+      fog: true
+      floorGrid: true
+      floorGridSpan: 10
+      floorGridInterval: 0.5
+      xzGridSpan: 10
+      xzGridInterval: 0.5
+      xzGrid: false
+      yzGridSpan: 10
+      yzGridInterval: 0.5
+      texture: true
+      lineWidth: 1
+      pointSize: 1
+      normalVisualization: false
+      normalLength: 0.01
+      coordinateAxes: true
+      fpsTestIteration: 1
+      showFPS: false
+      enableNewDisplayListDoubleRendering: false
+      useBufferForPicking: true
+      upsideDown: false
+      cameras: 
+        - 
+          camera: [ System, Perspective ]
+          isCurrent: true
+          fieldOfView: 0.6978
+          near: 0.01
+          far: 100
+          eye: [ -0.0827965868, -6.35423439, 2.62280056 ]
+          direction: [ 0.345451917, 0.840403346, -0.417594528 ]
+          up: [ 0.158764598, 0.386236963, 0.908633485 ]
+        - 
+          camera: [ System, Orthographic ]
+          orthoHeight: 20
+          near: 0.01
+          far: 100
+      backgroundColor: [ 0.100000001, 0.100000001, 0.300000012 ]
+      gridColor: [ 0.899999976, 0.899999976, 0.899999976, 1 ]
+      xzgridColor: [ 0.899999976, 0.899999976, 0.899999976, 1 ]
+      yzgridColor: [ 0.899999976, 0.899999976, 0.899999976, 1 ]
+      dedicatedItemTreeViewChecks: false
+  - 
+    id: 5
+    name: "Task"
+    plugin: Base
+    class: TaskView
+    state: 
+      layoutMode: horizontal
+      isAutoMode: false
+  - 
+    id: 6
+    plugin: Body
+    class: BodyLinkView
+    mounted: true
+    state: 
+      showRotationMatrix: false
+  - 
+    id: 7
+    plugin: Body
+    class: JointSliderView
+    mounted: true
+    state: 
+      showAllJoints: true
+      jointId: false
+      name: true
+      numColumns: 1
+      spinBox: true
+      slider: true
+      dial: false
+      labelOnLeft: true
+      currentBodyItem: 12
+  - 
+    id: 8
+    plugin: Body
+    class: LinkSelectionView
+    mounted: true
+    state: 
+      listingMode: "Joint List"
+      currentBodyItem: 12
+      bodyItems: 
+        - 
+          id: 2
+          selectedLinks: [ 24 ]
+        - 
+          id: 4
+          selectedLinks: [ 0 ]
+        - 
+          id: 12
+          selectedLinks: [ 0 ]
+        - 
+          id: 11
+          selectedLinks: [ 0 ]
+  - 
+    id: 9
+    plugin: OpenRTM
+    class: RTSNameServerView
+    state: 
+      NameServers: 
+        - 
+          isDefaultNameServer: true
+          host: "localhost"
+          port: 15005
+  - 
+    id: 10
+    plugin: Python
+    class: PythonConsoleView
+    mounted: true
+toolbars: 
+  "KinematicsBar": 
+    mode: AUTO
+    enablePositionDragger: true
+    penetrationBlock: false
+    collisionLinkHighlight: false
+    snapDistance: 0.025
+    penetrationBlockDepth: 0.0005
+    lazyCollisionDetectionMode: true
+  "TimeBar": 
+    minTime: 0
+    maxTime: 12000
+    frameRate: 1000
+    playbackFrameRate: 50
+    idleLoopDrivenMode: false
+    currentTime: 69.509
+    speedScale: 1
+    syncToOngoingUpdates: true
+    autoExpansion: true
+  "BodyBar": 
+    current: 12
+  "LeggedBodyBar": 
+    stanceWidth: 0.15
+  "BodyMotionGenerationBar": 
+    autoGenerationForNewBody: true
+    balancer: false
+    autoGeneration: false
+    timeScaleRatio: 1
+    preInitialDuration: 1
+    postFinalDuration: 1
+    onlyTimeBarRange: false
+    makeNewBodyItem: true
+    stealthyStepMode: true
+    stealthyHeightRatioThresh: 2
+    flatLiftingHeight: 0.005
+    flatLandingHeight: 0.005
+    impactReductionHeight: 0.005
+    impactReductionTime: 0.04
+    autoZmp: true
+    minZmpTransitionTime: 0.1
+    zmpCenteringTimeThresh: 0.03
+    zmpTimeMarginBeforeLiftingSpin: 0
+    zmpMaxDistanceFromCenter: 0.02
+    allLinkPositions: false
+    lipSyncMix: false
+    timeToStartBalancer: 0
+    balancerIterations: 2
+    plainBalancerMode: false
+    boundaryConditionType: position
+    boundarySmootherType: quintic
+    boundarySmootherTime: 0.5
+    boundaryCmAdjustment: false
+    boundaryCmAdjustmentTime: 1
+    waistHeightRelaxation: false
+    gravity: 9.8
+    dynamicsTimeRatio: 1
+Body: 
+  "BodyMotionEngine": 
+    updateJointVelocities: false
+  "EditableSceneBody": 
+    editableSceneBodies: 
+      - 
+        bodyItem: 2
+        showCenterOfMass: false
+        showPpcom: true
+        showZmp: false
+      - 
+        bodyItem: 4
+        showCenterOfMass: false
+        showPpcom: false
+        showZmp: false
+      - 
+        bodyItem: 9
+        showCenterOfMass: false
+        showPpcom: false
+        showZmp: false
+      - 
+        bodyItem: 11
+        showCenterOfMass: false
+        showPpcom: false
+        showZmp: false
+      - 
+        bodyItem: 12
+        showCenterOfMass: false
+        showPpcom: false
+        showZmp: false
+    staticModelEditing: false
+  "KinematicFaultChecker": 
+    checkJointPositions: true
+    angleMargin: 0
+    translationMargin: 0
+    checkJointVelocities: true
+    velocityLimitRatio: 100
+    targetJoints: all
+    checkSelfCollisions: true
+    onlyTimeBarRange: false
+  "SplineFilterDialog": 
+    isInputFrameRateSpecified: false
+    inputFrameRate: 200
+    isOutputFrameRateSpecified: false
+    outputFrameRate: 200
+OpenRTM: 
+  "deleteUnmanagedRTCsOnStartingSimulation": false
+viewAreas: 
+  - 
+    type: embedded
+    tabs: true
+    contents: 
+      type: splitter
+      orientation: horizontal
+      sizes: [ 406, 2083 ]
+      children: 
+        - 
+          type: splitter
+          orientation: vertical
+          sizes: [ 719, 732 ]
+          children: 
+            - 
+              type: pane
+              views: [ 2 ]
+              current: 2
+            - 
+              type: pane
+              views: [ 1, 8 ]
+              current: 1
+        - 
+          type: splitter
+          orientation: vertical
+          sizes: [ 1074, 377 ]
+          children: 
+            - 
+              type: splitter
+              orientation: horizontal
+              sizes: [ 360, 1719 ]
+              children: 
+                - 
+                  type: pane
+                  views: [ 6, 7, 0 ]
+                  current: 6
+                - 
+                  type: pane
+                  views: [ 4 ]
+                  current: 4
+            - 
+              type: pane
+              views: [ 3, 10 ]
+              current: 3
+layoutOfToolBars: 
+  rows: 
+    - 
+      - { name: "FileBar", x: 0, priority: 0 }
+      - { name: "ScriptBar", x: 47, priority: 3 }
+      - { name: "TimeBar", x: 47, priority: 1 }
+      - { name: "SceneBar", x: 1455, priority: 2 }
+      - { name: "SimulationBar", x: 1464, priority: 0 }
