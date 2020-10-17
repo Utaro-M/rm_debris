@@ -330,17 +330,22 @@
     (heave #f(200 -100 0) #f(200 100 0) :cog #f(100 0 700) :wait? nil)
     (setq flag  (check-while-working))))
 
+  
 ;;手をしっかり回し込むバージョンと
 ;;斜めで横に当てて押すバージョン
 (defun dem-pivot()
- (my-init-pose :move-foot? t) (start-coords)
-         (setq rarm-coords (make-coords :pos (float-vector 540 -500 800) :rpy (float-vector (deg2rad 100) (deg2rad  20) (deg2rad 00))))
-(setq rarm-coords (make-coords :pos (float-vector 540 -500 800) :rpy (float-vector (deg2rad 100) (deg2rad  60) (deg2rad 00))))         
-;; (setq larm-coords (make-coords :pos (float-vector 500 400 900) :rpy (float-vector 0 (deg2rad  60) (deg2rad 90))))
-(reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t)
-;; (heave #f(100 0 0) #f(0 0 -50) :reset? t :fix-contact? 2 :send? nil)
-(heave #f(50 0 200) #f(0 0 -50) :reset? t :fix-contact? 2 :send? nil)
-(heave #f(100 0 100) #f(0 0 -50) :reset? t :fix-contact? nil :send? nil)
-(heave #f(100 0 100) #f(0 0 -50) :reset? t :fix-contact? nil :send? nil)
-)
+  (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500)
+  (send *ri* :set-reference-force-updater-param :arms :motion-dir #f(0 0 -1) :p-gain 0.01 :update-time-ratio 1.0)
+  (send *ri* :start-reference-force-updater :arms)
+  
+  (my-init-pose :move-foot? t) (start-coords)
+  ;; (setq rarm-coords (make-coords :pos (float-vector 540 -500 800) :rpy (float-vector (deg2rad 100) (deg2rad  20) (deg2rad 00))))
+  (setq rarm-coords (make-coords :pos (float-vector 600 -600 780) :rpy (float-vector (deg2rad 100) (deg2rad  60) (deg2rad 00))))         
+  (setq larm-coords (make-coords :pos (float-vector 500 400 950) :rpy (float-vector 0 (deg2rad  60) (deg2rad 90))))
+  (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? nil :avoid-collision? t)
+  ;; (heave #f(100 0 0) #f(0 0 -50) :reset? t :fix-contact? 2 :send? nil)
+  ;; (heave #f(50 0 200) #f(0 0 -50) :reset? t :fix-contact? 2 :send? nil)
+  ;; (heave #f(100 0 100) #f(0 0 -50) :reset? t :fix-contact? nil :send? nil)
+  ;; (heave #f(100 0 100) #f(0 0 -50) :reset? t :fix-contact? nil :send? nil)
+  )
 

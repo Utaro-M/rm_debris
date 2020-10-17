@@ -115,7 +115,7 @@
   (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
   (setq pre-pose (send *robot* :angle-vector))
   (setq pre-lleg (send *robot* :lleg :end-coords :copy-worldcoords))
-  (ik-opt rarm-coords larm-coords :only-kinematics t :avoid-collision nil :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision?)
+  (ik-opt rarm-coords larm-coords :only-kinematics nil :avoid-collision nil :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision?)
   
   (if send?
       (progn 
@@ -558,12 +558,14 @@
   (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
   (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
   (send *robot* :reset-manip-pose)
-  (send-pose movetime :force-move flag-simulator) 
+  (send-pose movetime :force-move flag-simulator)
   ;; (send *ri* :hand-reset) ;;実機では必要？choreonoidでは不要？
   (format t "left or right ?  ~A" (elt (send (car (send *robot* :torso)) :worldpos) 1))
   (if move-foot?
-      (progn
-        ;; (if (< 0 (elt (send (car (send *robot* :torso)) :worldpos) 1))
+      (if (< 0 (elt (send (car (send *robot* :torso)) :worldpos) 1))
+          (progn
+            (start-coords)
+            (move-on-foot rleg-coords lleg-coords (send *robot* :rleg :end-coords :copy-worldcoords) (send *robot* :lleg :end-coords :copy-worldcoords) :which? :lleg))
         ;;     (progn
         ;;       (start-coords)
         ;;       (move-on-foot rleg-coords lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords) (send *robot* :rleg :end-coords :copy-worldcoords)))
@@ -571,10 +573,11 @@
         ;;       (start-coords)
         ;;       (move-on-foot rleg-coords lleg-coords (send *robot* :rleg :end-coords :copy-worldcoords) (send *robot* :lleg :end-coords :copy-worldcoords)))
         ;;   )
-        (start-coords)
-        (move-on-foot rleg-coords lleg-coords (send *robot* :rleg :end-coords :copy-worldcoords) (send *robot* :lleg :end-coords :copy-worldcoords)))
-        ))
-        
+        (progn
+          (start-coords)
+          (move-on-foot rleg-coords lleg-coords (send *robot* :rleg :end-coords :copy-worldcoords) (send *robot* :lleg :end-coords :copy-worldcoords) :which? :rleg))
+        )
+    )
   )
 
 ;; (defun save(&key (fname "emergency"))
