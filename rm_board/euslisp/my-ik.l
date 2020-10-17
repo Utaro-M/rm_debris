@@ -122,14 +122,15 @@
   (send (send *robot* :joint "LARM_JOINT0") :min-angle -40)
   (send (send *robot* :joint "LARM_JOINT0") :max-angle 0)
   ;;肩の特異点問題dem-step-simulator
-  (send (send *robot* :joint "RARM_JOINT1") :min-angle -100)
-  (send (send *robot* :joint "RARM_JOINT1") :max-angle 80)
-  (send (send *robot* :joint "LARM_JOINT1") :min-angle -100)
-  (send (send *robot* :joint "LARM_JOINT1") :max-angle 80)
-  ;; (send (send *robot* :joint "RARM_JOINT1") :min-angle -120)
-  ;; (send (send *robot* :joint "RARM_JOINT1") :max-angle 120)
-  ;; (send (send *robot* :joint "LARM_JOINT1") :min-angle -120)
-  ;; (send (send *robot* :joint "LARM_JOINT1") :max-angle 120)
+  ;; (send (send *robot* :joint "RARM_JOINT1") :min-angle -100)
+  ;; (send (send *robot* :joint "RARM_JOINT1") :max-angle 80)
+  ;; (send (send *robot* :joint "LARM_JOINT1") :min-angle -100)
+  ;; (send (send *robot* :joint "LARM_JOINT1") :max-angle 80)
+
+  (send (send *robot* :joint "RARM_JOINT1") :min-angle -140)
+  (send (send *robot* :joint "RARM_JOINT1") :max-angle 140)
+  (send (send *robot* :joint "LARM_JOINT1") :min-angle -140)
+  (send (send *robot* :joint "LARM_JOINT1") :max-angle 140)
 
 
   ;; (send (send *robot* :joint "RARM_JOINT6") :min-angle -50)
@@ -389,13 +390,15 @@
                   ;; :collision-distance-margin 10
                   :external-wrench-list
                   (if (and (not only-kinematics?) apply-external-force?)
-                      (list (float-vector 0 -80 0 0 0 0)))
+                      (progn
+                        (list (float-vector 0 -80 0 0 0 0))
+                        (list (float-vector 0 80 0 0 0 0))))
                   :external-coords-list  ;;外レンチ作用点リスト
                   (if (and (not only-kinematics?) apply-external-force?)
-                      ;; (progn
-                      ;;   (list (send *robot-env* :robot :get :rarm-contact-coords))
-                      ;;   (list (send *robot-env* :robot :get :larm-contact-coords)))
-                      (list (send *robot-env* :robot :link "LARM_LINK2"))
+                      (progn
+                        (list (send *robot-env* :robot :get :rarm-contact-coords))
+                        (list (send *robot-env* :robot :get :larm-contact-coords)))
+                      ;; (list (send *robot-env* :robot :link "LARM_LINK2"))
                     )
                   ))
 

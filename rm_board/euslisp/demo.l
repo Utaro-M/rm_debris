@@ -187,10 +187,13 @@
 
   (setq rarm-coords (make-coords :pos (float-vector 340 -350 300) :rpy (float-vector (deg2rad 0) (deg2rad  30) (deg2rad -90))))
   (setq larm-coords (make-coords :pos (float-vector 340 350 300)  :rpy (float-vector (deg2rad 0) (deg2rad  30) (deg2rad  90))))
-  (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? nil :avoid-collision? t )
-  (reach :fix-contact? nil)
-  (heave #f(100 -200 0) #f(100 200 0) :reset? nil :fix-contact? 2)
+  (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t )
+  ;; (reach :fix-contact? nil)
+  (heave #f(50 -300 0) #f(50 300 0) :reset? nil :fix-contact? 2)
+  (heave #f(0 -200 0) #f(0 200 0) :reset? t :fix-contact? nil)
   (heave #f(0 -200 0) #f(0 200 0) :reset? nil :fix-contact? 2)
+  ;; (heave #f(0 -200 0) #f(0 200 0) :reset? nil :fix-contact? 2)
+
   ;; (heave #f(0 -200 0) #f(0 200 0) :reset? nil :fix-contact? t)
   ;; (heave #f(0 -200 0) #f(0 200 0) :reset? nil :fix-contact? nil)
   ;; (setq flag-simulator t)
