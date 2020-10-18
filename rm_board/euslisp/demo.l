@@ -196,7 +196,8 @@
   (send *ri* :start-log)
   (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t)
   
-  (heave #f(-80 -700 0) #f(-80 700 0) :reset? t :fix-contact? 2 :wait? t)
+  ;; (heave #f(-80 -700 0) #f(-80 700 0) :reset? t :fix-contact? 2 :wait? t)
+  (heave #f(-80 -800 0) #f(-80 800 0) :reset? t :fix-contact? 2 :wait? t)  
   (change-arm 160 :rarm)
   (change-arm 160 :larm)
   ;; (heave #f(0 -200 0) #f(0 200 0) :reset? t :fix-contact? nil :wait? t)
