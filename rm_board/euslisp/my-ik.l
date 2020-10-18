@@ -390,7 +390,7 @@
                   )
                   
                   ;; (list  (send *robot-env* :robot :rleg :links)  (send *robot-env* :robot :lleg :links))
-                  ;; :collision-distance-margin 10
+                  :collision-distance-margin 0.2
                   :external-wrench-list
                   (if (and (not only-kinematics?) apply-external-force?)
                       (progn
@@ -429,7 +429,10 @@
 (defun move-on-foot(init-rcoords init-lcoords next-rcoords  next-lcoords &key (which? :lleg))
   ;; (setq ldif (send (send init-lcoords :copy-worldcoords) :transformation init-lcoords))
   ;; (setq rdif (send (send init-rcoords :copy-worldcoords) :transformation next-rcoords))
-  (if (eq which? :lleg)
+  (format t "init-lcoords = ~A~%" init-lcoords)
+  (format t "next-rcoords = ~A~%" next-rcoords)
+  (format t "next-lcoords = ~A~%" next-lcoords)  
+  (if (eq which? :lpleg)
       (send *ri* :set-foot-steps
         ;; (list
         ;;  (make-coords :coords init-rcoords :name :rleg)

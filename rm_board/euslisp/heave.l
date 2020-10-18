@@ -1,7 +1,7 @@
 ;; (require "irteus/demo/sample-robot-model.l")
 (require "models/arrow-object.l")
 ;; (require "package://control_tools/log-tools.l")
-;; (require "package://control_tools/play-hrpsysfile.l")
+(require "package://control_tools/play-hrpsysfile.l")
 (require "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
 
 ;; (require "~/catkin_ws/jaxon_tutorial/src/jsk_control/eus_qp/optmotiongen/euslisp/inverse-kinematics-statics-wrapper.l")
@@ -121,7 +121,7 @@
   (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
   (setq pre-pose (send *robot* :angle-vector))
   (setq pre-lleg (send *robot* :lleg :end-coords :copy-worldcoords))
-  (ik-opt rarm-coords larm-coords :only-kinematics nil :avoid-collision nil :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force?)
+  (ik-opt rarm-coords larm-coords :only-kinematics nil :avoid-collision nil :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait?)
   
   (if send?
       (progn 
@@ -476,9 +476,12 @@
   ;; (send-pose movetime :force-move flag-simulator)
   
   ;;choreonoid
+  (send *robot* :angle-vector (send *ri* :state :angle-vector))  
   ;;腕を引く
   (send *robot* arm :move-end-pos (scale offset #f(-1 0 0)) :local)
-  (send-pose movetime :force-move flag-simulator) 
+  (send-pose movetime :force-move flag-simulator)
+
+  (send *ri* :start-grasp arm)  
   ;;腕を下へ
   (if (eq arm :rarm)
       (send *robot* arm :move-end-pos (scale offset #f(0 1.5 0)) :local)
