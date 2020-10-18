@@ -211,6 +211,9 @@
     )
   ;; setup robot
   (setup-jaxon_redjsknts-for-sample-sqp-optimization :only-kinematics? only-kinematics? )
+  ;;fix-contact nil 足を自由な位置へ
+  ;;t contact-coordsの位置へ
+  ;;2 その場で
   (cond (fix-contact?
          (setq *robot-env*
                (instance robot-environment :init :robot *robot*))
@@ -285,7 +288,7 @@
                         ;; (send *robot-env* :robot :get :rarm-contact-coords)
                         ;; (send *robot-env* :robot :get :larm-contact-coords)
                         (send *robot-env* :robot  :rarm :end-coords)
-                        (send *robot-env* :robot  :larm :end-coords)                        
+                        (send *robot-env* :robot  :larm :end-coords)          
                         )
                   :contact-target-coords-list
                   (if (not only-kinematics?)
@@ -320,7 +323,7 @@
                                   :init
                                   :mu-trans 0.2
                                   :mu-rot 0.01
-                                  :max-fz 400
+                                  :max-fz 600
                                   (let* ((poly
                                           (send *robot-env* :robot :get :rleg_link5-support-polygon))
                                          (vs
@@ -340,7 +343,7 @@
                                   :init
                                   :mu-trans 0.2
                                   :mu-rot 0.01
-                                  :max-fz 400
+                                  :max-fz 600
                                   (let* ((poly
                                           (send *robot-env* :robot :get :lleg_link5-support-polygon))
                                          (vs
@@ -391,13 +394,17 @@
                   :external-wrench-list
                   (if (and (not only-kinematics?) apply-external-force?)
                       (progn
-                        (list (float-vector 0 -80 0 0 0 0))
-                        (list (float-vector 0 80 0 0 0 0))))
+                        ;; (list (float-vector 0 -80 0 0 0 0))
+                        ;; (list (float-vector 0 80 0 0 0 0))
+                        ;;力の正負が微妙かも
+                        (list (float-vector 0 0 -80 0 0 0)
+                              (float-vector 0 0 -80 0 0 0))
+                        ))
                   :external-coords-list  ;;外レンチ作用点リスト
                   (if (and (not only-kinematics?) apply-external-force?)
                       (progn
-                        (list (send *robot-env* :robot :get :rarm-contact-coords))
-                        (list (send *robot-env* :robot :get :larm-contact-coords)))
+                        (list (send *robot-env* :robot :get :rarm-contact-coords)
+                              (send *robot-env* :robot :get :larm-contact-coords)))
                       ;; (list (send *robot-env* :robot :link "LARM_LINK2"))
                     )
                   ))
@@ -414,7 +421,7 @@
                         ;; (validate-jacobian :config-task (send sqp :config-task))
                         ))
                   ))
-  (send *sqp-opt* :optimize :loop-num 80)
+  (send *sqp-opt* :optimize :loop-num 70)
   )
 (warn "(jaxon_red-sqp-optimization-instant)~%")
 
