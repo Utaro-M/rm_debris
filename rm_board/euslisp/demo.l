@@ -176,7 +176,7 @@
   ;; (setq flag-simulator t)
   )
 
-(defun dem-bigborad-simulator()
+(defun dem-bigboard-simulator()
   ;; (setq flag-simulator nil)
 
   (my-init-pose :move-foot? nil)
@@ -196,17 +196,34 @@
   (send *ri* :start-log)
   (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t)
   
-  ;; (heave #f(-80 -700 0) #f(-80 700 0) :reset? t :fix-contact? 2 :wait? t)
-  (heave #f(-80 -800 0) #f(-80 800 0) :reset? t :fix-contact? 2 :wait? t)  
+  (heave #f(-80 -700 0) #f(-80 700 0) :reset? t :fix-contact? 2 :wait? t)
+  ;; (heave #f(-80 -800 0) #f(-80 800 0) :reset? t :fix-contact? 2 :wait? t)  
   (change-arm 160 :rarm)
   (change-arm 160 :larm)
-  (heave #f(0 -200 0) #f(0 200 0) :reset? t :fix-contact? nil :wait? t)
-  (send *ri* :go-pos 0.2 0 0)
-  (heave #f(0 -400 0) #f(0 400 0) :reset? t :fix-contact? nil :wait? nil)
   (heave #f(0 -200 0) #f(0 200 0) :reset? t :fix-contact? nil :wait? nil)
-  (heave #f(0 -200 0) #f(0 200 0) :reset? t :fix-contact? nil :wait? nil)
+  ;; (send *ri* :go-pos 0.2 0 0)
+  ;; (heave #f(0 -400 0) #f(0 400 0) :reset? t :fix-contact? nil :wait? nil)
+  ;; (heave #f(0 -200 0) #f(0 200 0) :reset? t :fix-contact? nil :wait? nil)
+  ;; (heave #f(0 -200 0) #f(0 200 0) :reset? t :fix-contact? nil :wait? nil)
   ;; (setq flag-simulator t)
 
+  )
+(defun dem-bigboard-step-simulator()
+  ;; (setq flag-simulator nil)
+
+  (my-init-pose :move-foot? nil)
+  (start-coords)
+  (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500)
+  (send *ri* :set-reference-force-updater-param :arms :motion-dir #f(0 0 -1) :p-gain 0.01 :update-time-ratio 1.0)
+  (send *ri* :start-reference-force-updater :arms)
+
+  (setq rarm-coords (make-coords :pos (float-vector 350 -310 300) :rpy (float-vector (deg2rad 0) (deg2rad  30) (deg2rad -90))))
+  (setq larm-coords (make-coords :pos (float-vector 350  310 300)  :rpy (float-vector (deg2rad 0) (deg2rad  30) (deg2rad  90))))
+  (send *ri* :start-log)
+  (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t)
+  
+  (heave #f(-80 -800 0) #f(-80 800 0) :reset? t :fix-contact? 2 :wait? t)
+  (heave #f(0 -200 0) #f(0 200 0) :reset? t :fix-contact? nil :wait? nil)
   )
 
 (defun dem-pre()
@@ -401,5 +418,26 @@
   ;; (heave #f(50 0 200) #f(0 0 -50) :reset? t :fix-contact? 2 :send? nil)
   ;; (heave #f(100 0 100) #f(0 0 -50) :reset? t :fix-contact? nil :send? nil)
   ;; (heave #f(100 0 100) #f(0 0 -50) :reset? t :fix-contact? nil :send? nil)
+  )
+
+
+(defun dem-bigboard-support-simulator()
+  ;; (setq flag-simulator nil)
+
+  (my-init-pose :move-foot? nil)
+  (start-coords)
+  (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500)
+  (send *ri* :set-reference-force-updater-param :arms :motion-dir #f(0 0 -1) :p-gain 0.01 :update-time-ratio 1.0)
+  (send *ri* :start-reference-force-updater :arms)
+
+  ;; (setq rarm-coords (make-coords :pos (float-vector 340 -310 300) :rpy (float-vector (deg2rad 0) (deg2rad  30) (deg2rad -90))))
+  ;; (setq larm-coords (make-coords :pos (float-vector 840  310 400)  :rpy (float-vector (deg2rad 0) (deg2rad  80) (deg2rad  90))))
+  (setq rarm-coords (make-coords :pos (float-vector 240 -310 300) :rpy (float-vector (deg2rad 0) (deg2rad  30) (deg2rad -90))))  
+  (setq larm-coords (make-coords :pos (float-vector 840  310 400)  :rpy (float-vector (deg2rad 0) (deg2rad  70) (deg2rad  90))))
+
+  ;; (send *ri* :start-log)
+  (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? nil :avoid-collision? t :apply-external-force? t)
+  
+
   )
 
