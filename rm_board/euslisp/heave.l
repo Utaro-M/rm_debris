@@ -141,7 +141,7 @@
 
 ;;持ち上げる
 (defun heave
-    (rarm-move larm-move &key  (fix-contact? t) (send? t) (cog #f(0 0 700)) (degree 0) (wait? t) (reset? t))
+    (rarm-move larm-move &key  (fix-contact? t) (send? t) (cog #f(0 0 700)) (degree 0) (wait? t) (reset? t) (apply-external-force? t))
   ;; (send *robot* :move-coords (make-coords :pos #f(0 0 600) :rpy (float-vector 0 (deg2rad 50) 0)) (car (send *robot* :links)))
   ;; (send *robot* :fix-leg-to-coords (make-coords))
   ;; (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate rarm-move))
@@ -168,7 +168,7 @@
   (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
   (setq pre-pose (send *robot* :angle-vector))
   (setq pre-lleg (send *robot* :lleg :end-coords :copy-worldcoords))
-  (ik-opt rarm-coords larm-coords :only-kinematics nil :avoid-collision nil :optimize-torque? nil :fix-contact? fix-contact? :reset? reset? :apply-external-force? t)
+  (ik-opt rarm-coords larm-coords :only-kinematics nil :avoid-collision nil :optimize-torque? nil :fix-contact? fix-contact? :reset? reset? :apply-external-force? apply-external-force?)
   (if send?
       (progn
         (send-pose movetime :force-move flag-simulator :wait? wait? :pre-pose pre-pose :pre-lleg pre-lleg)

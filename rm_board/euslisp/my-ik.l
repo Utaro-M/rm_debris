@@ -397,14 +397,19 @@
                         ;; (list (float-vector 0 -80 0 0 0 0))
                         ;; (list (float-vector 0 80 0 0 0 0))
                         ;;力の正負が微妙かも
-                        (list (float-vector 0 0 -80 0 0 0)
-                              (float-vector 0 0 -80 0 0 0))
+                        ;; (list (float-vector 0 0 -80 0 0 0)
+                        ;;       (float-vector 0 0 -80 0 0 0))
+                        ;;pivot
+                        (list (float-vector 0 -50 0 0 0 0))
                         ))
                   :external-coords-list  ;;外レンチ作用点リスト
                   (if (and (not only-kinematics?) apply-external-force?)
                       (progn
-                        (list (send *robot-env* :robot :get :rarm-contact-coords)
-                              (send *robot-env* :robot :get :larm-contact-coords)))
+                        ;; (list (send *robot-env* :robot :get :rarm-contact-coords)
+                        ;;       (send *robot-env* :robot :get :larm-contact-coords))
+                        ;;pivot
+                        (list (send *robot-env* :robot :get :rarm-contact-coords))
+                        )
                       ;; (list (send *robot-env* :robot :link "LARM_LINK2"))
                     )
                   ))
