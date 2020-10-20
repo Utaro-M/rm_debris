@@ -1,10 +1,14 @@
 (load "/home/utaro/catkin_ws/jaxon_tutorial/src/rtmros_tutorials/hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
+;; (load "./heave.l")
 (ros::roseus-add-msgs "opencv_apps")
 (ros::load-ros-manifest "jsk_recognition_msgs")
 
 (defvar *bounding-box-llist* nil)
 ;;colorfilter parameters
+(jaxon_red-init)
+(setq *robot* *jaxon_red*)
 
+(ros::roseus "name")
 (setq path "/multisense_local/hsi_filter")
 (defun param_change (x)
   (cond ((= x 0)
@@ -38,44 +42,78 @@
 
 (setq flag t)
 (defun cb_judge (msg)
-  (setq handbox #f(100 100 100))
+  (setq handbox-size #f(100 100 100))
+  (setq thre-vol 0.5)
   (setq *bounding-box-list* (send msg :boxes))
-  ;; (if *bounding-box-list*
   (setq vol-total-rarm 0)
   (setq vol-total-larm 0)
   (dotimes (i (length *bounding-box-list*))
     (progn (let* ((b (elt *bounding-box-list* i))
                   (base->obj-coords (ros::tf-pose->coords (send b :pose)))
-                  (base-coords (send (send *robot* :body_lk) :copy-worldcoords)))
-             (setq obj-pos (scale 0.001 (send (send base-coords :transform base->obj-coords) :worldpos)))
-             (setq obj-ori (send (send base-coords :transform base->obj-coords) :worldrot)))
-           (setq obj-size (scale 1000 (send b :dimensions)))
-           (setq vol (* (- (elt obj-size 0)  (elt obj-size 1) (elt obj-size 2)))
-           (setq x (elt obj-pos 0))
-           (setq y (elt obj-pos 1))
-           (setq z (elt obj-pos 2))
-           (ros::ros-warn "x=~A,y=~A,z=~A" x y z)
-           (ros::ros-warn "vol = ~A" vol)
-           
-           (setq rarm-coords (send *robot* :rarm :end-coords))
+                  (base-coords (send (send *robot* :body_lk) :copy-worldcoords))
+                  (obj-size (scale 1000 (float-vector (send b :dimensions :x) (send b :dimensions :y) (send b :dimensions :z)))))
+             ;; (setq obj-pos (scale 0.001 (send (send base-coords :transform base->obj-coords) :worldpos)))
+             (setq obj-pos (scale 1.000 (send (send base-coords :transform base->obj-coords) :worldpos)))
+             (setq obj-ori (send (send base-coords :transform base->obj-coords) :worldrot))
+             
+             (format t "obj-pos = ~A~%" obj-pos)
+             (setq rarm-coords (send *robot* :rarm :end-coords))
            (setq larm-coords (send *robot* :larm :end-coords))
-
            (setq rarm-pos (send rarm-coords :worldpos))
            (setq larm-pos (send larm-coords :worldpos))
 
-           (if (< (abs (norm (v- obj-pos rarm-pos))) (/ (abs (norm handbox)) 2))
-               (progn
-                 (setq vol-total-rarm (+ vol vol-total))
-                 )
+           (format t "rarm-pos = ~A~%" rarm-pos)
+           (setq obj-upper (v+ (scale 0.5 obj-size) obj-pos))
+           (setq obj-lower (v- (scale 0.5 obj-size) obj-pos))   
+
+           (setq hand-l-upper (v+ (scale 0.5 handbox-size) larm-pos))
+           (setq hand-l-lower (v- (scale 0.5 handbox-size) larm-pos))
+           (setq hand-r-upper (v+ (scale 0.5 handbox-size) rarm-pos))
+           (setq hand-r-lower (v- (scale 0.5 handbox-size) rarm-pos))
+
+           (setq width-l (float-vector 0 0 0))
+           (setq width-r (float-vector 0 0 0))
+
+           (setq norm-l (abs (norm (v- obj-pos larm-pos))))
+           (setq norm-r (abs (norm (v- obj-pos rarm-pos))))
+
+           (dotimes (i 3)
+             (if (< norm-l 100)
+                 (cond ((and (< (elt obj-lower i) (elt hand-l-lower i)) (< (elt hand-l-lower i) (elt obj-upper i)))
+                        (setf (elt width-l i) (- (elt obj-upper i) (elt hand-l-lower i))))
+                       ((and (< (elt hand-l-lower i) (elt obj-lower i)) (< (elt obj-upper i) (elt hand-l-upper i)))
+                        (setf (elt width-l i)  (- (elt obj-upper i) (elt obj-lower i))))
+                       ((and (< (elt obj-lower i) (elt hand-l-upper i)) (< (elt hand-l-upper i) (elt obj-upper i)))
+                        (setf (elt width-l i) (- (elt hand-l-upper i) (elt obj-lower i))))
+                       ((and (< (elt obj-lower i) (elt hand-l-lower i)) (< (elt hand-l-upper i) (elt obj-upper i)))
+                        (setf (elt width-l i) (- (elt hand-l-upper i) (elt hand-l-lower i))))
+                       ))
+             (if (< norm-r 100)
+                 (cond ((and (< (elt obj-lower i) (elt hand-r-lower i)) (< (elt hand-r-lower i) (elt obj-upper i)))
+                        (setf (elt width-r i) (- (elt obj-upper i) (elt hand-r-lower i))))
+                       ((and (< (elt hand-r-lower i) (elt obj-lower i)) (< (elt obj-upper i) (elt hand-r-upper i)))
+                        (setf (elt width-r i)  (- (elt obj-upper i) (elt obj-lower i))))
+                       ((and (< (elt obj-lower i) (elt hand-r-upper i)) (< (elt hand-r-upper i) (elt obj-upper i)))
+                        (setf (elt width-r i) (- (elt hand-r-upper i) (elt obj-lower i))))
+                       ((and (< (elt obj-lower i) (elt hand-r-lower i)) (< (elt hand-r-upper i) (elt obj-upper i)))
+                        (setf (elt width-r i) (- (elt hand-r-upper i) (elt hand-r-lower i))))
+                       ))
+             
              )
-           (if (< (abs (norm (v- obj-pos larm-pos))) (/ (abs (norm handbox)) 2))
-               (progn
-                 (setq vol-total-larm (+ vol vol-total))
-                 )
-             )
+
+           (ros::ros-warn "width-r = ~A" width-r)
+           (ros::ros-warn "width-l = ~A" width-l)
+           
+           (setq vol-larm (* (elt width-l 0) (elt width-l 1) (elt width-l 2)))
+           (setq vol-total-larm (+ vol-larm vol-total-larm))
+           (setq vol-rarm (* (elt width-r 0) (elt width-r 1) (elt width-r 2)))
+           (setq vol-total-rarm (+ vol-rarm vol-total-rarm))
+           )
            ))
   
   (setq handbox-vol (* (elt handbox 0) (elt handbox 1) (elt handbox 2)))
+  (format t "vol-total-larm = ~A~%" vol-total-larm)
+  (format t "vol-total-rarm = ~A~%" vol-total-rarm)
   (if (> (/ (* 1.0 vol-total-rarm) handbox-vol) thre-vol)
       (print "rarm holding")
     (print "rarm-drop"))
@@ -83,14 +121,17 @@
       (print "larm holding")
     (print "larm drop"))
   )
+
+           
+
            
   ;; (ros::ros-warn "flag~A" flag))
 
-(ros::subscribe "multisense_local/boxes" jsk_recognition_msgs::BoundingBoxArray #'cb_go )
+(ros::subscribe "multisense_local/boxes" jsk_recognition_msgs::BoundingBoxArray #'cb_judge)
 
 
 (defun main ()
-  (init)
+  ;; (init)
   (param_change 0)
   (do-until-key
    (ros::sleep)
