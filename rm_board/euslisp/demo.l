@@ -1,4 +1,5 @@
 (load "./heave.l")
+(load "./vision.l")
 
 ;;(progn (my-init-pose)   (send *robot* :fix-leg-to-coords (make-coords)) (unix:sleep1) (reach) (unix:sleep 1) (dem-with-check-simulator))
 ;;(reach)
@@ -225,7 +226,7 @@
   (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t)
   
   (heave #f(-80 -800 0) #f(-80 800 0) :reset? t :fix-contact? 2 :wait? t)
-  (heave #f(0 -200 0) #f(0 200 0) :reset? t :fix-contact? nil :wait? t)
+  ;; (heave #f(0 -200 0) #f(0 200 0) :reset? t :fix-contact? nil :wait? t)
   )
 
 (defun dem-pre()
