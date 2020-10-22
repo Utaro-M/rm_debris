@@ -40,7 +40,8 @@
 	   ))
         
 	(t (progn
-	     (ros::set-dynamic-reconfigure-param "/multisense_local/euclidean_clustering" "max_size" :int 20000)
+	     ;; (ros::set-dynamic-reconfigure-param "/multisense_local/euclidean_clustering" "max_size" :int 20000)
+         (ros::set-dynamic-reconfigure-param "/multisense_local/euclidean_clustering" "max_size" :int 200)         
 	     (ros::set-dynamic-reconfigure-param "/multisense_local/euclidean_clustering" "min_size" :int 100)
 	     (ros::set-dynamic-reconfigure-param path "s_limit_max" :int 25)
 	     (ros::set-dynamic-reconfigure-param path "h_limit_max" :int 20)
