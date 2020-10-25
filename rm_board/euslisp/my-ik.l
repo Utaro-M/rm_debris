@@ -164,21 +164,31 @@
      (only-kinematics? nil)
      (pre-process-func)
      (reset? t)
+     (ground-y 200)
      &allow-other-keys
      )
 
   ;; setup environment
-  ;; (setq *ground-rleg* (make-cube 400 400 20))
-  ;; (setq *ground-lleg* (make-cube 400 400 20))
-  (setq *ground-rleg* (make-cube 1000 500 20))
-  (setq *ground-lleg* (make-cube 1000 500 20))  
-  ;; (setq *ground-larm* (make-cube 500 500 20))
+  ;;脚を開きすぎるとIK too lergeになる
+  ;; (setq *ground-rleg* (make-cube 1000 500 20))
+  ;; (setq *ground-lleg* (make-cube 1000 500 20))
+  ;; (send *ground-rleg* :newcoords
+  ;;       (make-coords :pos (float-vector 0 -260 -10) :rpy (list 0 0 0))
+  ;;       )
+  ;; (send *ground-lleg* :newcoords
+  ;;       (make-coords :pos (float-vector 0 260 -10) :rpy (list 0 0 0))
+  ;;       )
 
+  ;;
+  ;; (setq *ground-rleg* (make-cube 1000 360 20))
+  ;; (setq *ground-lleg* (make-cube 1000 360 20))
+  (setq *ground-rleg* (make-cube 1500 400 20))
+  (setq *ground-lleg* (make-cube 1500 400 20))
   (send *ground-rleg* :newcoords
-        (make-coords :pos (float-vector 0 -260 -10) :rpy (list 0 0 0))
+        (make-coords :pos (float-vector 0 (* -1 ground-y) -10) :rpy (list 0 0 0))
         )
   (send *ground-lleg* :newcoords
-        (make-coords :pos (float-vector 0 260 -10) :rpy (list 0 0 0))
+        (make-coords :pos (float-vector 0 (*  1 ground-y) -10) :rpy (list 0 0 0))
         )
   
   ;; (send *ground-larm* :newcoords

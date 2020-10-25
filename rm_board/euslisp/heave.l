@@ -451,7 +451,7 @@
 
 
 (defun change-arm
-    (offset arm)
+    (offset arm &key (send? t))
 
   ;; ;;jikki
   ;; (send *robot* :angle-vector (send *ri* :state :angle-vector))
@@ -477,21 +477,28 @@
   
   ;;choreonoid
   (send *robot* :angle-vector (send *ri* :state :angle-vector))  
-  ;;腕を引く
+  ;;腕を引くnnn
   (send *robot* arm :move-end-pos (scale offset #f(-1 0 0)) :local)
-  (send-pose movetime :force-move flag-simulator)
+  (if send?
+      (progn
+        (send-pose movetime :force-move flag-simulator )))
 
-  (send *ri* :start-grasp arm)  
+  ;; (send *ri* :start-grasp arm)
+  (send *ri* :move-gripper arm 0.4 :effort 10 :wait t) 
   ;;腕を下へ
   (if (eq arm :rarm)
-      (send *robot* arm :move-end-pos (scale offset #f(0 1.5 0)) :local)
-    (send *robot* arm :move-end-pos (scale offset #f(0 -1.5 0)) :local))
-  (send-pose movetime :force-move flag-simulator)
+      (send *robot* arm :move-end-pos (scale offset #f(0 1.3 0)) :local)
+    (send *robot* arm :move-end-pos (scale offset #f(0 -1.3 0)) :local))
+  (if send?
+      (progn
+        (send-pose movetime :force-move flag-simulator )))
   ;;腕を戻す    
   (if (eq arm :rarm)
       (send *robot* arm :move-end-pos (scale offset #f(1.5 0 0)) :local)
     (send *robot* arm :move-end-pos (scale offset #f(1.5 0 0)) :local))
-  (send-pose movetime :force-move flag-simulator)
+  (if send?
+      (progn
+        (send-pose movetime :force-move flag-simulator )))
   
   )
 

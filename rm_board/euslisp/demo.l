@@ -185,9 +185,9 @@
   (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500)
   (send *ri* :set-reference-force-updater-param :arms :motion-dir #f(0 0 -1) :p-gain 0.01 :update-time-ratio 1.0)
   (send *ri* :start-reference-force-updater :arms)
-
-  (setq rarm-coords (make-coords :pos (float-vector 340 -310 300) :rpy (float-vector (deg2rad 0) (deg2rad  30) (deg2rad -90))))
-  (setq larm-coords (make-coords :pos (float-vector 340  310 300)  :rpy (float-vector (deg2rad 0) (deg2rad  30) (deg2rad  90))))
+  (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5))
+  (setq rarm-coords (make-coords :pos (float-vector 360 -310 300) :rpy (float-vector (deg2rad 0) (deg2rad  30) (deg2rad -90))))
+  (setq larm-coords (make-coords :pos (float-vector 360  310 300)  :rpy (float-vector (deg2rad 0) (deg2rad  30) (deg2rad  90))))
   ;; (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t)
   ;; ;; (reach :fix-contact? nil)
   ;; (heave #f(50 -300 0) #f(50 300 0) :reset? nil :fix-contact? 2)
@@ -197,11 +197,54 @@
   (send *ri* :start-log)
   (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t)
   
-  (heave #f(-80 -700 0) #f(-80 700 0) :reset? t :fix-contact? 2 :wait? t)
+  (heave #f(-100 -700 0) #f(-100 700 0) :reset? t :fix-contact? 2 :wait? t)
   ;; (heave #f(-80 -800 0) #f(-80 800 0) :reset? t :fix-contact? 2 :wait? t)  
-  (change-arm 160 :rarm)
-  (change-arm 160 :larm)
-  (heave #f(0 -200 0) #f(0 200 0) :reset? t :fix-contact? nil :wait? nil)
+  (change-arm 150 :rarm)
+  (change-arm 150 :larm)
+  (heave #f(100 -100 0) #f(100 100 0) :reset? t :fix-contact? 2 :wait? t)
+
+  (send *ri* :go-pos 0.3 0 0)
+  ;; (unix::sleep 1)
+  ;; (heave #f(0 -200 0) #f(0 200 0) :reset? t :fix-contact? 2 :wait? t)
+  ;; (heave #f(100 -200 0) #f(100 200 0) :reset? t :fix-contact? 2 :wait? t)
+
+
+  
+  ;; (send *ri* :go-pos 0.2 0 0)
+  ;; (heave #f(0 -400 0) #f(0 400 0) :reset? t :fix-contact? nil :wait? nil)
+  ;; (heave #f(0 -200 0) #f(0 200 0) :reset? t :fix-contact? nil :wait? nil)
+  ;; (heave #f(0 -200 0) #f(0 200 0) :reset? t :fix-contact? nil :wait? nil)
+  ;; (setq flag-simulator t)
+
+  )
+
+(defun dem-bigboard-pose-simulator()
+  ;; (setq flag-simulator nil)
+
+  (my-init-pose :move-foot? nil)
+  (start-coords)
+  (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500)
+  (send *ri* :set-reference-force-updater-param :arms :motion-dir #f(0 0 -1) :p-gain 0.01 :update-time-ratio 1.0)
+  (send *ri* :start-reference-force-updater :arms)
+  (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5))
+  (setq rarm-coords (make-coords :pos (float-vector 340 -310 300) :rpy (float-vector (deg2rad 0) (deg2rad  30) (deg2rad -90))))
+  (setq larm-coords (make-coords :pos (float-vector 340  310 300)  :rpy (float-vector (deg2rad 0) (deg2rad  30) (deg2rad  90))))
+  ;; (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t)
+  ;; ;; (reach :fix-contact? nil)
+  ;; (heave #f(50 -300 0) #f(50 300 0) :reset? nil :fix-contact? 2)
+  ;; (heave #f(0 -200 0) #f(0 200 0) :reset? t :fix-contact? nil)
+  ;; (heave #f(0 -200 0) #f(0 200 0) :reset? nil :fix-contact? 2)
+
+  (send *ri* :start-log)
+  (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? nil :avoid-collision? t :apply-external-force? t)
+  
+  (heave #f(-80 -700 0) #f(-80 700 0) :send? nil :reset? t :fix-contact? 2 :wait? t)
+  ;; (heave #f(-80 -800 0) #f(-80 800 0) :reset? t :fix-contact? 2 :wait? t)  
+  (change-arm 140 :rarm :send? nil)
+  (change-arm 140 :larm :send? nil)
+  ;; (change-arm 160 :rarm :send? nil)
+  ;; (change-arm 160 :larm :send? nil)
+  (heave #f(100 -200 0) #f(100 200 0) :send? nil :reset? t :fix-contact? nil :wait? nil)
   ;; (send *ri* :go-pos 0.2 0 0)
   ;; (heave #f(0 -400 0) #f(0 400 0) :reset? t :fix-contact? nil :wait? nil)
   ;; (heave #f(0 -200 0) #f(0 200 0) :reset? t :fix-contact? nil :wait? nil)
@@ -219,14 +262,14 @@
   (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500)
   (send *ri* :set-reference-force-updater-param :arms :motion-dir #f(0 0 -1) :p-gain 0.01 :update-time-ratio 1.0)
   (send *ri* :start-reference-force-updater :arms)
-
+  (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5))
   (setq rarm-coords (make-coords :pos (float-vector 350 -310 300) :rpy (float-vector (deg2rad 0) (deg2rad  30) (deg2rad -90))))
   (setq larm-coords (make-coords :pos (float-vector 350  310 300)  :rpy (float-vector (deg2rad 0) (deg2rad  30) (deg2rad  90))))
   (send *ri* :start-log)
   (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t)
   
   (heave #f(-80 -800 0) #f(-80 800 0) :reset? t :fix-contact? 2 :wait? t)
-  ;; (heave #f(0 -200 0) #f(0 200 0) :reset? t :fix-contact? nil :wait? t)
+  ;; (heave #f(0 -100 0) #f(0 100 0) :reset? t :fix-contact? nil :wait? nil)
   )
 
 (defun dem-pre()
