@@ -141,7 +141,7 @@
 
 ;;持ち上げる
 (defun heave
-    (rarm-move larm-move &key  (fix-contact? t) (send? t) (cog #f(0 0 700)) (degree 0) (wait? t) (reset? t) (apply-external-force? t))
+    (rarm-move larm-move &key  (fix-contact? t) (send? t) (cog #f(0 0 700)) (deg-r-x 0) (deg-r-y 0) (deg-r-z 0) (deg-l-x 0) (deg-l-y 0) (deg-l-z 0) (wait? t) (reset? t) (apply-external-force? t) (avoid-collision? t) (rleg-pos #f( 0 -200 -10)) (lleg-pos #f( 0 200 -10)))
   ;; (send *robot* :move-coords (make-coords :pos #f(0 0 600) :rpy (float-vector 0 (deg2rad 50) 0)) (car (send *robot* :links)))
   ;; (send *robot* :fix-leg-to-coords (make-coords))
   ;; (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate rarm-move))
@@ -149,8 +149,9 @@
 
   ;; needless??
   ;; (send *robot* :angle-vector (send *ri* :state :angle-vector))
-  (setq rarm-coords (send (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate rarm-move) :rotate (deg2rad degree) :z))
-  (setq larm-coords (send (send (send *robot* :larm :end-coords :copy-worldcoords) :translate larm-move) :rotate (* -1 (deg2rad degree)) :z))
+  (setq rarm-coords (send (send (send (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate rarm-move) :rotate (deg2rad deg-r-x) :x) :rotate (deg2rad deg-r-y) :y) :rotate (deg2rad deg-r-z) :z))
+    (setq larm-coords (send (send (send (send (send *robot* :larm :end-coords :copy-worldcoords) :translate larm-move) :rotate (deg2rad deg-l-x) :x) :rotate (deg2rad deg-l-y) :y) :rotate (deg2rad deg-l-z) :z))
+  ;; (setq larm-coords (send (send (send *robot* :larm :end-coords :copy-worldcoords) :translate larm-move) :rotate (* -1 (deg2rad deg)) :z))
   ;; (setq rarm-coords (make-coords :pos (float-vector 290 -400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad -90))))
   ;; (setq larm-coords (make-coords :pos (float-vector 290  400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad  90))))  
   (setq rleg-coords (make-coords :pos #f(0 -100 0))
@@ -168,13 +169,14 @@
   (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
   (setq pre-pose (send *robot* :angle-vector))
   (setq pre-lleg (send *robot* :lleg :end-coords :copy-worldcoords))
-  (ik-opt rarm-coords larm-coords :only-kinematics nil :avoid-collision nil :optimize-torque? nil :fix-contact? fix-contact? :reset? reset? :apply-external-force? apply-external-force?)
+  (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :reset? reset? :apply-external-force? apply-external-force? :avoid-collision? avoid-collision? :rleg-pos rleg-pos :lleg-pos lleg-pos)
   (if send?
       (progn
-        (send-pose movetime :force-move flag-simulator :wait? wait? :pre-pose pre-pose :pre-lleg pre-lleg)
+        ;; (send-pose movetime :force-move flag-simulator :wait? wait? :pre-pose pre-pose :pre-lleg pre-lleg)
         (if (not fix-contact?)
             (move-on-foot rleg-coords lleg-coords (send *robot* :rleg :end-coords :copy-worldcoords)   (send *robot* :lleg :end-coords :copy-worldcoords) ;; :which? :rleg
                           ))
+        (send-pose movetime :force-move flag-simulator :wait? wait? :pre-pose pre-pose :pre-lleg pre-lleg)
         ))
   
   ;; (setq rarm-ref-f (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
@@ -451,7 +453,7 @@
 
 
 (defun change-arm
-    (offset arm &key (send? t))
+    (offset arm &key (send? t) (sync? t))
 
   ;; ;;jikki
   ;; (send *robot* :angle-vector (send *ri* :state :angle-vector))
@@ -481,24 +483,29 @@
   (send *robot* arm :move-end-pos (scale offset #f(-1 0 0)) :local)
   (if send?
       (progn
-        (send-pose movetime :force-move flag-simulator )))
+        (send-pose (- movetime 1500) :force-move flag-simulator )))
 
   ;; (send *ri* :start-grasp arm)
   (send *ri* :move-gripper arm 0.4 :effort 10 :wait t) 
   ;;腕を下へ
   (if (eq arm :rarm)
-      (send *robot* arm :move-end-pos (scale offset #f(0 1.3 0)) :local)
-    (send *robot* arm :move-end-pos (scale offset #f(0 -1.3 0)) :local))
+      (send *robot* arm :move-end-pos (scale offset #f(0 1.4 0)) :local)
+    (send *robot* arm :move-end-pos (scale offset #f(0 -1.4 0)) :local))
   (if send?
       (progn
-        (send-pose movetime :force-move flag-simulator )))
+        (send-pose (- movetime 1500) :force-move flag-simulator )))
+
   ;;腕を戻す    
   (if (eq arm :rarm)
-      (send *robot* arm :move-end-pos (scale offset #f(1.5 0 0)) :local)
-    (send *robot* arm :move-end-pos (scale offset #f(1.5 0 0)) :local))
+      (progn
+        (send *robot* :larm :move-end-pos (scale offset #f(0 0.2 0)) :local)
+        (send *robot* arm :move-end-pos (scale offset #f(1.6 0 0)) :local))
+    (progn
+      (send *robot* :rarm :move-end-pos (scale offset #f(0 -0.2 0)) :local)
+    (send *robot* arm :move-end-pos (scale offset #f(1.6 0 0)) :local)))
   (if send?
       (progn
-        (send-pose movetime :force-move flag-simulator )))
+        (send-pose (- movetime 1500) :force-move flag-simulator )))
   
   )
 
