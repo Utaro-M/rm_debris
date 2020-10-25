@@ -197,19 +197,23 @@
   (send *ri* :start-log)
   (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t)
   
-  (heave #f(-100 -700 0) #f(-100 700 0) :reset? t :fix-contact? 2 :wait? t)
+  (heave #f(-100 -900 0) #f(-100 900 0) :reset? t :fix-contact? 2 :wait? t)
   ;; (heave #f(-80 -800 0) #f(-80 800 0) :reset? t :fix-contact? 2 :wait? t)  
-  (change-arm 150 :rarm)
-  (change-arm 150 :larm)
-  (heave #f(100 -100 0) #f(100 100 0) :reset? t :fix-contact? 2 :wait? t)
+  (change-arm 120 :rarm)
+  (change-arm 120 :larm)
+  ;; (heave #f(100 0 0) #f(100 0 0) :reset? t :fix-contact? 2 :wait? t)
 
-  (send *ri* :go-pos 0.3 0 0)
+  ;; (send *ri* :go-pos 0.3 0 0)
   ;; (unix::sleep 1)
   ;; (heave #f(0 -200 0) #f(0 200 0) :reset? t :fix-contact? 2 :wait? t)
   ;; (heave #f(100 -200 0) #f(100 200 0) :reset? t :fix-contact? 2 :wait? t)
-
-
-  
+  (move-on-foot (send *robot* :rleg :end-coords :copy-worldcoords) (send *robot* :lleg :end-coords :copy-worldcoords) (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate #f(100 0 0)) (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(100 0 0)))
+  (move-on-foot (send *robot* :rleg :end-coords :copy-worldcoords) (send *robot* :lleg :end-coords :copy-worldcoords) (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate #f(100 0 0)) (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(100 0 0)))
+  (move-on-foot (send *robot* :rleg :end-coords :copy-worldcoords) (send *robot* :lleg :end-coords :copy-worldcoords) (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate #f(100 0 0)) (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(100 0 0)))
+  ;; (send *ri* :go-pos 0.2 0 0)
+  (heave #f(-50 -200 0) #f(-50 200 0) :reset? t :fix-contact? nil :wait? t)
+  (heave #f(100 -200 0) #f(100 200 0) :reset? t :fix-contact? 2 :wait? t)
+  (heave #f(300 300 0) #f(950 -400 300) :deg-l-y -30 :deg-r-y 30 :reset? t :fix-contact? nil :wait? t :avoid-collision? nil  :rleg-pos #f(-700 -50 -10) :lleg-pos #f(-300 250 -10))
   ;; (send *ri* :go-pos 0.2 0 0)
   ;; (heave #f(0 -400 0) #f(0 400 0) :reset? t :fix-contact? nil :wait? nil)
   ;; (heave #f(0 -200 0) #f(0 200 0) :reset? t :fix-contact? nil :wait? nil)
