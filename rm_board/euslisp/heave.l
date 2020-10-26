@@ -78,7 +78,10 @@
           (avoid-collision? nil)
           (apply-external-force? nil)
           (rarm-coords (make-coords :pos (float-vector 390 -400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad -90))))
-          (larm-coords (make-coords :pos (float-vector 390  400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad  90)))) )
+          (larm-coords (make-coords :pos (float-vector 390  400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad  90))))
+          (rleg-pos-shift #f(0 0 0))
+          (lleg-pos-shift #f(0 0 0))
+          )
   ;; (send *robot* :fix-leg-to-coords (make-coords))
   ;; (create-support-polygon *robot* (send (send *robot* :rleg :end-coords) :parent))
   ;; (create-support-polygon *robot* (send (send *robot* :lleg :end-coords) :parent))
@@ -121,7 +124,7 @@
   (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
   (setq pre-pose (send *robot* :angle-vector))
   (setq pre-lleg (send *robot* :lleg :end-coords :copy-worldcoords))
-  (ik-opt rarm-coords larm-coords :only-kinematics nil :avoid-collision nil :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait?)
+  (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift)
   
   (if send?
       (progn 
@@ -141,7 +144,12 @@
 
 ;;持ち上げる
 (defun heave
-    (rarm-move larm-move &key  (fix-contact? t) (send? t) (cog #f(0 0 700)) (deg-r-x 0) (deg-r-y 0) (deg-r-z 0) (deg-l-x 0) (deg-l-y 0) (deg-l-z 0) (wait? t) (reset? t) (apply-external-force? t) (avoid-collision? t) (rleg-pos #f( 0 -200 -10)) (lleg-pos #f( 0 200 -10)))
+    (rarm-move larm-move
+               &key  (fix-contact? t) (send? t) (cog #f(0 0 700))
+               (deg-r-x 0) (deg-r-y 0) (deg-r-z 0) (deg-l-x 0) (deg-l-y 0) (deg-l-z 0)
+               (wait? t) (reset? t) (apply-external-force? t) (avoid-collision? t)
+               (rleg-pos-shift #f(0 0 0))
+               (lleg-pos-shift #f(0 0 0)))
   ;; (send *robot* :move-coords (make-coords :pos #f(0 0 600) :rpy (float-vector 0 (deg2rad 50) 0)) (car (send *robot* :links)))
   ;; (send *robot* :fix-leg-to-coords (make-coords))
   ;; (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate rarm-move))
@@ -169,7 +177,7 @@
   (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
   (setq pre-pose (send *robot* :angle-vector))
   (setq pre-lleg (send *robot* :lleg :end-coords :copy-worldcoords))
-  (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :reset? reset? :apply-external-force? apply-external-force? :avoid-collision? avoid-collision? :rleg-pos rleg-pos :lleg-pos lleg-pos)
+  (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :reset? reset? :apply-external-force? apply-external-force? :avoid-collision? avoid-collision? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift)
   (if send?
       (progn
         ;; (send-pose movetime :force-move flag-simulator :wait? wait? :pre-pose pre-pose :pre-lleg pre-lleg)
@@ -478,8 +486,8 @@
   ;; (send-pose movetime :force-move flag-simulator)
   
   ;;choreonoid
-  (send *robot* :angle-vector (send *ri* :state :angle-vector))  
-  ;;腕を引くnnn
+  ;; (send *robot* :angle-vector (send *ri* :state :angle-vector))  
+  ;;腕を引く
   (send *robot* arm :move-end-pos (scale offset #f(-1 0 0)) :local)
   (if send?
       (progn
@@ -508,8 +516,6 @@
         (send-pose (- movetime 1500) :force-move flag-simulator )))
   
   )
-
-
 
 ;;手先位置は固定で腰を高くするheight 1000とか
 ;;stand-up 1000 :cog #f( 100 0 800)

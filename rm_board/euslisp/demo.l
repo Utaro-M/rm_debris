@@ -229,6 +229,41 @@
 
   )
 
+;;1026実機実験用
+(defun dem-bigboard()
+  ;; (setq flag-simulator nil)
+
+  (my-init-pose :move-foot? nil)
+  (start-coords)
+  (send *ri* :set-reference-force-updater-param :arms :motion-dir #f(0 0 -1) :p-gain 0.01 :update-time-ratio 1.0)
+  (send *ri* :start-reference-force-updater :arms)
+  (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5))
+  (setq rarm-coords (make-coords :pos (float-vector 360 -310 300) :rpy (float-vector (deg2rad 0) (deg2rad  30) (deg2rad -90))))
+  (setq larm-coords (make-coords :pos (float-vector 360  310 300)  :rpy (float-vector (deg2rad 0) (deg2rad  30) (deg2rad  90))))
+
+  (send *ri* :start-log)
+  (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t :rleg-pos-shift #f(0 -100 0) :lleg-pos-shift #f(0 100 0))
+  
+  (heave #f(-110 -900 0) #f(-110 900 0) :reset? t :fix-contact? 2 :wait? t)
+
+  (change-arm 120 :rarm)
+  (change-arm 120 :larm)
+  
+  (move-on-foot (send *robot* :rleg :end-coords :copy-worldcoords) (send *robot* :lleg :end-coords :copy-worldcoords) (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate #f(100 0 0)) (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(100 0 0)))
+  (send *robot* :move-coords (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(100 0 100)) (send *robot* :link "LLEG_LINK5"))
+  (objects)
+  (move-on-foot (send *robot* :rleg :end-coords :copy-worldcoords) (send *robot* :lleg :end-coords :copy-worldcoords) (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate #f(100 0 0)) (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(100 0 0)))
+  (send *robot* :move-coords (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(100 0 100)) (send *robot* :link "LLEG_LINK5"))
+  (objects)
+  (move-on-foot (send *robot* :rleg :end-coords :copy-worldcoords) (send *robot* :lleg :end-coords :copy-worldcoords) (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate #f(100 0 0)) (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(100 0 0)))
+  (send *robot* :move-coords (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(100 0 100)) (send *robot* :link "LLEG_LINK5"))
+  (objects)
+  
+  (heave #f(0 -200 0) #f(0 200 0) :reset? t :fix-contact? nil :wait? t)
+
+  ;; (heave #f(300 200 0) #f(400 -700 200) :deg-l-y -30 :deg-r-y 30 :reset? t :fix-contact? nil :wait? t :avoid-collision? nil  :rleg-pos #f(-600 -50 -10) :lleg-pos #f(-200 250 -10))
+  )
+
 (defun dem-bigboard-pose-simulator()
   ;; (setq flag-simulator nil)
 

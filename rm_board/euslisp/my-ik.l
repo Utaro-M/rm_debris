@@ -164,8 +164,10 @@
      (only-kinematics? nil)
      (pre-process-func)
      (reset? t)
-     (rleg-pos #f( 0 -200 -10))
-     (lleg-pos #f( 0  200 -10))
+     ;; (rleg-pos #f( 0 -200 -10))
+     ;; (lleg-pos #f( 0  200 -10))
+     (rleg-pos-shift )
+     (lleg-pos-shift )
      &allow-other-keys
      )
 
@@ -183,8 +185,8 @@
   ;;
   ;; (setq *ground-rleg* (make-cube 1000 360 20))
   ;; (setq *ground-lleg* (make-cube 1000 360 20))
-  (setq *ground-rleg* (make-cube 3000 400 20))
-  (setq *ground-lleg* (make-cube 3000 400 20))
+  (setq *ground-rleg* (make-cube 1000 400 20))
+  (setq *ground-lleg* (make-cube 1000 400 20))
   ;; (send *ground-rleg* :newcoords
   ;;       (make-coords :pos (float-vector 0 (* -1 ground-y) -10) :rpy (list 0 0 0))
   ;;       )
@@ -192,10 +194,10 @@
   ;;       (make-coords :pos (float-vector 0 (*  1 ground-y) -10) :rpy (list 0 0 0))
   ;;       )
     (send *ground-rleg* :newcoords
-        (make-coords :pos rleg-pos :rpy (list 0 0 0))
+        (make-coords :pos (send (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate rleg-pos-shift) :worldpos)  :rpy (list 0 0 0))
         )
   (send *ground-lleg* :newcoords
-        (make-coords :pos lleg-pos :rpy (list 0 0 0))
+        (make-coords :pos (send (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate lleg-pos-shift) :worldpos)  :rpy (list 0 0 0))
         )
 
   
@@ -463,7 +465,7 @@
   (format t "init-lcoords = ~A~%" init-lcoords)
   (format t "next-rcoords = ~A~%" next-rcoords)
   (format t "next-lcoords = ~A~%" next-lcoords)  
-  (if (eq which? :lpleg)
+  (if (eq which? :lleg)
       (send *ri* :set-foot-steps
         ;; (list
         ;;  (make-coords :coords init-rcoords :name :rleg)
