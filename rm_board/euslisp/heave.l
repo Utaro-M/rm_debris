@@ -9,7 +9,7 @@
 (require "./class.l")
 (load "./my-ik.l")
 (require "../../euslisp/save-log.l")
-(require "~/research/rm_debris/src/predict_from_multi_pose.l")
+;; (require "~/research/rm_debris/src/predict_from_multi_pose.l")
 
 (unless (and (boundp '*robot*) (boundp '*ri*))
   (jaxon_red-init)
@@ -79,8 +79,8 @@
           (apply-external-force? nil)
           (rarm-coords (make-coords :pos (float-vector 390 -400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad -90))))
           (larm-coords (make-coords :pos (float-vector 390  400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad  90))))
-          (rleg-pos-shift #f(0 0 0))
-          (lleg-pos-shift #f(0 0 0))
+          (rleg-pos-shift #f(0 0 -10))
+          (lleg-pos-shift #f(0 0 -10))
           )
   ;; (send *robot* :fix-leg-to-coords (make-coords))
   ;; (create-support-polygon *robot* (send (send *robot* :rleg :end-coords) :parent))
@@ -148,8 +148,8 @@
                &key  (fix-contact? t) (send? t) (cog #f(0 0 700))
                (deg-r-x 0) (deg-r-y 0) (deg-r-z 0) (deg-l-x 0) (deg-l-y 0) (deg-l-z 0)
                (wait? t) (reset? t) (apply-external-force? t) (avoid-collision? t)
-               (rleg-pos-shift #f(0 0 0))
-               (lleg-pos-shift #f(0 0 0)))
+               (rleg-pos-shift #f(0 0 -10))
+               (lleg-pos-shift #f(0 0 -10)))
   ;; (send *robot* :move-coords (make-coords :pos #f(0 0 600) :rpy (float-vector 0 (deg2rad 50) 0)) (car (send *robot* :links)))
   ;; (send *robot* :fix-leg-to-coords (make-coords))
   ;; (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate rarm-move))
@@ -599,7 +599,7 @@
       (send *robot* :reset-manip-pose)
       (start-coords)))
   (send-pose movetime :force-move flag-simulator)
-  ;; (send *ri* :hand-reset) ;;実機では必要？choreonoidでは不要？
+  (send *ri* :hand-reset) ;;実機では必要？choreonoidでは不要？
   (format t "left or right ?  ~A" (elt (send (car (send *robot* :torso)) :worldpos) 1))
   (if move-foot?
       (if (< 0 (elt (send (car (send *robot* :torso)) :worldpos) 1))

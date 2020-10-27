@@ -230,7 +230,7 @@
   )
 
 ;;1026実機実験用
-(defun dem-bigboard()
+(defun dem-bigboard-pre()
   ;; (setq flag-simulator nil)
 
   (my-init-pose :move-foot? nil)
@@ -238,15 +238,20 @@
   (send *ri* :set-reference-force-updater-param :arms :motion-dir #f(0 0 -1) :p-gain 0.01 :update-time-ratio 1.0)
   (send *ri* :start-reference-force-updater :arms)
   (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5))
+  (send *ri* :set-gait-generator-param :default-step-time 1.2)
   (setq rarm-coords (make-coords :pos (float-vector 360 -310 300) :rpy (float-vector (deg2rad 0) (deg2rad  30) (deg2rad -90))))
   (setq larm-coords (make-coords :pos (float-vector 360  310 300)  :rpy (float-vector (deg2rad 0) (deg2rad  30) (deg2rad  90))))
 
-  (send *ri* :set-log-maxlength (* 500 90))
+  (send *ri* :set-log-maxlength (* 500 60))
   (send *ri* :start-log)
-  (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t :rleg-pos-shift #f(0 -100 0) :lleg-pos-shift #f(0 100 0))
-  
-  (heave #f(-110 -900 0) #f(-110 900 0) :reset? t :fix-contact? 2 :wait? t)
+  (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t :rleg-pos-shift #f(0 -100 -10) :lleg-pos-shift #f(0 100 -10))
+  (setq movetime 20000)
+  ;; (heave #f(-110 -900 0) #f(-110 900 0) :reset? t :fix-contact? 2 :wait? t)
+  (heave #f(-110 -600 0) #f(-110 600 0) :reset? t :fix-contact? 2 :wait? t)  
+  (setq movetime 16000)
+  )
 
+(defun dem-bigboard-mid()
   (change-arm 120 :rarm)
   (change-arm 120 :larm)
   
