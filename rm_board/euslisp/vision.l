@@ -1,4 +1,4 @@
-(load "/home/utaro/catkin_ws/jaxon_tutorial/src/rtmros_tutorials/hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
+;; (load "/home/utaro/catkin_ws/jaxon_tutorial/src/rtmros_tutorials/hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
 ;; (load "./heave.l")
 (ros::roseus-add-msgs "opencv_apps")
 (ros::load-ros-manifest "jsk_recognition_msgs")
