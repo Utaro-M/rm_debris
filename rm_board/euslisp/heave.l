@@ -599,7 +599,7 @@
       (send *robot* :reset-manip-pose)
       (start-coords)))
   (send-pose movetime :force-move flag-simulator)
-  (send *ri* :hand-reset) ;;実機では必要？choreonoidでは不要？
+  ;; (send *ri* :hand-reset) ;;実機では必要？choreonoidでは不要？
   (format t "left or right ?  ~A" (elt (send (car (send *robot* :torso)) :worldpos) 1))
   (if move-foot?
       (if (< 0 (elt (send (car (send *robot* :torso)) :worldpos) 1))
