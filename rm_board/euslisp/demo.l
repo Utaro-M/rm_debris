@@ -228,7 +228,7 @@
   ;; (setq flag-simulator t)
 
   )
-
+(setq pre-angle 0)
 ;;1026実機実験用
 (defun dem-bigboard-pre()
   ;; (setq flag-simulator nil)
@@ -245,9 +245,13 @@
   (send *ri* :set-log-maxlength (* 500 60))
   (send *ri* :start-log)
   (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t :rleg-pos-shift #f(0 -100 -10) :lleg-pos-shift #f(0 100 -10))
+  (setq pre-angle (send *robot* :angle-vector))
   (setq movetime 20000)
-  ;; (heave #f(-110 -900 0) #f(-110 900 0) :reset? t :fix-contact? 2 :wait? t)
-  (heave #f(-110 -600 0) #f(-110 600 0) :reset? t :fix-contact? 2 :wait? t)  
+  
+  (heave #f(-110 -900 0) #f(-110 900 0) :reset? t :fix-contact? 2 :wait? t)
+  ;; (heave #f(-110 -1200 0) #f(-110 1200 0) :reset? t :fix-contact? nil :wait? t)
+  ;;jikkide tamesita
+  ;; (heave #f(-110 -600 0) #f(-110 600 0) :reset? t :fix-contact? 2 :wait? t)  
   (setq movetime 16000)
   )
 

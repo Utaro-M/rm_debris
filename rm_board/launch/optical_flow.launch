@@ -21,7 +21,7 @@
       image_width: 640
       window_size: 16
       <!-- threshold: 5.0 -->
-      threshold: 3.0
+      threshold: 5.0
     </rosparam>
   </node>
 
@@ -80,7 +80,7 @@
         output="screen" clear_params="true">
     <remap from="~input" to="/extract_indices/output" />
     <rosparam>
-      tolerance: 0.02
+      tolerance: 0.1
     </rosparam>
   </node>
 
