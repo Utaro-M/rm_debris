@@ -1,0 +1,92 @@
+<launch>
+  <arg name="gui" default="true" />
+  <node name="robot_to_mask_image"
+        pkg="nodelet" type="nodelet"
+        args="standalone jsk_perception/RobotToMaskImage">
+    <remap from="~input/camera_info" to="/multisense_local/left/camera_info"/>
+    <rosparam>
+      robot_description : "jaxon_red"
+      self_see_links:
+        - name: RLEG_LINK0
+        - name: RLEG_LINK1
+        - name: RLEG_LINK2
+        - name: RLEG_LINK3
+        - name: RLEG_LINK4
+        - name: RLEG_LINK5
+        - name: LLEG_LINK0
+        - name: LLEG_LINK1
+        - name: LLEG_LINK2
+        - name: LLEG_LINK3
+        - name: LLEG_LINK4
+        - name: LLEG_LINK5
+        <!-- - name: CHEST_LINK0 -->
+        <!-- - name: CHEST_LINK1 -->
+        <!-- - name: CHEST_LINK2 -->
+        <!-- - name: HEAD_LINK0 -->
+        <!-- - name: HEAD_LINK1 -->
+        - name: RARM_FINGER0
+        - name: RARM_FINGER1                
+        - name: RARM_LINK0
+        - name: RARM_LINK1
+        - name: RARM_LINK2
+        - name: RARM_LINK3
+        - name: RARM_LINK4
+        - name: RARM_LINK5
+        - name: RARM_LINK6
+        - name: RARM_LINK7
+        - name: LARM_FINGER0
+        - name: LARM_FINGER1
+        - name: LARM_LINK0
+        - name: LARM_LINK1
+        - name: LARM_LINK2
+        - name: LARM_LINK3
+        - name: LARM_LINK4
+        - name: LARM_LINK5
+        - name: LARM_LINK6
+        - name: LARM_LINK7
+      self_see_default_padding: 0.0
+    </rosparam>
+  </node>
+
+  <!-- <node name="rviz" -->
+  <!--       pkg="rviz" type="rviz" -->
+  <!--       args="-d $(find jsk_perception)/sample/config/sample_robot_to_mask_image.rviz"/> -->
+  
+  <node name="background_subtraction"
+        pkg="jsk_perception" type="background_substraction">
+    <remap from="~image" to="/subtract_mask_image/output" />
+    <!-- <remap from="~image" to="/multisense_local/left/image_rect_color" />     -->
+    <remap from="~image" to="/subtract_imagerect_maskmask/output" />    
+  </node>
+
+  <node name="subtract_imagerect_mask"
+        pkg="jsk_perception" type="subtract_mask_image">
+    <!-- <remap from="~input/src1" to="background_subtraction/output" /> -->
+    <remap from="~input/src1" to="/multisense_local/left/image_rect_color" />
+    <remap from="~input/src2" to="/robot_to_mask_image/output" />
+  </node>
+
+  <node name="subtract_imagerect_maskmask"
+        pkg="jsk_perception" type="subtract_mask_image">
+    <!-- <remap from="~input/src1" to="background_subtraction/output" /> -->
+    <remap from="~input/src1" to="/multisense_local/left/image_rect_color" />
+    <remap from="~input/src2" to="subtract_imagerect_mask/output" />
+  </node>
+    
+  <group if="$(arg gui)">
+    <node name="image_view_mask"
+          pkg="image_view" type="image_view">
+      <remap from="image" to="/robot_to_mask_image/output"/>
+    </node>
+    <node name="image_view_rgb"
+          pkg="image_view" type="image_view">
+      <remap from="image" to="subtract_mask_image/output"/>
+    </node>
+    <node name="image_view_fg"
+          pkg="image_view" type="image_view">
+      <remap from="image" to="background_subtraction/output"/>
+    </node>
+  </group>
+
+</launch>
+
