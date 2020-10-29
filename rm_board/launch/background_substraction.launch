@@ -1,8 +1,16 @@
 <launch>
+  <arg name="create_manager" default="true" />
+  <arg name="manager" default="camera_nodelet_manager" />
   <arg name="gui" default="true" />
+  
+  <node if="$(arg create_manager)"
+        pkg="nodelet" type="nodelet" name="camera_nodelet_manager"
+        args="manager" output="screen"/>
+  
   <node name="robot_to_mask_image"
         pkg="nodelet" type="nodelet"
-        args="standalone jsk_perception/RobotToMaskImage">
+        args="load jsk_perception/RobotToMaskImage $(arg manager)">
+        <!-- args="standalone jsk_perception/RobotToMaskImage"> -->
     <remap from="~input/camera_info" to="/multisense_local/left/camera_info"/>
     <rosparam>
       robot_description : "jaxon_red"
@@ -51,14 +59,31 @@
   <!-- <node name="rviz" -->
   <!--       pkg="rviz" type="rviz" -->
   <!--       args="-d $(find jsk_perception)/sample/config/sample_robot_to_mask_image.rviz"/> -->
-  
+
+  <!-- 動いているところだけ抽出 -->
+  <!-- <node name="background_subtraction" -->
+  <!--       pkg="jsk_perception" type="background_substraction"> -->
   <node name="background_subtraction"
-        pkg="jsk_perception" type="background_substraction">
+        pkg="nodelet" type="nodelet"
+        args="load jsk_perception/BackgroundSubstraction  $(arg manager)">            
+        <!-- args="standalone jsk_perception/BackgroundSubstraction">     -->
     <!-- <remap from="~image" to="/subtract_mask_image/output" /> -->
     <remap from="~image" to="/multisense_local/left/image_rect_color" />
     <!-- <remap from="~image" to="/subtract_imagerect_maskmask/output" />     -->
   </node>
 
+  <!-- マスク画像を抽出した動画に適用o -->
+  <node name="apply_mask_image"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_perception/ApplyMaskImage $(arg manager)">
+    <remap from="~input" to="background_subtraction/output" />
+    <remap from="~input/mask" to="/robot_to_mask_image/output" />
+    <rosparam>
+      approximate_sync: true
+    </rosparam>
+  </node>
+
+  
   <!-- <node name="subtract_imagerect_mask" -->
   <!--       pkg="jsk_perception" type="subtract_mask_image"> -->
   <!--   <!-\- <remap from="~input/src1" to="background_subtraction/output" /> -\-> -->
@@ -74,30 +99,69 @@
   <!--   <!-\- <remap from="~input/src2" to="/robot_to_mask_image/output" />    -\->  -->
   <!-- </node> -->
 
-  <node name="apply_mask_image"
-        pkg="nodelet" type="nodelet"
-        args="standalone jsk_perception/ApplyMaskImage">
-    <remap from="~input" to="background_subtraction/output" />
-    <remap from="~input/mask" to="/robot_to_mask_image/output" />
+  <!-- マスク画像の結果と点群を結びつけて、点のインダイスを出力する -->
+  <arg name="camera" value="/multisense_local" />
+  <!-- <node name="mask_image_filter" pkg="jsk_pcl_ros" type="mask_image_filter"> -->
+  <node pkg="nodelet" type="nodelet"
+        name="mask_image_filter"
+        args="load jsk_pcl/MaskImageFilter $(arg manager)"
+        output="screen" clear_params="true">
+    
+    <param name="~negative" value="false" />
+    <remap from="~input" to="/multisense_local/image_points2_color" />
+    <!-- <remap from="~input/mask" to="/robot_to_mask_image/output" /> -->
+    <remap from="~input/mask" to="/apply_mask_image/output" />    
+    <remap from="~input/camera_info" to="/multisense_local/left/camera_info" />
+  </node>
+
+  <!-- インダイスを使って該当点群を抽出 -->
+  <!-- <node name="extract_indices" pkg="jsk_pcl_ros" type="extract_indices"> -->
+  <node pkg="nodelet" type="nodelet"
+        name="extract_indices"
+        args="load jsk_pcl/ExtractIndices $(arg manager)"
+        output="screen" clear_params="true">    
+    <remap from="~input" to="/multisense_local/image_points2_color" />
+    <remap from="~indices" to="/mask_image_filter/output" />
+  </node>
+
+  <!-- クラスタリング -->
+  <node pkg="nodelet" type="nodelet"
+        name="clustering"
+        args="load jsk_pcl/EuclideanClustering $(arg manager)"
+        output="screen" clear_params="true">
+    <remap from="~input" to="/extract_indices/output" />
     <rosparam>
-      approximate_sync: true
+      tolerance: 0.1
+      min_size: 300
     </rosparam>
   </node>
-  
-  <group if="$(arg gui)">
-    <node name="image_view_mask"
-          pkg="image_view" type="image_view">
-      <remap from="image" to="/robot_to_mask_image/output"/>
-    </node>
-    <node name="image_view_rgb"
-          pkg="image_view" type="image_view">
-      <remap from="image" to="subtract_mask_image/output"/>
-    </node>
-    <node name="image_view_fg"
-          pkg="image_view" type="image_view">
-      <remap from="image" to="background_subtraction/output"/>
-    </node>
-  </group>
+
+  <node pkg="nodelet" type="nodelet"
+        name="cluster_decomposer"
+        args="load jsk_pcl/ClusterPointIndicesDecomposer $(arg manager)"
+        output="screen" clear_params="true">
+    <remap from="~input" to="/extract_indices/output" />
+    <remap from="~target" to="/clustering/output" />
+    <rosparam>
+      min_size: 400
+    </rosparam>
+  </node>
+
+  <!-- <!-\- 表示 -\-> -->
+  <!-- <group if="$(arg gui)"> -->
+  <!--   <node name="image_view_mask" -->
+  <!--         pkg="image_view" type="image_view"> -->
+  <!--     <remap from="image" to="/robot_to_mask_image/output"/> -->
+  <!--   </node> -->
+  <!--   <node name="image_view_rgb" -->
+  <!--         pkg="image_view" type="image_view"> -->
+  <!--     <remap from="image" to="subtract_mask_image/output"/> -->
+  <!--   </node> -->
+  <!--   <node name="image_view_fg" -->
+  <!--         pkg="image_view" type="image_view"> -->
+  <!--     <remap from="image" to="background_subtraction/output"/> -->
+  <!--   </node> -->
+  <!-- </group> -->
 
 </launch>
 
