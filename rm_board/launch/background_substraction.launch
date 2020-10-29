@@ -54,25 +54,36 @@
   
   <node name="background_subtraction"
         pkg="jsk_perception" type="background_substraction">
-    <remap from="~image" to="/subtract_mask_image/output" />
-    <!-- <remap from="~image" to="/multisense_local/left/image_rect_color" />     -->
-    <remap from="~image" to="/subtract_imagerect_maskmask/output" />    
+    <!-- <remap from="~image" to="/subtract_mask_image/output" /> -->
+    <remap from="~image" to="/multisense_local/left/image_rect_color" />
+    <!-- <remap from="~image" to="/subtract_imagerect_maskmask/output" />     -->
   </node>
 
-  <node name="subtract_imagerect_mask"
-        pkg="jsk_perception" type="subtract_mask_image">
-    <!-- <remap from="~input/src1" to="background_subtraction/output" /> -->
-    <remap from="~input/src1" to="/multisense_local/left/image_rect_color" />
-    <remap from="~input/src2" to="/robot_to_mask_image/output" />
-  </node>
+  <!-- <node name="subtract_imagerect_mask" -->
+  <!--       pkg="jsk_perception" type="subtract_mask_image"> -->
+  <!--   <!-\- <remap from="~input/src1" to="background_subtraction/output" /> -\-> -->
+  <!--   <remap from="~input/src1" to="/multisense_local/left/image_rect_color" /> -->
+  <!--   <remap from="~input/src2" to="/robot_to_mask_image/output" /> -->
+  <!-- </node> -->
+  
+  <!-- <node name="subtract_imagerect_maskmask" -->
+  <!--       pkg="jsk_perception" type="subtract_mask_image"> -->
+  <!--   <remap from="~input/src2" to="background_subtraction/output" /> -->
+  <!--   <!-\- <remap from="~input/src1" to="/multisense_local/left/image_rect_color" /> -\-> -->
+  <!--   <remap from="~input/src1" to="subtract_imagerect_mask/output" /> -->
+  <!--   <!-\- <remap from="~input/src2" to="/robot_to_mask_image/output" />    -\->  -->
+  <!-- </node> -->
 
-  <node name="subtract_imagerect_maskmask"
-        pkg="jsk_perception" type="subtract_mask_image">
-    <!-- <remap from="~input/src1" to="background_subtraction/output" /> -->
-    <remap from="~input/src1" to="/multisense_local/left/image_rect_color" />
-    <remap from="~input/src2" to="subtract_imagerect_mask/output" />
+  <node name="apply_mask_image"
+        pkg="nodelet" type="nodelet"
+        args="standalone jsk_perception/ApplyMaskImage">
+    <remap from="~input" to="background_subtraction/output" />
+    <remap from="~input/mask" to="/robot_to_mask_image/output" />
+    <rosparam>
+      approximate_sync: true
+    </rosparam>
   </node>
-    
+  
   <group if="$(arg gui)">
     <node name="image_view_mask"
           pkg="image_view" type="image_view">
