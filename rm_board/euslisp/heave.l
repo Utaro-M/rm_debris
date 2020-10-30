@@ -51,7 +51,9 @@
 ;;(float-vector 0 0 (elt (send (car (send *robot* :links)) :worldpos) 2))
 
 (defun send-pose
-    (time &key (pre-pose (send *robot* :angle-vector)) (pre-lleg  (send *robot* :lleg :end-coords :copy-worldcoords) ) (force-move nil) (wait? t))
+    (time &key (pre-pose (send *robot* :angle-vector)) (pre-lleg  (send *robot* :lleg :end-coords :copy-worldcoords) ) (force-move nil) (wait? t) (look-at-hands? nil))
+  (if look-at-hands?
+  (send *robot* :head :look-at (midpoint 0.5 (send (send *robot* :rarm :end-coords :copy-worldcoords) :worldpos) (send (send *robot* :larm :end-coords :copy-worldcoords) :worldpos))))
   (objects)
   (if (or force-move (setq ans (y-or-n-p "Do you move real machine?")))
       (progn
@@ -81,6 +83,7 @@
           (larm-coords (make-coords :pos (float-vector 390  400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad  90))))
           (rleg-pos-shift #f(0 0 -10))
           (lleg-pos-shift #f(0 0 -10))
+          (look-at-hands? nil)
           )
   ;; (send *robot* :fix-leg-to-coords (make-coords))
   ;; (create-support-polygon *robot* (send (send *robot* :rleg :end-coords) :parent))
@@ -133,7 +136,7 @@
 ;  (my-ik rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog #f(0 0 1000))
 
         ;;もどす
-        (send-pose movetime :force-move flag-simulator :pre-pose pre-pose :pre-lleg pre-lleg)))
+        (send-pose movetime :force-move flag-simulator :pre-pose pre-pose :pre-lleg pre-lleg :look-at-hands? look-at-hands?  )))
   ;; (my-ik #f(0 0 40) #f(0 0 40))
 
   )
@@ -149,7 +152,8 @@
                (deg-r-x 0) (deg-r-y 0) (deg-r-z 0) (deg-l-x 0) (deg-l-y 0) (deg-l-z 0)
                (wait? t) (reset? t) (apply-external-force? t) (avoid-collision? t)
                (rleg-pos-shift #f(0 0 -10))
-               (lleg-pos-shift #f(0 0 -10)))
+               (lleg-pos-shift #f(0 0 -10))
+               (look-at-hands? nil))
   ;; (send *robot* :move-coords (make-coords :pos #f(0 0 600) :rpy (float-vector 0 (deg2rad 50) 0)) (car (send *robot* :links)))
   ;; (send *robot* :fix-leg-to-coords (make-coords))
   ;; (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate rarm-move))
@@ -184,7 +188,7 @@
         (if (not fix-contact?)
             (move-on-foot rleg-coords lleg-coords (send *robot* :rleg :end-coords :copy-worldcoords)   (send *robot* :lleg :end-coords :copy-worldcoords) ;; :which? :rleg
                           ))
-        (send-pose movetime :force-move flag-simulator :wait? wait? :pre-pose pre-pose :pre-lleg pre-lleg)
+        (send-pose movetime :force-move flag-simulator :wait? wait? :pre-pose pre-pose :pre-lleg pre-lleg :look-at-hands? look-at-hands?)
         ))
   
   ;; (setq rarm-ref-f (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))

@@ -10,7 +10,7 @@
   <node name="robot_to_mask_image"
         pkg="nodelet" type="nodelet"
         args="load jsk_perception/RobotToMaskImage $(arg manager)">
-        <!-- args="standalone jsk_perception/RobotToMaskImage"> -->
+    <!-- args="standalone jsk_perception/RobotToMaskImage"> -->        
     <remap from="~input/camera_info" to="/multisense_local/left/camera_info"/>
     <rosparam>
       robot_description : "jaxon_red"
@@ -27,13 +27,16 @@
         - name: LLEG_LINK3
         - name: LLEG_LINK4
         - name: LLEG_LINK5
-        <!-- - name: CHEST_LINK0 -->
-        <!-- - name: CHEST_LINK1 -->
-        <!-- - name: CHEST_LINK2 -->
+        - name: CHEST_LINK0
+        - name: CHEST_LINK1
+        - name: CHEST_LINK2
         <!-- - name: HEAD_LINK0 -->
         <!-- - name: HEAD_LINK1 -->
-        - name: RARM_FINGER0
-        - name: RARM_FINGER1                
+        <!-- - name: RARM_FINGER0 -->
+        <!-- - name: RARM_FINGER1                 -->
+        - name: R_thk_finger1
+        - name: R_thk_finger2
+        - name: R_thk_palm
         - name: RARM_LINK0
         - name: RARM_LINK1
         - name: RARM_LINK2
@@ -42,8 +45,11 @@
         - name: RARM_LINK5
         - name: RARM_LINK6
         - name: RARM_LINK7
-        - name: LARM_FINGER0
-        - name: LARM_FINGER1
+        <!-- - name: LARM_FINGER0 -->
+        <!-- - name: LARM_FINGER1 -->
+        - name: L_thk_finger1
+        - name: L_thk_finger2
+        - name: L_thk_palm   
         - name: LARM_LINK0
         - name: LARM_LINK1
         - name: LARM_LINK2
@@ -52,7 +58,7 @@
         - name: LARM_LINK5
         - name: LARM_LINK6
         - name: LARM_LINK7
-      self_see_default_padding: 0.0
+      self_see_default_padding: 0.1
     </rosparam>
   </node>
 
@@ -136,16 +142,16 @@
     </rosparam>
   </node>
 
-  <node pkg="nodelet" type="nodelet"
-        name="cluster_decomposer"
-        args="load jsk_pcl/ClusterPointIndicesDecomposer $(arg manager)"
-        output="screen" clear_params="true">
-    <remap from="~input" to="/extract_indices/output" />
-    <remap from="~target" to="/clustering/output" />
-    <rosparam>
-      min_size: 400
-    </rosparam>
-  </node>
+  <!-- <node pkg="nodelet" type="nodelet" -->
+  <!--       name="cluster_decomposer" -->
+  <!--       args="load jsk_pcl/ClusterPointIndicesDecomposer $(arg manager)" -->
+  <!--       output="screen" clear_params="true"> -->
+  <!--   <remap from="~input" to="/extract_indices/output" /> -->
+  <!--   <remap from="~target" to="/clustering/output" /> -->
+  <!--   <rosparam> -->
+  <!--     min_size: 400 -->
+  <!--   </rosparam> -->
+  <!-- </node> -->
 
   <!-- <!-\- 表示 -\-> -->
   <!-- <group if="$(arg gui)"> -->
