@@ -6,6 +6,23 @@
   <node if="$(arg create_manager)"
         pkg="nodelet" type="nodelet" name="camera_nodelet_manager"
         args="manager" output="screen"/>
+
+  <arg name="interactive_marker" default="false" />
+  <node pkg="tf" type="static_transform_publisher" name="virtual_camera_broadcaster" args="1.4 0.0 0.07 -0.707107 0.707017 0.0 0.0 BODY static_virtual_camera 100" unless="$(arg interactive_marker)" />
+  <node pkg="safe_footstep_planner" name="static_virtual_camera" type="static_virtual_camera" output="screen" />
+
+  
+  <!-- get image from static virtual camera -->
+  <node name="depth_image_creator"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_pcl/DepthImageCreator /$(arg MANAGER)">
+    <remap from="~input" to="/concatenate_data/output" />
+    <remap from="~info" to="/static_virtual_camera/camera_info" />
+    <rosparam>
+      use_approximate: true
+      max_queue_size: 20
+    </rosparam>
+  </node>
   
   <node name="robot_to_mask_image"
         pkg="nodelet" type="nodelet"
@@ -142,16 +159,16 @@
     </rosparam>
   </node>
 
-  <!-- <node pkg="nodelet" type="nodelet" -->
-  <!--       name="cluster_decomposer" -->
-  <!--       args="load jsk_pcl/ClusterPointIndicesDecomposer $(arg manager)" -->
-  <!--       output="screen" clear_params="true"> -->
-  <!--   <remap from="~input" to="/extract_indices/output" /> -->
-  <!--   <remap from="~target" to="/clustering/output" /> -->
-  <!--   <rosparam> -->
-  <!--     min_size: 400 -->
-  <!--   </rosparam> -->
-  <!-- </node> -->
+  <node pkg="nodelet" type="nodelet"
+        name="cluster_decomposer"
+        args="load jsk_pcl/ClusterPointIndicesDecomposer $(arg manager)"
+        output="screen" clear_params="true">
+    <remap from="~input" to="/extract_indices/output" />
+    <remap from="~target" to="/clustering/output" />
+    <rosparam>
+      min_size: 400
+    </rosparam>
+  </node>
 
   <!-- <!-\- 表示 -\-> -->
   <!-- <group if="$(arg gui)"> -->
