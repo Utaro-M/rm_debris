@@ -13,11 +13,11 @@
 
   <arg name="interactive_marker" default="false" />
   <node pkg="rm_debris_vision" name="static_virtual_camera" type="static_virtual_camera.py" output="screen" />
-  <!-- <node pkg="tf" type="static_transform_publisher" name="virtual_camera_broadcaster" args="1.4 0.0 0.07 -0.707107 0.707017 0.0 0.0 BODY static_virtual_camera 100" unless="$(arg interactive_marker)" /> original -->
+  <!-- <node pkg="tf" type="static_transform_publisher" name="virtual_camera_broadcaster" args="1.4 0.0 0.07 -0.707107 0.707017 0.0 0.0 BODY static_virtual_camera 100" unless="$(arg interactive_marker)" /> <!-\- original -\-> -->
   <!-- robot coordinate? -->
   
   <!-- <node pkg="tf" type="static_transform_publisher" name="virtual_camera_broadcaster" args="0.0 0.0 0.6 -0.5 0.5 -0.5 0.5 BODY static_virtual_camera 100" unless="$(arg interactive_marker)" /> -->
-  <node pkg="tf" type="static_transform_publisher" name="virtual_camera_broadcaster" args="0.2 -0.4 1.6 -0.5 0.5 -0.5 0.5 LLEG_LINK5 static_virtual_camera 100" unless="$(arg interactive_marker)" /> 
+  <node pkg="tf" type="static_transform_publisher" name="virtual_camera_broadcaster" args="0.2 -0.4 1.6 -0.5 0.5 -0.5 0.5 LLEG_LINK5 static_virtual_camera 100" unless="$(arg interactive_marker)" />
 <!-- progn (setq theta -90) (setq vec #f(1 -1 1)) (normalize-vector (concatenate float-vector  (scale (sin (deg2rad (/ theta 2.0) )) vec) (scale (cos (deg2rad (/ theta 2.0))) (float-vector 1)))) -->
  
   <!-- <node pkg="transform_coords" name="transform_pcl" type="transform_coords_node" output="screen" /> -->
@@ -45,7 +45,7 @@
     <remap from="~info" to="$(arg /camerainfo)" />
     <rosparam>
       use_approximate: true
-      max_queue_size: 5
+      max_queue_size: 20
     </rosparam>
   </node>
 
@@ -75,11 +75,14 @@
         <!-- - name: CHEST_LINK2 -->
         <!-- - name: HEAD_LINK0 -->
         <!-- - name: HEAD_LINK1 -->
-        - name: RARM_FINGER0
-        - name: RARM_FINGER1
-        <!-- - name: R_thk_finger1 -->
-        <!-- - name: R_thk_finger2 -->
-        <!-- - name: R_thk_palm -->
+        
+        <!-- - name: RARM_FINGER0 -->
+        <!-- - name: RARM_FINGER1 -->
+        <!-- jikki -->
+        - name: R_thk_finger1
+        - name: R_thk_finger2
+        - name: R_thk_palm
+        
         - name: RARM_LINK0
         - name: RARM_LINK1
         - name: RARM_LINK2
@@ -88,11 +91,13 @@
         - name: RARM_LINK5
         - name: RARM_LINK6
         - name: RARM_LINK7
-        - name: LARM_FINGER0
-        - name: LARM_FINGER1
-        <!-- - name: L_thk_finger1 -->
-        <!-- - name: L_thk_finger2 -->
-        <!-- - name: L_thk_palm    -->
+        <!-- - name: LARM_FINGER0 -->
+        <!-- - name: LARM_FINGER1 -->
+        <!-- jikki -->
+        - name: L_thk_finger1
+        - name: L_thk_finger2
+        - name: L_thk_palm
+
         - name: LARM_LINK0
         - name: LARM_LINK1
         - name: LARM_LINK2
@@ -159,8 +164,8 @@
     
     <param name="~negative" value="false" />
     <remap from="~input" to="$(arg /pcl2)" />
-    <!-- <remap from="~input/mask" to="/robot_to_mask_image/output" /> -->
-    <remap from="~input/mask" to="/apply_mask_image/output" />    
+    <!-- <remap from="~input/mask" to="/apply_mask_image/output" />     -->
+    <remap from="~input/mask" to="background_subtraction/output" />    
     <remap from="~input/camera_info" to="$(arg /camerainfo)" />
   </node>
 
@@ -181,7 +186,7 @@
         output="screen" clear_params="true">
     <remap from="~input" to="/extract_indices/output" />
     <rosparam>
-      tolerance: 0.1
+      tolerance: 0.15
       min_size: 300
     </rosparam>
   </node>
@@ -193,7 +198,7 @@
     <remap from="~input" to="/extract_indices/output" />
     <remap from="~target" to="/clustering/output" />
     <rosparam>
-      min_size: 400
+      min_size: 300
     </rosparam>
   </node>
 
