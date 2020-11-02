@@ -18,7 +18,7 @@
   
   <!-- <node pkg="tf" type="static_transform_publisher" name="virtual_camera_broadcaster" args="0.0 0.0 0.6 -0.5 0.5 -0.5 0.5 BODY static_virtual_camera 100" unless="$(arg interactive_marker)" /> -->
   <node pkg="tf" type="static_transform_publisher" name="virtual_camera_broadcaster" args="0.2 -0.4 1.6 -0.5 0.5 -0.5 0.5 LLEG_LINK5 static_virtual_camera 100" unless="$(arg interactive_marker)" />
-<!-- progn (setq theta -90) (setq vec #f(1 -1 1)) (normalize-vector (concatenate float-vector  (scale (sin (deg2rad (/ theta 2.0) )) vec) (scale (cos (deg2rad (/ theta 2.0))) (float-vector 1)))) -->
+  <!-- progn (setq theta -90) (setq vec #f(1 -1 1)) (normalize-vector (concatenate float-vector  (scale (sin (deg2rad (/ theta 2.0) )) vec) (scale (cos (deg2rad (/ theta 2.0))) (float-vector 1)))) -->
  
   <!-- <node pkg="transform_coords" name="transform_pcl" type="transform_coords_node" output="screen" /> -->
 
@@ -33,17 +33,19 @@
     </rosparam>
   </node>
 
-  <node name="bilateral_filter"
-        pkg="nodelet" type="nodelet"
-        args="standalone jsk_pcl/BilateralFilter">
-    <remap from="~input" to="$(arg /multisense_pcl2)" />
-  </node>
+  <!-- <node name="bilateral_filter" -->
+  <!--       pkg="nodelet" type="nodelet" -->
+  <!--       args="standalone jsk_pcl/BilateralFilter"> -->
+  <!--   <remap from="~input" to="$(arg /multisense_pcl2)" /> -->
+    <!-- <remap from="~input" to="/multisense_local/organized_image_points2_color" /> -->
+  <!-- </node> -->
   
   <!-- get image from static virtual camera -->
   <node name="depth_image_creator"
         pkg="nodelet" type="nodelet"
         args="load jsk_pcl/DepthImageCreator /$(arg manager)">
-    <remap from="~input" to="/bilateral_filter/output" />
+    <!-- <remap from="~input" to="/bilateral_filter/output" /> -->
+    <remap from="~input" to="$(arg /multisense_pcl2)" />
     <!-- <remap from="~input" to="/passthrough_x/output" />     -->
     <remap from="~info" to="$(arg /camerainfo)" />
     <rosparam>
@@ -52,11 +54,10 @@
     </rosparam>
   </node>
 
-
   <node name="robot_to_mask_image"
         pkg="nodelet" type="nodelet"
         args="load jsk_perception/RobotToMaskImage $(arg manager)">
-    <!-- args="standalone jsk_perception/RobotToMaskImage"> -->        
+    <!-- args="standalone jsk_perception/RobotToMaskImage"> -->   
     <remap from="~input/camera_info" to="$(arg /camerainfo)"/>
     <rosparam>
       robot_description : "jaxon_red"
