@@ -1,0 +1,131 @@
+<!-- -*- mode: xml -*- -->
+<launch>
+  <arg name="INPUT" default="image_points2_color"/>
+  <arg name="CENTROID_FRAME" default="target"/>
+  <arg name="DEFAULT_NAMESPACE" default="/multisense_local"/>
+  <!-- <arg name="FILTER_NAME_SUFFIX" default=""/> -->
+  <!-- <arg name="OUTPUT" default="hsi_output$(arg FILTER_NAME_SUFFIX)"/> -->
+
+  <arg name="h_max" default="127" />
+  <arg name="h_min" default="66"/>
+  <arg name="s_max" default="255"/>
+  <arg name="s_min" default="0" />
+  <arg name="i_max" default="255"/>
+  <arg name="i_min" default="0" />
+
+  <arg name="create_manager" default="true" />
+  <arg name="manager" default="pass_through_manager" />
+
+  <group ns="$(arg DEFAULT_NAMESPACE)">
+    <!-- create manager -->
+    <node if="$(arg create_manager)"
+          pkg="nodelet" type="nodelet" name="$(arg manager)"
+          args="manager" output="screen"/>
+
+    <!-- hsi color filter -->
+    <node pkg="nodelet" type="nodelet" name="hsi_filter"
+          args="load jsk_pcl/HSIColorFilter $(arg manager)" output="screen">
+      <remap from="~input" to="$(arg INPUT)" />
+      <!-- <remap from="~output" to="$(arg OUTPUT)" /> -->
+      <rosparam>
+        use_indices: false
+      </rosparam>
+      <param name="h_limit_max" value="$(arg h_max)" />
+      <param name="h_limit_min" value="$(arg h_min)" />
+      <param name="s_limit_max" value="$(arg s_max)" />
+      <param name="s_limit_min" value="$(arg s_min)" />
+      <param name="i_limit_max" value="$(arg i_max)" />
+      <param name="i_limit_min" value="$(arg i_min)" />
+    </node>
+    
+    <node pkg="transform_coords" name="transform_pcl" type="transform_coords_node" output="screen" >
+      <!-- <param name="arm_frame" value="larm_end_coords"/> -->
+      	</node>
+
+    <!-- passthrough filter -->
+    <node pkg="nodelet" type="nodelet" name="passthrough_larm_x"
+          args="load pcl/PassThrough $(arg manager)" output="screen">
+
+      <!-- <remap from="~input" to="$(arg DEFAULT_NAMESPACE)/hsi_filter/passthrough_x" /> -->
+      <!-- /multisense_local/passthrough_x/input <= /multisense_local/hsi_filter/output -->
+      <!-- ~input = /multisense_local/passthrough_x/input -->
+      <!-- ~input <= /multisense_local/hsi_filter/output -->
+      <remap from="~input" to="$(arg DEFAULT_NAMESPACE)/transform_pcl/larm/output"/>
+      <!-- <remap from="~output" to="~output" /> -->
+      <rosparam>
+        filter_field_name: x
+        filter_limit_min: 0
+        filter_limit_max: 0.1
+        filter_limit_negative: False
+      </rosparam>
+    </node>
+
+    <node pkg="nodelet" type="nodelet" name="passthrough_larm_y"
+          args="load pcl/PassThrough $(arg manager)" output="screen">
+      <!-- <remap from="~input" to="/camera/depth/points" /> -->
+      <remap from="~input" to="$(arg DEFAULT_NAMESPACE)/passthrough_larm_x/output"/>
+      <rosparam>
+        filter_field_name: y
+        filter_limit_min: -0.08
+        filter_limit_max:  0.08
+        filter_limit_negative: False
+      </rosparam>
+      </node>
+
+    <node pkg="nodelet" type="nodelet" name="passthrough_larm_z"
+          args="load pcl/PassThrough $(arg manager)" output="screen">
+      <!-- <remap from="~input" to="/camera/depth/points" /> -->
+      <remap from="~input" to="$(arg DEFAULT_NAMESPACE)/passthrough_larm_y/output"/>
+      <rosparam>
+        filter_field_name: z
+        filter_limit_min: -0.05
+        filter_limit_max:  0.05
+        filter_limit_negative: False
+      </rosparam>
+    </node>
+
+    
+    <node pkg="nodelet" type="nodelet" name="passthrough_rarm_x"
+          args="load pcl/PassThrough $(arg manager)" output="screen">
+
+      <remap from="~input" to="$(arg DEFAULT_NAMESPACE)/transform_pcl/rarm/output"/>
+      <!-- <remap from="~output" to="~output" /> -->
+      <rosparam>
+        filter_field_name: x
+        filter_limit_min: 0
+        filter_limit_max: 0.1
+        filter_limit_negative: False
+      </rosparam>
+    </node>
+
+    <node pkg="nodelet" type="nodelet" name="passthrough_rarm_y"
+          args="load pcl/PassThrough $(arg manager)" output="screen">
+      <!-- <remap from="~input" to="/camera/depth/points" /> -->
+      <remap from="~input" to="$(arg DEFAULT_NAMESPACE)/passthrough_rarm_x/output"/>
+      <rosparam>
+        filter_field_name: y
+        filter_limit_min: -0.08
+        filter_limit_max:  0.08
+        filter_limit_negative: False
+      </rosparam>
+      </node>
+
+    <node pkg="nodelet" type="nodelet" name="passthrough_rarm_z"
+          args="load pcl/PassThrough $(arg manager)" output="screen">
+      <!-- <remap from="~input" to="/camera/depth/points" /> -->
+      <remap from="~input" to="$(arg DEFAULT_NAMESPACE)/passthrough_rarm_y/output"/>
+      <rosparam>
+        filter_field_name: z
+        filter_limit_min: -0.05
+        filter_limit_max:  0.05
+        filter_limit_negative: False
+      </rosparam>
+    </node>
+
+    <node pkg="count_points" name="count_points_rarm" type="count_points_node" output="screen" >
+      <!-- remapの仕方 -->
+    </node>
+    
+  </group>
+  
+</launch>
