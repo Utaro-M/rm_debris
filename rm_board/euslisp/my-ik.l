@@ -151,7 +151,7 @@
   
   )
 
-
+;;reachとかに使ってるやつ
 ;; (defun jaxon_red-sqp-optimization-instant
 (defun ik-opt
     (rarm-coords larm-coords 
@@ -459,6 +459,7 @@
   )
 (warn "(jaxon_red-sqp-optimization-instant)~%")
 
+;;潜り込み
 (defun setup-jaxon_red-ik-opt-with-larmcontact
     (&key (only-kinematics? nil))
   ;; (setq *robot* (instance hrp2jsknts-robot :init))
@@ -711,7 +712,8 @@
     (send *obst* :set-color (float-vector 1 0 0) 0.5)
     )
   ;; setup robot
-  (setup-jaxon_red-ik-opt-with-larmcontact :only-kinematics? only-kinematics? )
+  ;; (setup-jaxon_red-ik-opt-with-larmcontact :only-kinematics? only-kinematics? ) 
+  (setup-jaxon_red-ik-opt-with-larmcontact-face :only-kinematics? only-kinematics? ) ;;contact coords larm を少しずらした
   ;;fix-contact nil 足を自由な位置へ
   ;;t contact-coordsの位置へ
   ;;2 その場で
@@ -891,7 +893,7 @@
                         ;; 力の正負が微妙かも
                         (list 
                               ;; (float-vector 0 0 -80 0 0 0)
-                              (float-vector -80 0 -80 0 0 0))
+                              (float-vector -40 0 -10 0 0 0))
                         ;;pivot
                         ;; (list (float-vector 0 -50 0 0 0 0))
                         ;; ;;support
@@ -924,7 +926,7 @@
                         ;; (validate-jacobian :config-task (send sqp :config-task))
                         ))
                   ))
-  (send *sqp-opt* :optimize :loop-num 70)
+  (send *sqp-opt* :optimize :loop-num 100)
   )
 
 ;;progn (load "demo.l") (prepare-simulator)  (send *robot* :angle-vector #f(-5.80758 -6.03765 -75.0039 57.4591 -13.1998 9.56411 8.66658 8.42425 -76.3062 57.8698 -12.498 -10.2217 2.00262 3.11233 -2.03515 2.71054 -7.51743 6.97288 28.0959 -132.366 -31.2662 -94.6359 -34.0954 -10.6936 30.1544 -8.20333 23.1193 125.023 26.9899 -91.5323 29.6232 5.47784 26.1095)) (start-coords) 
