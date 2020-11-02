@@ -482,9 +482,11 @@
                         ))
   (send *robot* :put :larm-contact-coords
         (make-cascoords :name :larm-contact-coords
-                        :parent (send *robot* :link "LARM_LINK4")
+                        :parent (send *robot* :link "LARM_LINK3")
                         :coords ;; (send
-                        (send (send (send (send *robot* :link "LARM_LINK5") :copy-worldcoords) :rotate (deg2rad 90) :x) :rotate (deg2rad -90) :z)
+                        ;; (send (send (send (send *robot* :link "LARM_LINK3") :copy-worldcoords) :rotate (deg2rad 90) :y) :rotate (deg2rad 30) :x)
+                        (send (send (send (send (send *robot* :link "LARM_LINK4") :copy-worldcoords) :rotate (deg2rad 90) :x) :rotate (deg2rad -90) :z) :rotate (deg2rad -50) :x)
+                        ;; (send (send (send (send *robot* :link "LARM_LINK5") :copy-worldcoords) :rotate (deg2rad 90) :x) :rotate (deg2rad -90) :z)
                                       ;; :translate (scale 1e3 (float-vector -0.0042 0.0233 -0.2345))
                                       ;; )
                         ))
@@ -495,7 +497,7 @@
     ;; (create-support-polygon *robot* (send *robot* :hand :rarm :link "RARM_LINK7"))
     ;; (create-support-polygon *robot* (send *robot* :hand :larm :link "LARM_LINK7"))
     (create-support-polygon *robot* (send *robot* :link "RARM_LINK7"))
-    (create-support-polygon *robot* (send *robot* :link "LARM_LINK5"))    
+    (create-support-polygon *robot* (send *robot* :link "LARM_LINK4"))
     (create-support-polygon *robot* (send *robot* :link "RLEG_LINK5"))
     (create-support-polygon *robot* (send *robot* :link "LLEG_LINK5"))
     )
@@ -550,7 +552,8 @@
   ;; (send (send *robot* :joint "LARM_JOINT7") :max-angle 50) 
   
   )
-
+;;r -50
+;; (dive #f(-300 400 -200) #f(-300 -200 100) :deg-l-x 90 :deg-l-y -40 :deg-r-y 40 :reset? t :fix-contact? nil :wait? t :avoid-collision? t  :rleg-pos-shift #f(-300 0 0) :lleg-pos-shift #f(0 0 0) :send? nil)
 (defun ik-opt-with-larmcontact
     (rarm-coords
      larm-coords
@@ -571,12 +574,12 @@
   (setq lleg-pos-shift (v+ lleg-pos-shift #f(0 0 -10)))  
   (setq *ground-rleg* (make-cube 1000 400 20))
   (setq *ground-lleg* (make-cube 1000 400 20))
-  (setq *ground-larm* (make-cube 1000 400 20))
+  (setq *ground-larm* (make-cube 800 600 20))
   (send *ground-rleg* :newcoords
-        (make-coords :pos (send (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate rleg-pos-shift) :worldpos)  :rpy (list 0 0 0))
+        (make-coords :pos (send (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate rleg-pos-shift) :worldpos)  :rpy (list (deg2rad -50) 0 0))
         )
   (send *ground-lleg* :newcoords
-        (make-coords :pos (send (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate lleg-pos-shift) :worldpos)  :rpy (list 0 0 0))
+        (make-coords :pos (send (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate lleg-pos-shift) :worldpos)  :rpy (list (deg2rad -50) 0 0))
         )
   (send *ground-larm* :newcoords
         larm-coords)
@@ -597,8 +600,9 @@
   (when avoid-collision?
     ;;big board version
     (format t "avoid collision~%")
-    (setq *obst* (make-cube 100 1000 200)) 
-    (send *obst* :translate (float-vector (- (/ (+ (elt (send rarm-coords :worldpos) 0) (elt (send larm-coords :worldpos) 0)) 2) 50) 0 100))
+    (setq *obst* (make-cube 100 10 1000))
+    (send *obst* :translate  (v+ (send (send larm-coords :copy-worldcoords) :worldpos) #f(0 300 0)))
+    (send *obst* :rotate (deg2rad -30) :y)
     (send *obst* :set-color (float-vector 1 0 0) 0.5)
     )
   ;; setup robot
@@ -755,7 +759,7 @@
                                  :max-fz 200
                                  :contact-face
                                         ;                                 (send *robot-env* :robot :get :larm_link6-support-polygon)
-                                 (send *robot-env* :robot :get :larm_link5-support-polygon)
+                                 (send *robot-env* :robot :get :larm_link4-support-polygon)
                                  )
                        ))
                   :kin-scale-list
@@ -768,7 +772,7 @@
                   :collision-pair-list
 
                   (if avoid-collision?
-                      (mapcar #'(lambda (l) (list l *obst*)) (flatten (send *robot-env* :robot :legs :links)))
+                      (mapcar #'(lambda (l) (list l *obst*)) (flatten (send *robot-env* :robot :arms :links)))
                   )
                   
                   ;; (list  (send *robot-env* :robot :rleg :links)  (send *robot-env* :robot :lleg :links))
@@ -781,7 +785,7 @@
                         ;; (list (float-vector 0 80 0 0 0 0))
                         ;; 力の正負が微妙かも
                         (list (float-vector 0 0 -80 0 0 0)
-                              (float-vector 0 0 -80 0 0 0)
+                              ;; (float-vector 0 0 -80 0 0 0)
                               (float-vector 0 0 -80 0 0 0))
                         ;;pivot
                         ;; (list (float-vector 0 -50 0 0 0 0))
@@ -793,8 +797,8 @@
                   (if (and (not only-kinematics?) apply-external-force?)
                       (progn
                         (list (send *robot-env* :robot :get :rarm-contact-coords)
-                              (send *robot-env* :robot :get :larm-contact-coords)
-                              (send *robot-env* :robot  :link "LARM_LINK5"))
+                              ;; (send *robot-env* :robot :get :larm-contact-coords)
+                              (send *robot-env* :robot  :link "LARM_LINK4"))
                         ;;pivot
                         ;; (list (send *robot-env* :robot :get :rarm-contact-coords))
                         ;;support
