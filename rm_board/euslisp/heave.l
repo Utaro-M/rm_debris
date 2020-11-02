@@ -521,7 +521,6 @@
   
   )
 
-
 (defun move-hand
     (arm relative-pos &key (send? t) (sync? t))
   (if sync?
@@ -531,6 +530,7 @@
       (progn
         (send-pose (- movetime 1500) :force-move flag-simulator )))
   )
+
   
 ;;手先位置は固定で腰を高くするheight 1000とか
 ;;stand-up 1000 :cog #f( 100 0 800)
