@@ -3,7 +3,7 @@
   <arg name="manager" default="camera_nodelet_manager" />
   <arg name="gui" default="true" />
   <arg name="/multisense_pcl2" default="/multisense_local/image_points2_color" />
-  <arg name="/pcl2" default="/depth_image_creator/output_cloud" />
+  <arg name="/processed_pcl2" default="/depth_image_creator/output_cloud" />
   <arg name="/multisense_camerainfo" default="/multisense_local/left/camera_info" />  
   <arg name="/camerainfo" default="/static_virtual_camera/camera_info" />
   
@@ -24,10 +24,7 @@
 
   <node pkg="nodelet" type="nodelet" name="passthrough_x"
         args="load pcl/PassThrough $(arg manager)" output="screen">
-    <!-- <remap from="~input" to="/camera/depth/points" /> -->
-    <!-- <remap from="~input" to="$(arg DEFAULT_NAMESPACE)/passthrough_larm_y/output"/> -->
     <remap from="~input" to="$(arg /multisense_pcl2)" />
-    <!-- <remap from="~input" to="/transform_pcl/larm/output" />     -->
     <rosparam>
       filter_field_name: z
       filter_limit_min:  1.5
@@ -46,7 +43,7 @@
   <node name="depth_image_creator"
         pkg="nodelet" type="nodelet"
         args="load jsk_pcl/DepthImageCreator /$(arg manager)">
-    <remap from="~input" to="$(arg /multisense_pcl2)" />
+    <remap from="~input" to="/bilateral_filter/output" />
     <!-- <remap from="~input" to="/passthrough_x/output" />     -->
     <remap from="~info" to="$(arg /camerainfo)" />
     <rosparam>
@@ -129,8 +126,7 @@
         <!-- args="standalone jsk_perception/BackgroundSubstraction"> -->
         <!-- <remap from="~image" to="/multisense_local/left/image_rect_color" /> -->
         <remap from="~image" to="/depth_image_creator/output_image" />
-        <!-- <remap from="~image" to="/passthrough_x/output" />         -->
-
+        <!-- <remap from="~image" to="/passthrough_x/output" /> -->
   </node>
 
   <!-- マスク画像を抽出した動画に適用o -->
@@ -169,9 +165,9 @@
         output="screen" clear_params="true">
     
     <param name="~negative" value="false" />
-    <remap from="~input" to="$(arg /pcl2)" />
+    <remap from="~input" to="$(arg /processed_pcl2)" />
     <!-- <remap from="~input/mask" to="/apply_mask_image/output" />     -->
-    <remap from="~input/mask" to="background_subtraction/output" />    
+    <remap from="~input/mask" to="background_subtraction/output" />
     <remap from="~input/camera_info" to="$(arg /camerainfo)" />
   </node>
 
@@ -181,7 +177,7 @@
         name="extract_indices"
         args="load jsk_pcl/ExtractIndices $(arg manager)"
         output="screen" clear_params="true">    
-    <remap from="~input" to="$(arg /pcl2)" />
+    <remap from="~input" to="$(arg /processed_pcl2)" />
     <remap from="~indices" to="/mask_image_filter/output" />
   </node>
 
