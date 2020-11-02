@@ -220,6 +220,41 @@
   )
 
 
+(defun dive
+    (rarm-move larm-move
+               &key
+               rarm-coords
+               larm-coords
+               (fix-contact? t) (send? t) (cog #f(0 0 700))
+               (deg-r-x 0) (deg-r-y 0) (deg-r-z 0) (deg-l-x 0) (deg-l-y 0) (deg-l-z 0)
+               (wait? t) (reset? t) (apply-external-force? t) (avoid-collision? t)
+               (rleg-pos-shift #f(0 0 -10))
+               (lleg-pos-shift #f(0 0 -10))
+               (look-at-hands? nil))
+
+  ;; needless??
+  ;; (send *robot* :angle-vector (send *ri* :state :angle-vector))
+  (if (not rarm-coords)
+      (setq rarm-coords (send (send (send (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate rarm-move) :rotate (deg2rad deg-r-x) :x) :rotate (deg2rad deg-r-y) :y) :rotate (deg2rad deg-r-z) :z)))
+  (if (not larm-coords)
+      (setq larm-coords (send (send (send (send (send *robot* :larm :end-coords :copy-worldcoords) :translate larm-move) :rotate (deg2rad deg-l-x) :x) :rotate (deg2rad deg-l-y) :y) :rotate (deg2rad deg-l-z) :z)))
+
+  (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
+  (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
+  (setq pre-pose (send *robot* :angle-vector))
+  (setq pre-lleg (send *robot* :lleg :end-coords :copy-worldcoords))
+  (ik-opt-with-larmcontact rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :reset? reset? :apply-external-force? apply-external-force? :avoid-collision? avoid-collision? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift)
+  (if send?
+      (progn
+        ;; (send-pose movetime :force-move flag-simulator :wait? wait? :pre-pose pre-pose :pre-lleg pre-lleg)
+        (if (not fix-contact?)
+            (move-on-foot rleg-coords lleg-coords (send *robot* :rleg :end-coords :copy-worldcoords)   (send *robot* :lleg :end-coords :copy-worldcoords) 
+                          ))
+        (send-pose movetime :force-move flag-simulator :wait? wait? :pre-pose pre-pose :pre-lleg pre-lleg :look-at-hands? look-at-hands?)
+        ))
+  )
+
+
 ;; (setq waiting nil)
 
 ;;progn (load "heave.l ") (prepare-simulator)
