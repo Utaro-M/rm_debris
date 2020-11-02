@@ -164,29 +164,51 @@
      (only-kinematics? nil)
      (pre-process-func)
      (reset? t)
+     ;; (rleg-pos #f( 0 -200 -10))
+     ;; (lleg-pos #f( 0  200 -10))
+     (rleg-pos-shift )
+     (lleg-pos-shift )
      &allow-other-keys
      )
 
   ;; setup environment
-  ;; (setq *ground-rleg* (make-cube 400 400 20))
-  ;; (setq *ground-lleg* (make-cube 400 400 20))
-  (setq *ground-rleg* (make-cube 1000 500 20))
-  (setq *ground-lleg* (make-cube 1000 500 20))  
-  ;; (setq *ground-larm* (make-cube 500 500 20))
+  ;;脚を開きすぎるとIK too lergeになる
+  ;; (setq *ground-rleg* (make-cube 1000 500 20))
+  ;; (setq *ground-lleg* (make-cube 1000 500 20))
+  ;; (send *ground-rleg* :newcoords
+  ;;       (make-coords :pos (float-vector 0 -260 -10) :rpy (list 0 0 0))
+  ;;       )
+  ;; (send *ground-lleg* :newcoords
+  ;;       (make-coords :pos (float-vector 0 260 -10) :rpy (list 0 0 0))
+  ;;       )
 
-  (send *ground-rleg* :newcoords
-        (make-coords :pos (float-vector 0 -260 -10) :rpy (list 0 0 0))
+  ;;
+  ;; (setq *ground-rleg* (make-cube 1000 360 20))
+  ;; (setq *ground-lleg* (make-cube 1000 360 20))
+  (setq *ground-rleg* (make-cube 1000 400 20))
+  (setq *ground-lleg* (make-cube 1000 400 20))
+  ;; (send *ground-rleg* :newcoords
+  ;;       (make-coords :pos (float-vector 0 (* -1 ground-y) -10) :rpy (list 0 0 0))
+  ;;       )
+  ;; (send *ground-lleg* :newcoords
+  ;;       (make-coords :pos (float-vector 0 (*  1 ground-y) -10) :rpy (list 0 0 0))
+  ;;       )
+    (send *ground-rleg* :newcoords
+        (make-coords :pos (send (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate rleg-pos-shift) :worldpos)  :rpy (list 0 0 0))
         )
   (send *ground-lleg* :newcoords
-        (make-coords :pos (float-vector 0 260 -10) :rpy (list 0 0 0))
+        (make-coords :pos (send (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate lleg-pos-shift) :worldpos)  :rpy (list 0 0 0))
         )
+
   
   ;; (send *ground-larm* :newcoords
   ;;       (make-coords :pos (float-vector 900 500 1000) :rpy (list 0 (deg2rad -45) (deg2rad 45))))
   ;; (setq *env-list* (list *ground-rleg* *ground-lleg* *ground-larm*))
   (setq *env-list* (list *ground-rleg* *ground-lleg*))
   (send-all *env-list* :worldcoords)
-  (send-all *env-list* :set-color (float-vector 0.5 0.5 0.25))
+  ;; (send-all *env-list* :set-color (float-vector 0.5 0.5 0.25))
+  (send *ground-rleg* :set-color (float-vector 1 0 0))
+  (send *ground-lleg* :set-color (float-vector 0 0 1))
   (setq *rarm-coords* (instance arrow-object :init))
   (send *rarm-coords* :newcoords
         ;; (make-coords :pos (float-vector 290 -400 320) :rpy (float-vector 0 (deg2rad  30) (deg2rad -90)))
@@ -205,8 +227,9 @@
     ;; (setq *obst* (make-cube 160 600 500))
     ;; (send *obst* :translate (float-vector (- (elt (send rarm-coords :worldpos) 0) 100) 0 250))
     ;;big board version
+    (format t "avoid collision~%")
     (setq *obst* (make-cube 100 1000 200)) 
-    (send *obst* :translate (float-vector (- (/ (+ (elt (send rarm-coords :worldpos) 0) (elt (send larm-coords :worldpos) 0)) 2)50) 0 100))
+    (send *obst* :translate (float-vector (- (/ (+ (elt (send rarm-coords :worldpos) 0) (elt (send larm-coords :worldpos) 0)) 2) 50) 0 100))
     (send *obst* :set-color (float-vector 1 0 0) 0.5)
     )
   ;; setup robot
@@ -442,7 +465,7 @@
   (format t "init-lcoords = ~A~%" init-lcoords)
   (format t "next-rcoords = ~A~%" next-rcoords)
   (format t "next-lcoords = ~A~%" next-lcoords)  
-  (if (eq which? :lpleg)
+  (if (eq which? :lleg)
       (send *ri* :set-foot-steps
         ;; (list
         ;;  (make-coords :coords init-rcoords :name :rleg)
