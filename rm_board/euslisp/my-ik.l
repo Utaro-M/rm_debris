@@ -1049,7 +1049,7 @@
                         ;; 力の正負が微妙かも
                         (list 
                               ;; (float-vector 0 0 -80 0 0 0)
-                              (float-vector 0 0 -80 0 0 0))
+                              (float-vector -80 0 -80 0 0 0))
                         ;;pivot
                         ;; (list (float-vector 0 -50 0 0 0 0))
                         ;; ;;support
