@@ -556,7 +556,10 @@
   ;; (send-pose movetime :force-move flag-simulator)
   
   ;;choreonoid
-  ;; (send *robot* :angle-vector (send *ri* :state :angle-vector))  
+  ;; (send *robot* :angle-vector (send *ri* :state :angle-vector))
+
+  (if sync?
+     (send *robot* :angle-vector (send *ri* :state :angle-vector))) 
   ;;腕を引く
   (send *robot* arm :move-end-pos (scale offset #f(-1 0 0)) :local)
   (if send?
@@ -577,10 +580,10 @@
   (if (eq arm :rarm)
       (progn
         (send *robot* :larm :move-end-pos (scale offset #f(0 0.2 0)) :local)
-        (send *robot* arm :move-end-pos (scale offset #f(1.6 0 0)) :local))
+        (send *robot* arm :move-end-pos (scale offset #f(1.5 0 0)) :local))
     (progn
       (send *robot* :rarm :move-end-pos (scale offset #f(0 -0.2 0)) :local)
-    (send *robot* arm :move-end-pos (scale offset #f(1.6 0 0)) :local)))
+    (send *robot* arm :move-end-pos (scale offset #f(1.5 0 0)) :local)))
   (if send?
       (progn
         (send-pose (- movetime 1500) :force-move flag-simulator )))
