@@ -591,6 +591,18 @@
                                       ;; :translate (scale 1e3 (float-vector -0.0042 0.0233 -0.2345))
                                       ;; )
                         ))
+    (send *robot* :put :larm-elbow-contact-coords
+        (make-cascoords :name :larm-elbow-contact-coords
+                        :parent (send *robot* :link "LARM_LINK3")
+                        :coords ;; (send
+                        ;; (send (send (send (send *robot* :link "LARM_LINK3") :copy-worldcoords) :rotate (deg2rad 90) :y) :rotate (deg2rad 30) :x)
+                        ;; (send (send (send (send (send *robot* :link "LARM_LINK4") :copy-worldcoords)
+                        ;;                   :rotate (deg2rad 90) :x) :rotate (deg2rad -90) :z) :rotate (deg2rad -50) :x)
+                        (send (send (send (send (send (send *robot* :link "LARM_LINK4") :copy-worldcoords) :rotate (deg2rad 90) :x) :rotate (deg2rad -90) :z) :rotate (deg2rad 0) :x) :translate  #f(0 0 0))
+                        ;; (send (send (send (send *robot* :link "LARM_LINK5") :copy-worldcoords) :rotate (deg2rad 90) :x) :rotate (deg2rad -90) :z)
+                                      ;; :translate (scale 1e3 (float-vector -0.0042 0.0233 -0.2345))
+                                      ;; )
+                        ))
   
   (send *robot* :init-pose)
   (send *robot* :fix-leg-to-coords (make-coords))
@@ -600,6 +612,7 @@
     ;; (create-support-polygon *robot* (send *robot* :hand :larm :link "LARM_LINK7"))
     (create-support-polygon *robot* (send *robot* :link "RARM_LINK7"))
     (create-support-polygon *robot* (send *robot* :link "LARM_LINK3"))
+    (create-support-polygon *robot* (send *robot* :link "LARM_LINK4"))
     (create-support-polygon *robot* (send *robot* :link "RLEG_LINK5"))
     (create-support-polygon *robot* (send *robot* :link "LLEG_LINK5"))
     )
@@ -717,16 +730,17 @@
   (when avoid-collision?
     ;;big board version
     (format t "avoid collision~%")
+    (setq tilt-y -40)
     ;; (setq *obst* (make-cube 100 10 1000))
     (setq *obst* (make-cube 20 600 1000))
     (send *obst* :translate  (v+ (send (send larm-coords :copy-worldcoords) :worldpos) #f(150 0 0)))
-    (send *obst* :rotate (deg2rad -40) :y)
+    (send *obst* :rotate (deg2rad tilt-y) :y)
     ;; (send *obst* :rotate (deg2rad 20) :z)
     (send *obst* :set-color (float-vector 1 0 0) 0.5)
 
     (setq *obst-side* (make-cube 300 20 1000))
-    (send *obst-side* :translate  (v+ (send (send larm-coords :copy-worldcoords) :worldpos) #f(150 400 0)))
-    (send *obst-side* :rotate (deg2rad -20) :y)
+    (send *obst-side* :translate  (v+ (send (send larm-coords :copy-worldcoords) :worldpos) #f(150 300 0)))
+    (send *obst-side* :rotate (deg2rad tilt-y) :y)
     (send *obst-side* :set-color (float-vector 1 0 0) 0.5)
     )
   ;; setup robot
@@ -785,6 +799,7 @@
                                (send *ground-lleg* :copy-worldcoords)
                                (send *rarm-coords* :copy-worldcoords)
                                (send *ground-larm* :copy-worldcoords)
+                               (send *ground-larm* :copy-worldcoords);;リンクの長さ分ずらしたほうが良さそう？
                                )
                          )
                         ((eq fix-contact? nil)
@@ -792,13 +807,15 @@
                                (send *robot-env* :contact "lleg" :contact-coords)
                                (send *rarm-coords* :copy-worldcoords)
                                (send *robot-env* :contact "larm" :contact-coords)
+                               (send *robot-env* :contact "larm" :contact-coords)
                                )
                          )
                         (t
                          (list rleg-now
                                lleg-now
                                (send *rarm-coords* :copy-worldcoords)
-                               (send *robot-env* :contact "larm" :contact-coords);;?????
+                               (send *robot-env* :contact "larm" :contact-coords)
+                               (send *robot-env* :contact "larm" :contact-coords)
                                )
                          ))
                   :kin-attention-coords-list ;;幾何到達着目姿勢リスト
@@ -807,6 +824,7 @@
                         ;; (send *robot-env* :robot :get :rarm-contact-coords)
                         (send *robot-env* :robot  :rarm :end-coords)
                         (send *robot-env* :robot :get :larm-contact-coords)
+                        (send *robot-env* :robot :get :larm-elbow-contact-coords)
                         ;; (send *robot-env* :robot  :larm :end-coords)          
                         )
                   :contact-target-coords-list
@@ -815,11 +833,13 @@
                              (list (send *ground-rleg* :copy-worldcoords)
                                    (send *ground-lleg* :copy-worldcoords)
                                    (send *ground-larm* :copy-worldcoords)
+                                   (send *ground-larm* :copy-worldcoords);;リンクの長さ分ずらしたほうが良さそう？
                                    )
                              )
                             ((eq fix-contact? nil)
                              (list (send *robot-env* :contact "rleg" :contact-coords)
                                    (send *robot-env* :contact "lleg" :contact-coords)
+                                   (send *robot-env* :contact "larm" :contact-coords)
                                    (send *robot-env* :contact "larm" :contact-coords)
                                    )
                              )
@@ -827,7 +847,8 @@
                              (list
                               rleg-now
                               lleg-now
-                              (send *robot-env* :contact "larm" :contact-coords);;?????                              
+                              (send *robot-env* :contact "larm" :contact-coords);;?????
+                              (send *robot-env* :contact "larm" :contact-coords)
                               )
                          )))
                   :contact-attention-coords-list
@@ -835,6 +856,7 @@
                       (list (send *robot-env* :robot :get :rleg-contact-coords)
                             (send *robot-env* :robot :get :lleg-contact-coords)
                             (send *robot-env* :robot :get :larm-contact-coords)
+                            (send *robot-env* :robot :get :larm-elbow-contact-coords)
                             ))
                   :contact-constraint-list
                   (if (not only-kinematics?)
@@ -887,6 +909,15 @@
                                  :contact-face
                                         ;                                 (send *robot-env* :robot :get :larm_link6-support-polygon)
                                  (send *robot-env* :robot :get :larm_link3-support-polygon)
+                                 )
+                       (instance default-contact-constraint
+                                 :init
+                                 :mu-trans 0.2
+                                 :mu-rot 0.01
+                                 :max-fz 200
+                                 :contact-face
+                                        ;                                 (send *robot-env* :robot :get :larm_link6-support-polygon)
+                                 (send *robot-env* :robot :get :larm_link4-support-polygon)
                                  )
                        ))
                   :kin-scale-list
