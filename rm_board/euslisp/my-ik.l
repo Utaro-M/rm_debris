@@ -951,14 +951,14 @@
      )
   (setq rleg-pos-shift (v+ rleg-pos-shift #f(0 0 -10)))
   (setq lleg-pos-shift (v+ lleg-pos-shift #f(0 0 -10)))  
-  (setq *ground-rleg* (make-cube 800 400 20))
-  (setq *ground-lleg* (make-cube 800 400 20))
+  (setq *ground-rleg* (make-cube 800 200 20))
+  (setq *ground-lleg* (make-cube 800 200 20))
   (setq *ground-larm* (make-cube 800 600 20))
   (send *ground-rleg* :newcoords
-        (make-coords :pos (send (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate rleg-pos-shift) :worldpos)  :rpy (list (deg2rad -50) 0 0))
+        (make-coords :pos (send (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate rleg-pos-shift) :worldpos)  :rpy (list (deg2rad -70) 0 0))
         )
   (send *ground-lleg* :newcoords
-        (make-coords :pos (send (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate lleg-pos-shift) :worldpos)  :rpy (list (deg2rad -50) 0 0))
+        (make-coords :pos (send (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate lleg-pos-shift) :worldpos)  :rpy (list (deg2rad -70) 0 0))
         )
   (send *ground-larm* :newcoords
         larm-coords)
