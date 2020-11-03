@@ -1006,7 +1006,8 @@
          ))
 
   (if reset?
-      (send *robot-env* :robot :reset-manip-pose))
+      (send *robot-env* :robot :reset-manip-pose)
+      (send *robot* :torso-waist-p :joint-angle 30))
   ;; draw
   (unless (boundp '*irtviewer*)
     (make-irtviewer)
@@ -1194,7 +1195,7 @@
   (send *sqp-opt* :optimize :loop-num 100)
   )
 
-(defun move-on-foot(init-rcoords init-lcoords next-rcoords  next-lcoords &key (which? :lleg))
+(defun move-on-foot(init-rcoords init-lcoords next-rcoords  next-lcoords &key (which? :lleg) (only-move? nil))
   ;; (setq ldif (send (send init-lcoords :copy-worldcoords) :transformation init-lcoords))
   ;; (setq rdif (send (send init-rcoords :copy-worldcoords) :transformation next-rcoords))
   (format t "init-lcoords = ~A~%" init-lcoords)
@@ -1234,8 +1235,12 @@
   ;; (format t "lleg init ~A~%" init-lcoords)
   ;; (format t "rleg ~A~%" (make-coords :coords (send init-rcoords :transformation next-rcoords) :name :rleg))
   ;; (format t "lleg ~A~%" (make-coords :coords (send init-lcoords :transformation next-lcoords) :name :lleg))
+  (if only-move? 
+      (send *robot* :angle-vector (send *ri* :state :angle-vector)))
+  (send *robot* :move-coords (send (send next-lcoords :copy-worldcoords) :translate #f(0 0 100)) (send *robot* :link "LLEG_LINK5"))
+  (send *robot* :move-coords (send (send next-rcoords :copy-worldcoords) :translate #f(0 0 100)) (send *robot* :link "RLEG_LINK5"))
+  (objects)
   )
-
 (defun ik-walk
     (rarm-coords larm-coords
                  &key rleg lleg cog (move-root-link :z) (virtual-joint-weight #f(0.5 0.5 0.5  1 1 1))
