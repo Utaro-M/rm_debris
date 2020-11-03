@@ -524,6 +524,7 @@
   (send (send *robot* :joint "RARM_JOINT0") :max-angle 40)
   (send (send *robot* :joint "LARM_JOINT0") :min-angle -40)
   (send (send *robot* :joint "LARM_JOINT0") :max-angle 0)
+  
   ;;肩の特異点問題dem-step-simulator
   ;; (send (send *robot* :joint "RARM_JOINT1") :min-angle -100)
   ;; (send (send *robot* :joint "RARM_JOINT1") :max-angle 80)
@@ -533,9 +534,11 @@
   (send (send *robot* :joint "RARM_JOINT1") :min-angle -140)
   (send (send *robot* :joint "RARM_JOINT1") :max-angle 140)
   (send (send *robot* :joint "LARM_JOINT1") :min-angle -140)
-  (send (send *robot* :joint "LARM_JOINT1") :max-angle 140)
+  (send (send *robot* :joint "LARM_JOINT1") :max-angle 30)
 
-
+  (send (send *robot* :joint "LARM_JOINT4") :max-angle 0)
+  ;; (send (send *robot* :joint "RARM_JOINT4") :max-angle 0)
+  
   ;; (send (send *robot* :joint "RARM_JOINT6") :min-angle -50)
   ;; (send (send *robot* :joint "RARM_JOINT6") :max-angle 50)
   ;; (send (send *robot* :joint "LARM_JOINT5") :min-angle -50)
@@ -583,7 +586,7 @@
                         ;; (send (send (send (send *robot* :link "LARM_LINK3") :copy-worldcoords) :rotate (deg2rad 90) :y) :rotate (deg2rad 30) :x)
                         ;; (send (send (send (send (send *robot* :link "LARM_LINK4") :copy-worldcoords)
                         ;;                   :rotate (deg2rad 90) :x) :rotate (deg2rad -90) :z) :rotate (deg2rad -50) :x)
-                        (send (send (send (send (send (send *robot* :link "LARM_LINK3") :copy-worldcoords) :rotate (deg2rad 90) :x) :rotate (deg2rad -90) :z) :rotate (deg2rad -60) :x) :translate  #f(40 0 0))
+                        (send (send (send (send (send (send *robot* :link "LARM_LINK3") :copy-worldcoords) :rotate (deg2rad 90) :x) :rotate (deg2rad -90) :z) :rotate (deg2rad 0) :x) :translate  #f(0 0 0))
                         ;; (send (send (send (send *robot* :link "LARM_LINK5") :copy-worldcoords) :rotate (deg2rad 90) :x) :rotate (deg2rad -90) :z)
                                       ;; :translate (scale 1e3 (float-vector -0.0042 0.0233 -0.2345))
                                       ;; )
@@ -612,6 +615,9 @@
   ;; (send (send *robot* :joint "LLEG_JOINT2") :min-angle -70)
   (send (send *robot* :joint "CHEST_JOINT1") :min-angle 0)
   (send (send *robot* :joint "CHEST_JOINT1") :max-angle 30)
+
+  (send (send *robot* :joint "CHEST_JOINT2") :max-angle 30)
+  (send (send *robot* :joint "CHEST_JOINT2") :min-angle -30)
   
   (send (send *robot* :joint "RLEG_JOINT0") :max-angle 20)
   (send (send *robot* :joint "LLEG_JOINT0") :min-angle -20)
@@ -633,7 +639,11 @@
   (send (send *robot* :joint "LARM_JOINT1") :min-angle -140)
   (send (send *robot* :joint "LARM_JOINT1") :max-angle 140)
 
+  (send (send *robot* :joint "LARM_JOINT1") :max-angle 30)
 
+  (send (send *robot* :joint "LARM_JOINT4") :max-angle 0)
+  ;; (send (send *robot* :joint "RARM_JOINT4") :max-angle 0)
+   
   ;; (send (send *robot* :joint "RARM_JOINT6") :min-angle -50)
   ;; (send (send *robot* :joint "RARM_JOINT6") :max-angle 50)
   ;; (send (send *robot* :joint "LARM_JOINT5") :min-angle -50)
@@ -710,7 +720,7 @@
     ;; (setq *obst* (make-cube 100 10 1000))
     (setq *obst* (make-cube 20 600 1000))
     (send *obst* :translate  (v+ (send (send larm-coords :copy-worldcoords) :worldpos) #f(150 0 0)))
-    (send *obst* :rotate (deg2rad -20) :y)
+    (send *obst* :rotate (deg2rad -40) :y)
     ;; (send *obst* :rotate (deg2rad 20) :z)
     (send *obst* :set-color (float-vector 1 0 0) 0.5)
 
@@ -745,8 +755,9 @@
          ))
 
   (if reset?
-      ;; (send *robot-env* :robot :reset-manip-pose)
-      (send *robot-env* :robot :reset-pose))
+      (send *robot-env* :robot :reset-manip-pose)
+      ;; (send *robot-env* :robot :reset-pose)
+    )
   ;; draw
   (unless (boundp '*irtviewer*)
     (make-irtviewer)
