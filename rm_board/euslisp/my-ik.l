@@ -553,6 +553,7 @@
   ;; (send (send *robot* :joint "LARM_JOINT7") :max-angle 50) 
   
   )
+   
 ;;contact coordsの位置を関節から少しずらす
 (defun setup-jaxon_red-ik-opt-with-larmcontact-face
     (&key (only-kinematics? nil))
@@ -577,16 +578,17 @@
                         ))
   (send *robot* :put :larm-contact-coords
         (make-cascoords :name :larm-contact-coords
-                        :parent (send *robot* :link "LARM_LINK3")
+                        :parent (send *robot* :link "LARM_LINK2")
                         :coords ;; (send
                         ;; (send (send (send (send *robot* :link "LARM_LINK3") :copy-worldcoords) :rotate (deg2rad 90) :y) :rotate (deg2rad 30) :x)
                         ;; (send (send (send (send (send *robot* :link "LARM_LINK4") :copy-worldcoords)
                         ;;                   :rotate (deg2rad 90) :x) :rotate (deg2rad -90) :z) :rotate (deg2rad -50) :x)
-                        (send (send (send (send (send (send *robot* :link "LARM_LINK4") :copy-worldcoords) :rotate (deg2rad 90) :x) :rotate (deg2rad -90) :z) :rotate (deg2rad -60) :x) :translate  #f(40 0 0))
+                        (send (send (send (send (send (send *robot* :link "LARM_LINK3") :copy-worldcoords) :rotate (deg2rad 90) :x) :rotate (deg2rad -90) :z) :rotate (deg2rad -60) :x) :translate  #f(40 0 0))
                         ;; (send (send (send (send *robot* :link "LARM_LINK5") :copy-worldcoords) :rotate (deg2rad 90) :x) :rotate (deg2rad -90) :z)
                                       ;; :translate (scale 1e3 (float-vector -0.0042 0.0233 -0.2345))
                                       ;; )
                         ))
+  
   (send *robot* :init-pose)
   (send *robot* :fix-leg-to-coords (make-coords))
   (unless only-kinematics?
@@ -594,7 +596,7 @@
     ;; (create-support-polygon *robot* (send *robot* :hand :rarm :link "RARM_LINK7"))
     ;; (create-support-polygon *robot* (send *robot* :hand :larm :link "LARM_LINK7"))
     (create-support-polygon *robot* (send *robot* :link "RARM_LINK7"))
-    (create-support-polygon *robot* (send *robot* :link "LARM_LINK4"))
+    (create-support-polygon *robot* (send *robot* :link "LARM_LINK3"))
     (create-support-polygon *robot* (send *robot* :link "RLEG_LINK5"))
     (create-support-polygon *robot* (send *robot* :link "LLEG_LINK5"))
     )
@@ -671,7 +673,7 @@
   (setq lleg-pos-shift (v+ lleg-pos-shift #f(0 0 -10)))  
   (setq *ground-rleg* (make-cube 800 400 20))
   (setq *ground-lleg* (make-cube 800 400 20))
-  (setq *ground-larm* (make-cube 800 600 20))
+  (setq *ground-larm* (make-cube 600 600 20))
   (send *ground-rleg* :newcoords
         (make-coords :pos (send (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate rleg-pos-shift) :worldpos)  :rpy (list (deg2rad -70) 0 0))
         )
@@ -709,7 +711,13 @@
     (setq *obst* (make-cube 20 600 1000))
     (send *obst* :translate  (v+ (send (send larm-coords :copy-worldcoords) :worldpos) #f(150 0 0)))
     (send *obst* :rotate (deg2rad -20) :y)
+    ;; (send *obst* :rotate (deg2rad 20) :z)
     (send *obst* :set-color (float-vector 1 0 0) 0.5)
+
+    (setq *obst-side* (make-cube 300 20 1000))
+    (send *obst-side* :translate  (v+ (send (send larm-coords :copy-worldcoords) :worldpos) #f(150 400 0)))
+    (send *obst-side* :rotate (deg2rad -20) :y)
+    (send *obst-side* :set-color (float-vector 1 0 0) 0.5)
     )
   ;; setup robot
   ;; (setup-jaxon_red-ik-opt-with-larmcontact :only-kinematics? only-kinematics? ) 
@@ -737,7 +745,8 @@
          ))
 
   (if reset?
-      (send *robot-env* :robot :reset-manip-pose))
+      ;; (send *robot-env* :robot :reset-manip-pose)
+      (send *robot-env* :robot :reset-pose))
   ;; draw
   (unless (boundp '*irtviewer*)
     (make-irtviewer)
@@ -745,7 +754,7 @@
     (send *irtviewer* :draw-floor 500)
     (send *irtviewer* :floor-color (float-vector 0 0 0))
     )
-  (objects (append (list *robot* *rarm-coords* *ground-larm*) *env-list*  (if avoid-collision? (list *obst*))
+  (objects (append (list *robot* *rarm-coords* *ground-larm*) *env-list*  (if avoid-collision? (list *obst* *obst-side*))
                    ))
 
   (setq *instant-config-task*
@@ -866,7 +875,7 @@
                                  :max-fz 200
                                  :contact-face
                                         ;                                 (send *robot-env* :robot :get :larm_link6-support-polygon)
-                                 (send *robot-env* :robot :get :larm_link4-support-polygon)
+                                 (send *robot-env* :robot :get :larm_link3-support-polygon)
                                  )
                        ))
                   :kin-scale-list
@@ -877,13 +886,14 @@
                             (list 1 2 3 4 5 6)
                             ))
                   :collision-pair-list
-
                   (if avoid-collision?
-                      (mapcar #'(lambda (l) (list l *obst*)) (flatten (send *robot-env* :robot :arms :links)))
+                      (append
+                       (mapcar #'(lambda (l) (list l *obst* )) (flatten (send *robot-env* :robot :arms :links)))
+                       (mapcar #'(lambda (l) (list l *obst-side*)) (flatten (send *robot-env* :robot :arms :links))))
                   )
                   
                   ;; (list  (send *robot-env* :robot :rleg :links)  (send *robot-env* :robot :lleg :links))
-                  :collision-distance-margin 0.1
+                  :collision-distance-margin  0.1
                   :external-wrench-list
                   (if (and (not only-kinematics?) apply-external-force?)
                       (progn
