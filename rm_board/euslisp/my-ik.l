@@ -512,8 +512,9 @@
   ;; (send (send *robot* :joint "LLEG_JOINT0") :max-angle 35)
   ;; (send (send *robot* :joint "RLEG_JOINT2") :min-angle -70)
   ;; (send (send *robot* :joint "LLEG_JOINT2") :min-angle -70)
-  (send (send *robot* :joint "CHEST_JOINT1") :min-angle 0)
-  (send (send *robot* :joint "CHEST_JOINT1") :max-angle 30)
+  
+  ;; (send (send *robot* :joint "CHEST_JOINT1") :min-angle 0)
+  ;; (send (send *robot* :joint "CHEST_JOINT1") :max-angle 30)
   
   (send (send *robot* :joint "RLEG_JOINT0") :max-angle 20)
   (send (send *robot* :joint "LLEG_JOINT0") :min-angle -20)
@@ -696,7 +697,7 @@
   (setq lleg-pos-shift (v+ lleg-pos-shift #f(0 0 -10)))  
   (setq *ground-rleg* (make-cube 800 400 20))
   (setq *ground-lleg* (make-cube 800 400 20))
-  (setq *ground-larm* (make-cube 600 600 20))
+  (setq *ground-larm* (make-cube 800 600 20))
   (send *ground-rleg* :newcoords
         (make-coords :pos (send (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate rleg-pos-shift) :worldpos)  :rpy (list (deg2rad -70) 0 0))
         )
