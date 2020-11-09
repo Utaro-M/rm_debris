@@ -186,8 +186,8 @@
   ;;
   ;; (setq *ground-rleg* (make-cube 1000 360 20))
   ;; (setq *ground-lleg* (make-cube 1000 360 20))
-  (setq *ground-rleg* (make-cube 1000 400 20))
-  (setq *ground-lleg* (make-cube 1000 400 20))
+  (setq *ground-rleg* (make-cube 800 400 20))
+  (setq *ground-lleg* (make-cube 800 400 20))
   ;; (send *ground-rleg* :newcoords
   ;;       (make-coords :pos (float-vector 0 (* -1 ground-y) -10) :rpy (list 0 0 0))
   ;;       )
@@ -653,7 +653,7 @@
   (send (send *robot* :joint "LARM_JOINT1") :min-angle -140)
   (send (send *robot* :joint "LARM_JOINT1") :max-angle 140)
 
-  (send (send *robot* :joint "LARM_JOINT1") :max-angle 30)
+  ;; (send (send *robot* :joint "LARM_JOINT1") :max-angle 30)
 
   (send (send *robot* :joint "LARM_JOINT4") :max-angle 0)
   ;; (send (send *robot* :joint "RARM_JOINT4") :max-angle 0)
@@ -1278,14 +1278,24 @@
   (send *sqp-opt* :optimize :loop-num 100)
   )
 
-(defun move-on-foot(init-rcoords init-lcoords next-rcoords  next-lcoords &key (which? :lleg) (only-move? nil))
+(defun move-on-foot
+    (init-rcoords init-lcoords next-rcoords  next-lcoords &key (which? :lleg) (only-move? nil) (wait? t))
   ;; (setq ldif (send (send init-lcoords :copy-worldcoords) :transformation init-lcoords))
   ;; (setq rdif (send (send init-rcoords :copy-worldcoords) :transformation next-rcoords))
   (format t "init-lcoords = ~A~%" init-lcoords)
   (format t "next-rcoords = ~A~%" next-rcoords)
   (format t "next-lcoords = ~A~%" next-lcoords)  
   (if (eq which? :lleg)
-      (send *ri* :set-foot-steps
+      ;; (send *ri* :set-foot-steps
+      ;; (send *ri* :set-foot-steps-with-param-no-wait
+      (if wait?
+          (send *ri* :set-foot-steps
+                (list
+                 (make-coords :coords init-rcoords :name :rleg)
+                 (make-coords :coords  next-lcoords :name :lleg)
+                 (make-coords :coords  next-rcoords :name :rleg)
+                 ))
+        (send *ri* :set-foot-steps-no-wait            
         ;; (list
         ;;  (make-coords :coords init-rcoords :name :rleg)
         ;;  (make-coords :coords (send (send init-lcoords :copy-worldcoords) :translate (send ldif :worldpos) :rpy (car (send ldif :rpy-angle))) :name :lleg)
@@ -1298,8 +1308,15 @@
          (make-coords :coords  next-lcoords :name :lleg)
          (make-coords :coords  next-rcoords :name :rleg)
          
-         ))
-    (send *ri* :set-foot-steps
+         )))
+    (if wait?
+          (send *ri* :set-foot-steps
+                (list
+                 (make-coords :coords init-rcoords :name :rleg)
+                 (make-coords :coords  next-lcoords :name :lleg)
+                 (make-coords :coords  next-rcoords :name :rleg)
+                 ))
+        (send *ri* :set-foot-steps-no-wait
         ;; (list
         ;;  (make-coords :coords init-rcoords :name :rleg)
         ;;  (make-coords :coords (send (send init-lcoords :copy-worldcoords) :translate (send ldif :worldpos) :rpy (car (send ldif :rpy-angle))) :name :lleg)
@@ -1313,7 +1330,7 @@
          (make-coords :coords  next-lcoords :name :lleg)
          
          ))
-    )
+    ))
   ;; (format t "rleg init ~A~%" init-rcoords)
   ;; (format t "lleg init ~A~%" init-lcoords)
   ;; (format t "rleg ~A~%" (make-coords :coords (send init-rcoords :transformation next-rcoords) :name :rleg))
