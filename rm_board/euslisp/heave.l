@@ -200,8 +200,10 @@
         (if (not fix-contact?)
             (progn
               (send *ri* :set-gait-generator-param :zmp-weight-map (float-vector rleg-ratio lleg-ratio 1 1))
-              (move-on-foot rleg-coords-old lleg-coords-old rleg-coords-new lleg-coords-new :wait? nil))
-              )
+              ;; (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5) :is-hand-fix-mode t)
+              (move-on-foot rleg-coords-old lleg-coords-old rleg-coords-new lleg-coords-new :wait? nil)
+              ;; (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5) :is-hand-fix-mode nil))
+              ))
         (send-pose movetime :force-move flag-simulator :wait? wait? :pre-pose pre-pose :pre-lleg pre-lleg :look-at-hands? look-at-hands?)
         ))
 ;; (setq rarm-ref-f (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
@@ -299,8 +301,9 @@
       (progn
         ;; (send-pose movetime :force-move flag-simulator :wait? wait? :pre-pose pre-pose :pre-lleg pre-lleg)
         (if (not fix-contact?)
-            (move-on-foot rleg-coords lleg-coords (send *robot* :rleg :end-coords :copy-worldcoords)   (send *robot* :lleg :end-coords :copy-worldcoords) 
-                          ))
+            (progn
+              (send *ri* :set-gait-generator-param :zmp-weight-map (float-vector rleg-ratio lleg-ratio 1 1))
+              (move-on-foot rleg-coords lleg-coords (send *robot* :rleg :end-coords :copy-worldcoords)   (send *robot* :lleg :end-coords :copy-worldcoords) :wait? nil)))
         (send-pose movetime :force-move flag-simulator :wait? wait? :pre-pose pre-pose :pre-lleg pre-lleg :look-at-hands? look-at-hands?)
         ))
   )
@@ -600,10 +603,10 @@
   (if (eq arm :rarm)
       (progn
         (send *robot* :larm :move-end-pos (scale offset #f(0 0.2 0)) :local)
-        (send *robot* arm :move-end-pos (scale offset #f(1.5 0 0)) :local))
+        (send *robot* arm :move-end-pos (scale offset #f(1.7 0 0)) :local))
     (progn
       (send *robot* :rarm :move-end-pos (scale offset #f(0 -0.2 0)) :local)
-    (send *robot* arm :move-end-pos (scale offset #f(1.5 0 0)) :local)))
+    (send *robot* arm :move-end-pos (scale offset #f(1.7 0 0)) :local)))
   (if send?
       (progn
         (send-pose (- movetime 1500) :force-move flag-simulator )))
@@ -614,7 +617,7 @@
     (arm relative-pos &key (send? t) (sync? t))
   (if sync?
       (send *robot* :angle-vector (send *ri* :state :angle-vector)))
-  (send *robot* arm :move-end-pos relative-pos  :local)
+  (send *robot* arm :move-end-pos relative-pos :local)
   (if send?
       (progn
         (send-pose (- movetime 1500) :force-move flag-simulator )))
