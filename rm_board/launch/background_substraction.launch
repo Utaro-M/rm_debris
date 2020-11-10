@@ -5,14 +5,14 @@
   <arg name="/multisense_pcl2" default="/multisense_local/image_points2_color" />
   <arg name="/processed_pcl2" default="/depth_image_creator/output_cloud" />
   <arg name="/multisense_camerainfo" default="/multisense_local/left/camera_info" />  
-  <arg name="/camerainfo" default="/static_virtual_camera/camera_info" />
+  <arg name="/camerainfo" default="/static_virtual_cam/camera_info" />
   
   <node if="$(arg create_manager)"
         pkg="nodelet" type="nodelet" name="camera_nodelet_manager"
         args="manager" output="screen"/>
 
   <arg name="interactive_marker" default="false" />
-  <node pkg="rm_debris_vision" name="static_virtual_camera" type="static_virtual_camera.py" output="screen" />
+  <node pkg="rm_debris_vision" name="static_virtual_cam" type="static_virtual_camera.py" output="screen" />
   <!-- <node pkg="tf" type="static_transform_publisher" name="virtual_camera_broadcaster" args="1.4 0.0 0.07 -0.707107 0.707017 0.0 0.0 BODY static_virtual_camera 100" unless="$(arg interactive_marker)" /> <!-\- original -\-> -->
   <!-- robot coordinate? -->
   
@@ -46,33 +46,17 @@
         args="load jsk_pcl/DepthImageCreator /$(arg manager)">
     <!-- <remap from="~input" to="/bilateral_filter/output" /> -->
     <remap from="~input" to="$(arg /multisense_pcl2)" />
-    <!-- <remap from="~input" to="/passthrough_x/output" />     -->
+    <!-- <remap from="~input" to="/multisense_local/image_points2_color" /> -->
     <remap from="~info" to="$(arg /camerainfo)" />
+    <!-- <remap from="~info" to="$(arg /multisense_camerainfo)" /> -->
+    <!-- <remap from="~info" to="/static_virtual_cam/camera_info" /> -->
     <rosparam>
+      use_asynchronous: true
       use_approximate: true
-      max_queue_size: 20
+      max_queue_size: 5
     </rosparam>
   </node>
 
-  <!-- remove noise -->
-  <node name="dilate_mask_image"
-        pkg="nodelet" type="nodelet"
-        args="load jsk_perception/DilateMaskImage $(arg manager)">
-    <remap from="~input" to="/depth_image_creator/output_image" />
-    <rosparam>
-      method: 0
-      size: 3
-    </rosparam>
-  </node>
-  <node name="erode_mask_image"
-        pkg="nodelet" type="nodelet"
-        args="load jsk_perception/ErodeMaskImage $(arg manager)">
-    <remap from="~input" to="/dilate_mask_image/output" />
-    <rosparam>
-      method: 0
-      size: 3
-    </rosparam>
-  </node>
   
   <node name="robot_to_mask_image"
         pkg="nodelet" type="nodelet"
@@ -146,15 +130,43 @@
         args="load jsk_perception/BackgroundSubstraction  $(arg manager)"> 
         <!-- args="standalone jsk_perception/BackgroundSubstraction"> -->
         <!-- <remap from="~image" to="/multisense_local/left/image_rect_color" /> -->
-        <remap from="~image" to="erode_mask_image/output" />
+        <remap from="~image" to="/depth_image_creator/output_image" />
         <!-- <remap from="~image" to="/passthrough_x/output" /> -->
+	<!-- <rosparam> -->
+	<!--   nmixture: 3 -->
+	<!-- </rosparam> -->
+  </node>
+
+  <!-- remove noise -->
+  <!-- 収縮の後に膨張 -->
+
+  <!-- 収縮 -->
+  <node name="erode_mask_image"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_perception/ErodeMaskImage $(arg manager)">
+    <remap from="~input" to="/background_subtraction/output" />
+    <rosparam>
+      method: 0
+      size: 2
+    </rosparam>
+  </node>
+    <!-- 膨張 -->
+  <node name="dilate_mask_image"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_perception/DilateMaskImage $(arg manager)">
+    <remap from="~input" to="/erode_mask_image/output" />
+    <rosparam>
+      method: 0
+      size: 3
+    </rosparam>
   </node>
 
   <!-- マスク画像を抽出した動画に適用o -->
   <node name="apply_mask_image"
         pkg="nodelet" type="nodelet"
         args="load jsk_perception/ApplyMaskImage $(arg manager)">
-    <remap from="~input" to="background_subtraction/output" />
+    <!-- <remap from="~input" to="background_subtraction/output" /> -->
+    <remap from="~input" to="dilate_mask_image/output" />    
     <remap from="~input/mask" to="/robot_to_mask_image/output" />
     <rosparam>
       approximate_sync: true
@@ -188,7 +200,8 @@
     <param name="~negative" value="false" />
     <remap from="~input" to="$(arg /processed_pcl2)" />
     <!-- <remap from="~input/mask" to="/apply_mask_image/output" />     -->
-    <remap from="~input/mask" to="background_subtraction/output" />
+    <!-- <remap from="~input/mask" to="background_subtraction/output" /> -->
+    <remap from="~input/mask" to="dilate_mask_image/output" />    
     <remap from="~input/camera_info" to="$(arg /camerainfo)" />
   </node>
 
