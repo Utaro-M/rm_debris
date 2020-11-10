@@ -40,9 +40,11 @@
 
   (setq flag-simulator t) ;;simulatorではｔ
   (setq movetime 4000)
+  (send *ri* :start-auto-balancer :limbs (list :lleg :rleg :larm :rarm))
   (unless (= (send (send *ri* :get-st-param) :emergency_check_mode) 0)
     (warn "disable emergency-check~%")
     ;;COPのemergencyをきる
+    
     (send *ri* :stop-st)
     (send *ri* :set-st-param :emergency-check-mode 0)
     (send *ri* :start-st))
@@ -128,17 +130,22 @@
   (setq pre-pose (send *robot* :angle-vector))
   (setq pre-lleg (send *robot* :lleg :end-coords :copy-worldcoords))
   (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift)
-  
+  (setq zmp-vector (send *ri*  :zmp-vector))
+  (setq rleg-coords-new (send *robot* :rleg :end-coords :copy-worldcoords))
+  (setq lleg-coords-new (send *robot* :lleg :end-coords :copy-worldcoords))
+  (setq lleg-ratio (abs (norm (v- (send lleg-coords-new :worldpos) zmp-vector))))
+  (setq rleg-ratio (abs (norm (v- (send rleg-coords-new :worldpos) zmp-vector))))
   (if send?
       (progn 
         (if (not fix-contact?)
-            (move-on-foot rleg-coords lleg-coords (send *robot* :rleg :end-coords :copy-worldcoords)   (send *robot* :lleg :end-coords :copy-worldcoords)))
+            (progn
+              (send *ri* :set-gait-generator-param :zmp-weight-map (float-vector rleg-ratio lleg-ratio 1 1))
+              (move-on-foot rleg-coords lleg-coords rleg-coords-new lleg-coords-new :wait? t)))
 ;  (my-ik rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog #f(0 0 1000))
 
         ;;もどす
         (send-pose movetime :force-move flag-simulator :pre-pose pre-pose :pre-lleg pre-lleg :look-at-hands? look-at-hands?  )))
   ;; (my-ik #f(0 0 40) #f(0 0 40))
-
   )
 
 (defun start-coords()
@@ -151,8 +158,8 @@
                &key  (fix-contact? t) (send? t) (cog #f(0 0 700))
                (deg-r-x 0) (deg-r-y 0) (deg-r-z 0) (deg-l-x 0) (deg-l-y 0) (deg-l-z 0)
                (wait? t) (reset? t) (apply-external-force? t) (avoid-collision? t)
-               (rleg-pos-shift #f(0 0 -10))
-               (lleg-pos-shift #f(0 0 -10))
+               (rleg-pos-shift #f(0 0 0))
+               (lleg-pos-shift #f(0 0 0))
                (look-at-hands? nil))
   ;; (send *robot* :move-coords (make-coords :pos #f(0 0 600) :rpy (float-vector 0 (deg2rad 50) 0)) (car (send *robot* :links)))
   ;; (send *robot* :fix-leg-to-coords (make-coords))
@@ -177,21 +184,29 @@
   ;; (my-ik rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog cog)
   ;; (ik-walk rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog cog)
 
-  (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
-  (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
+  (setq rleg-coords-old (send *robot* :rleg :end-coords :copy-worldcoords))
+  (setq lleg-coords-old (send *robot* :lleg :end-coords :copy-worldcoords))
   (setq pre-pose (send *robot* :angle-vector))
   (setq pre-lleg (send *robot* :lleg :end-coords :copy-worldcoords))
   (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :reset? reset? :apply-external-force? apply-external-force? :avoid-collision? avoid-collision? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift)
+  (setq zmp-vector (send *ri*  :zmp-vector))
+  (setq rleg-coords-new (send *robot* :rleg :end-coords :copy-worldcoords))
+  (setq lleg-coords-new (send *robot* :lleg :end-coords :copy-worldcoords))
+  (setq lleg-ratio (abs (norm (v- (send lleg-coords-new :worldpos) zmp-vector))))
+  (setq rleg-ratio (abs (norm (v- (send rleg-coords-new :worldpos) zmp-vector))))
   (if send?
       (progn
         ;; (send-pose movetime :force-move flag-simulator :wait? wait? :pre-pose pre-pose :pre-lleg pre-lleg)
         (if (not fix-contact?)
-            (move-on-foot rleg-coords lleg-coords (send *robot* :rleg :end-coords :copy-worldcoords)   (send *robot* :lleg :end-coords :copy-worldcoords) ;; :which? :rleg
-                          ))
+            (progn
+              (send *ri* :set-gait-generator-param :zmp-weight-map (float-vector rleg-ratio lleg-ratio 1 1))
+              ;; (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5) :is-hand-fix-mode t)
+              (move-on-foot rleg-coords-old lleg-coords-old rleg-coords-new lleg-coords-new :wait? nil)
+              ;; (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5) :is-hand-fix-mode nil))
+              ))
         (send-pose movetime :force-move flag-simulator :wait? wait? :pre-pose pre-pose :pre-lleg pre-lleg :look-at-hands? look-at-hands?)
         ))
-  
-  ;; (setq rarm-ref-f (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
+;; (setq rarm-ref-f (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
   ;; (setq larm-ref-f (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
   ;; (check-while-still rarm-ref-f larm-ref-f )
 
@@ -217,6 +232,80 @@
 
   ;; (check rarm-coords larm-coords (list 80 80) 5)
 
+  )
+
+
+(defun dive
+    (rarm-move larm-move
+               &key
+               rarm-coords
+               larm-coords
+               (fix-contact? t) (send? t) (cog #f(0 0 700))
+               (deg-r-x 0) (deg-r-y 0) (deg-r-z 0) (deg-l-x 0) (deg-l-y 0) (deg-l-z 0)
+               (wait? t) (reset? t) (apply-external-force? t) (avoid-collision? t)
+               (rleg-pos-shift #f(0 0 -10))
+               (lleg-pos-shift #f(0 0 -10))
+               (look-at-hands? nil))
+
+  ;; needless??
+  ;; (send *robot* :angle-vector (send *ri* :state :angle-vector))
+  (if (not rarm-coords)
+      (setq rarm-coords (send (send (send (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate rarm-move) :rotate (deg2rad deg-r-x) :x) :rotate (deg2rad deg-r-y) :y) :rotate (deg2rad deg-r-z) :z)))
+  (if (not larm-coords)
+      (setq larm-coords (send (send (send (send (send *robot* :larm :end-coords :copy-worldcoords) :translate larm-move) :rotate (deg2rad deg-l-x) :x) :rotate (deg2rad deg-l-y) :y) :rotate (deg2rad deg-l-z) :z)))
+
+  (setq rleg-coords-old (send *robot* :rleg :end-coords :copy-worldcoords))
+  (setq lleg-coords-old (send *robot* :lleg :end-coords :copy-worldcoords))
+  (setq pre-pose (send *robot* :angle-vector))
+  (setq pre-lleg (send *robot* :lleg :end-coords :copy-worldcoords))
+  (ik-opt-with-larmcontact rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :reset? reset? :apply-external-force? apply-external-force? :avoid-collision? avoid-collision? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift)
+  (setq zmp-vector (send *ri*  :zmp-vector))
+  (setq rleg-coords-new (send *robot* :rleg :end-coords :copy-worldcoords))
+  (setq lleg-coords-new (send *robot* :lleg :end-coords :copy-worldcoords))
+  (setq lleg-ratio (abs (norm (v- (send lleg-coords-new :worldpos) zmp-vector))))
+  (setq rleg-ratio (abs (norm (v- (send rleg-coords-new :worldpos) zmp-vector))))
+  (if send?
+      (progn
+        ;; (send-pose movetime :force-move flag-simulator :wait? wait? :pre-pose pre-pose :pre-lleg pre-lleg)
+        (if (not fix-contact?)
+            (progn
+              (send *ri* :set-gait-generator-param :zmp-weight-map (float-vector rleg-ratio lleg-ratio 1 1))
+              (move-on-foot rleg-coords-old lleg-coords-old rleg-coords-new lleg-coords-new :wait? nil))
+              )
+        (send-pose movetime :force-move flag-simulator :wait? wait? :pre-pose pre-pose :pre-lleg pre-lleg :look-at-hands? look-at-hands?)
+        ))
+  )
+
+(defun dive-larm-only
+    ( larm-move
+               &key
+               larm-coords
+               (fix-contact? t) (send? t) (cog #f(0 0 700))
+               (deg-r-x 0) (deg-r-y 0) (deg-r-z 0) (deg-l-x 0) (deg-l-y 0) (deg-l-z 0)
+               (wait? t) (reset? t) (apply-external-force? t) (avoid-collision? t)
+               (rleg-pos-shift #f(0 0 -10))
+               (lleg-pos-shift #f(0 0 -10))
+               (look-at-hands? nil))
+
+  ;; needless??
+  ;; (send *robot* :angle-vector (send *ri* :state :angle-vector))
+  (if (not larm-coords)
+      (setq larm-coords (send (send (send (send (send *robot* :larm :end-coords :copy-worldcoords) :translate larm-move) :rotate (deg2rad deg-l-x) :x) :rotate (deg2rad deg-l-y) :y) :rotate (deg2rad deg-l-z) :z)))
+
+  (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
+  (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
+  (setq pre-pose (send *robot* :angle-vector))
+  (setq pre-lleg (send *robot* :lleg :end-coords :copy-worldcoords))
+  (ik-opt-with-larmcontact-only larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :reset? reset? :apply-external-force? apply-external-force? :avoid-collision? avoid-collision? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift)
+  (if send?
+      (progn
+        ;; (send-pose movetime :force-move flag-simulator :wait? wait? :pre-pose pre-pose :pre-lleg pre-lleg)
+        (if (not fix-contact?)
+            (progn
+              (send *ri* :set-gait-generator-param :zmp-weight-map (float-vector rleg-ratio lleg-ratio 1 1))
+              (move-on-foot rleg-coords lleg-coords (send *robot* :rleg :end-coords :copy-worldcoords)   (send *robot* :lleg :end-coords :copy-worldcoords) :wait? nil)))
+        (send-pose movetime :force-move flag-simulator :wait? wait? :pre-pose pre-pose :pre-lleg pre-lleg :look-at-hands? look-at-hands?)
+        ))
   )
 
 
@@ -490,7 +579,10 @@
   ;; (send-pose movetime :force-move flag-simulator)
   
   ;;choreonoid
-  ;; (send *robot* :angle-vector (send *ri* :state :angle-vector))  
+  ;; (send *robot* :angle-vector (send *ri* :state :angle-vector))
+
+  (if sync?
+     (send *robot* :angle-vector (send *ri* :state :angle-vector))) 
   ;;腕を引く
   (send *robot* arm :move-end-pos (scale offset #f(-1 0 0)) :local)
   (if send?
@@ -511,10 +603,10 @@
   (if (eq arm :rarm)
       (progn
         (send *robot* :larm :move-end-pos (scale offset #f(0 0.2 0)) :local)
-        (send *robot* arm :move-end-pos (scale offset #f(1.6 0 0)) :local))
+        (send *robot* arm :move-end-pos (scale offset #f(1.7 0 0)) :local))
     (progn
       (send *robot* :rarm :move-end-pos (scale offset #f(0 -0.2 0)) :local)
-    (send *robot* arm :move-end-pos (scale offset #f(1.6 0 0)) :local)))
+    (send *robot* arm :move-end-pos (scale offset #f(1.7 0 0)) :local)))
   (if send?
       (progn
         (send-pose (- movetime 1500) :force-move flag-simulator )))
@@ -525,7 +617,7 @@
     (arm relative-pos &key (send? t) (sync? t))
   (if sync?
       (send *robot* :angle-vector (send *ri* :state :angle-vector)))
-  (send *robot* arm :move-end-pos relative-pos  :local)
+  (send *robot* arm :move-end-pos relative-pos :local)
   (if send?
       (progn
         (send-pose (- movetime 1500) :force-move flag-simulator )))
