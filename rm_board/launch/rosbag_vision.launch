@@ -6,7 +6,10 @@
 	args="-o $(arg bagfile)
 	      -b 0
 	      /multisense_local/image_points2_color
-	      /static_virtual_cam/camera_info"
+	      /static_virtual_camera/camera_info
+	      /multisense_local/organized_image_points2_color
+	      /tf
+	      /tf_static"
 	output="screen">
   </node>
 </launch>
