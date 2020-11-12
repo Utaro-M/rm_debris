@@ -7,10 +7,10 @@
   <arg name="/multisense_camerainfo" default="/multisense_local/left/camera_info" />  
   <arg name="/camerainfo" default="/static_virtual_camera/camera_info" />
 
-  <node name="rosbag_play"
-    pkg="rosbag" type="play"
-    args="/home/utaro/research/rm_debris/rm_board/ros_bag/backgroud_subtraction_2020-11-11-13-17-00.bag --clock --loop" />
-
+  <!-- <node name="rosbag_play" -->
+  <!--   pkg="rosbag" type="play" -->
+  <!--   args="/home/utaro/Downloads/background_bagfile.bag -\-clock -\-loop" /> -->
+    <!-- args="/home/utaro/research/rm_debris/rm_board/ros_bag/backgroud_subtraction_2020-11-11-13-17-00.bag -\-clock -\-loop" /> -->
   <node if="$(arg create_manager)"
         pkg="nodelet" type="nodelet" name="camera_nodelet_manager"
         args="manager" output="screen"/>
@@ -47,6 +47,15 @@
       use_asynchronous: true
       use_approximate: false
       max_queue_size: 5
+    </rosparam>
+  </node>
+
+  <node name="organized_multi_plane_segmentation"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_pcl/OrganizedMultiPlaneSegmentation $(arg manager)">
+    <remap from="~input" to="$(arg /multisense_pcl2)"/>
+    <rosparam>
+      publish_normal: true
     </rosparam>
   </node>
 
