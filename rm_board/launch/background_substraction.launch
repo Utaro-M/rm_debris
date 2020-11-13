@@ -2,8 +2,11 @@
   <arg name="create_manager" default="true" />
   <arg name="manager" default="camera_nodelet_manager" />
   <arg name="gui" default="true" />
-  <arg name="rosbag_file" default="/home/utaro/.ros/backgroud_subtraction_2020-11-12-19-51-10.bag  --loop " />
-  
+  <!-- <arg name="rosbag_file" default="/home/utaro/.ros/backgroud_subtraction_2020-11-12-19-51-10.bag  -\-loop " /> -->
+  <!-- <arg name="rosbag_file" default="/home/utaro/.ros/backgroud_subtraction_2020-11-12-19-32-58.bag  -\-loop " /> -->
+  <!-- <arg name="rosbag_file" default="/home/utaro/.ros/backgroud_subtraction_with_virtualcamera_2020-11-13-15-47-40.bag  -\-loop " /> -->
+  <arg name="rosbag_file" default="/home/utaro/.ros/backgroud_subtraction_no_virtualcamera_2020-11-13-15-45-38.bag  --clock --loop " />
+  <!-- <arg name="rosbag_file" default="/home/utaro/.ros/backgroud_subtraction_no_virtualcamera_2020-11-13-16-08-54.bag   -\-clock -\-loop " /> -->
   <arg name="multisense_pcl2" default="/multisense_local/image_points2_color" />
   <arg name="multisense_org_pcl2" default="/multisense_local/organized_image_points2_color" />
   <arg name="processed_pcl2" default="/depth_image_creator/output_cloud" />
@@ -21,8 +24,9 @@
   <arg name="interactive_marker" default="false" />
 
   <!-- 固定してん -->
-  <!-- <node pkg="rm_debris_vision" name="static_virtual_camera" type="static_virtual_camera.py" output="screen" /> -->
-  <!-- <node pkg="tf" type="static_transform_publisher" name="virtual_camera_broadcaster" args="0.2 -0.4 1.6 -0.5 0.5 -0.5 0.5 LLEG_LINK5 static_virtual_camera 100" unless="$(arg interactive_marker)" /> -->
+  <rosparam param="/use_sim_time">true</rosparam>
+  <node pkg="rm_debris_vision" name="static_virtual_camera" type="static_virtual_camera.py" output="screen" />
+  <node pkg="tf" type="static_transform_publisher" name="virtual_camera_broadcaster" args="0.2 -0.2 0.8 -0.5 0.5 -0.5 0.5 LLEG_LINK5 static_virtual_camera 100" unless="$(arg interactive_marker)" />
 
   <!-- <node pkg="nodelet" type="nodelet" name="passthrough_x" -->
   <!--       args="load pcl/PassThrough $(arg manager)" output="screen"> -->
@@ -52,14 +56,14 @@
     </rosparam>
   </node>
   
-  <!-- <node name="organized_multi_plane_segmentation" -->
-  <!--       pkg="nodelet" type="nodelet" -->
-  <!--       args="load jsk_pcl/OrganizedMultiPlaneSegmentation $(arg manager)"> -->
-  <!--   <remap from="~input" to="$(arg multisense_pcl2)"/> -->
-  <!--   <rosparam> -->
-  <!--     publish_normal: true -->
-  <!--   </rosparam> -->
-  <!-- </node> -->
+  <node name="organized_multi_plane_segmentation"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_pcl/OrganizedMultiPlaneSegmentation $(arg manager)">
+    <remap from="~input" to="$(arg multisense_org_pcl2)"/>
+    <rosparam>
+      publish_normal: true
+    </rosparam>
+  </node>
 
   
   <!-- <node name="robot_to_mask_image" -->
@@ -149,7 +153,7 @@
     <remap from="~input" to="/background_subtraction/output" />
     <rosparam>
       method: 0
-      size: 2
+      size: 1
     </rosparam>
   </node>
     <!-- 膨張 -->
@@ -159,7 +163,7 @@
     <remap from="~input" to="/erode_mask_image/output" />
     <rosparam>
       method: 0
-      size: 3
+      size: 4
     </rosparam>
   </node>
 
