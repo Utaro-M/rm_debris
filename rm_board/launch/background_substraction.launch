@@ -25,17 +25,13 @@
         args="manager" output="screen"/>
 
   <arg name="interactive_marker" default="false" />
+
+
   <!-- 固定してん -->
-
-  <node pkg="rm_debris_vision" name="static_virtual_camera" type="static_virtual_camera.py" output="screen" />
-  <node pkg="tf" type="static_transform_publisher" name="virtual_camera_broadcaster" args="0.2 -0.4 1.6 -0.5 0.5 -0.5 0.5 LLEG_LINK5 static_virtual_camera 100" unless="$(arg interactive_marker)" />
-
-  
   <rosparam param="/use_sim_time">true</rosparam>
   <node pkg="rm_debris_vision" name="static_virtual_camera" type="static_virtual_camera.py" output="screen" />
   <node pkg="tf" type="static_transform_publisher" name="virtual_camera_broadcaster" args="0.1 -0.2 0.7 -0.5 0.5 -0.5 0.5 LLEG_LINK5 static_virtual_camera 100" unless="$(arg interactive_marker)" />
     <!-- <node pkg="tf" type="static_transform_publisher" name="virtual_camera_broadcaster" args="0.1 -0.2 0.7 -0.547723 0.547723 -0.547723 0.316228 LLEG_LINK5 static_virtual_camera 100" unless="$(arg interactive_marker)" /> -->
-
 
   <!-- <node pkg="nodelet" type="nodelet" name="passthrough_x" -->
   <!--       args="load pcl/PassThrough $(arg manager)" output="screen"> -->
@@ -71,8 +67,6 @@
   <node name="organized_multi_plane_segmentation"
         pkg="nodelet" type="nodelet"
         args="load jsk_pcl/OrganizedMultiPlaneSegmentation $(arg manager)">
-
-    <!-- <remap from="~image" to="/depth_image_creator/output_cloud" /> -->
 
     <remap from="~input" to="$(arg multisense_org_pcl2)"/>
     <!-- <remap from="~input" to="/depth_image_creator/output_cloud"/> -->
