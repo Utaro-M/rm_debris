@@ -48,11 +48,11 @@
     <!-- <remap from="~input" to="/bilateral_filter/output" /> -->
     <remap from="~input" to="$(arg multisense_pcl2)" />
     <!-- <remap from="~input" to="/multisense_local/image_points2_color" /> -->
-    <!-- <remap from="~info" to="$(arg camerainfo)" /> -->
-    <remap from="~info" to="$(arg multisense_camerainfo)" />
+    <remap from="~info" to="$(arg camerainfo)" />
+    <!-- <remap from="~info" to="$(arg multisense_camerainfo)" /> -->
     <!-- <remap from="~info" to="/static_virtual_cam/camera_info" /> -->
     <rosparam>
-      tf_duration: 0.1
+      <!-- tf_duration: 0.1 -->
       organize_cloud: true
       use_asynchronous: true
       use_approximate: true
@@ -63,20 +63,38 @@
   <node name="organized_multi_plane_segmentation"
         pkg="nodelet" type="nodelet"
         args="load jsk_pcl/OrganizedMultiPlaneSegmentation $(arg manager)">
-    <!-- <remap from="~input" to="$(arg multisense_org_pcl2)"/> -->
-    <remap from="~input" to="/depth_image_creator/output_cloud"/>
+    <remap from="~input" to="$(arg multisense_org_pcl2)"/>
+    <!-- <remap from="~input" to="/depth_image_creator/output_cloud"/> -->
     <rosparam>
       publish_normal: true
     </rosparam>
   </node>
   
-  <node name="normal_concatenater"
-          pkg="nodelet" type="nodelet"
-          args="load jsk_pcl_utils/NormalConcatenater $(arg manager)">
-      <remap from="~input" to="/depth_image_creator/output_cloud"/>
-      <remap from="~normal" to="organized_multi_plane_segmentation/output_normal"/>
+  <!-- <node name="normal_concatenater" -->
+  <!--         pkg="nodelet" type="nodelet" -->
+  <!--         args="load jsk_pcl_utils/NormalConcatenater $(arg manager)"> -->
+  <!--     <remap from="~input" to="/depth_image_creator/output_cloud"/> -->
+  <!--     <remap from="~normal" to="organized_multi_plane_segmentation/output_normal"/> -->
+  <!-- </node> -->
+
+  <node name="multi_plane_extraction"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_pcl/MultiPlaneExtraction  $(arg manager)">
+    <!-- <remap from="~input" to="/kinect_head/depth_registered/points"/>-->
+    <!-- <remap from="~input" to="depth_image_creator/output_cloud"/> -->
+    <!-- <remap from="~input" to="$(arg multisense_org_pcl2)"/> -->
+    <remap from="~input" to="/extract_indices/output"/>    
+    <remap from="~indices" to="organized_multi_plane_segmentation/output_refined"/>
+    <remap from="~input_polygons" to="organized_multi_plane_segmentation/output_refined_polygon"/>
+    <remap from="~input_coefficients" to="organized_multi_plane_segmentation/output_refined_coefficients"/>
+    <rosparam>
+      use_indices: true
+      use_coefficients: true
+      min_height: -0.3
+      max_height: 0.3
+    </rosparam>
   </node>
-  
+
   <!-- <node name="robot_to_mask_image" -->
   <!--       pkg="nodelet" type="nodelet" -->
   <!--       args="load jsk_perception/RobotToMaskImage $(arg manager)"> -->
@@ -146,8 +164,8 @@
         pkg="nodelet" type="nodelet"
         args="load jsk_perception/BackgroundSubstraction  $(arg manager)"> 
         <!-- args="standalone jsk_perception/BackgroundSubstraction"> -->
-        <!-- <remap from="~image" to="/multisense_local/left/image_rect_color" /> -->
-        <remap from="~image" to="/depth_image_creator/output_image" />
+        <remap from="~image" to="/multisense_local/left/image_rect_color" />
+        <!-- <remap from="~image" to="/depth_image_creator/output_image" /> -->
         <!-- <remap from="~image" to="/passthrough_x/output" /> -->
         <rosparam>
           nmixtures : 5
@@ -215,6 +233,7 @@
     <remap from="~indices" to="/mask_image_filter/output" />
     <rosparam>
       approximate_sync: true
+      keep_organized: true
     </rosparam>
   </node>
 
