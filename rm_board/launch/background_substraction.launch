@@ -28,7 +28,9 @@
 
 
   <!-- 固定してん -->
-  <rosparam param="/use_sim_time">true</rosparam>
+  <!-- rosbag -->
+  <!-- <rosparam param="/use_sim_time">true</rosparam> -->
+  <!-- <rosparam param="/use_sim_time">false</rosparam> -->
   <node pkg="rm_debris_vision" name="static_virtual_camera" type="static_virtual_camera.py" output="screen" />
   <node pkg="tf" type="static_transform_publisher" name="virtual_camera_broadcaster" args="0.1 -0.2 0.7 -0.5 0.5 -0.5 0.5 LLEG_LINK5 static_virtual_camera 100" unless="$(arg interactive_marker)" />
     <!-- <node pkg="tf" type="static_transform_publisher" name="virtual_camera_broadcaster" args="0.1 -0.2 0.7 -0.547723 0.547723 -0.547723 0.316228 LLEG_LINK5 static_virtual_camera 100" unless="$(arg interactive_marker)" /> -->
@@ -87,7 +89,7 @@
     <!-- <remap from="~input" to="/kinect_head/depth_registered/points"/>-->
     <!-- <remap from="~input" to="depth_image_creator/output_cloud"/> -->
     <!-- <remap from="~input" to="$(arg multisense_org_pcl2)"/> -->
-    <remap from="~input" to="/extract_indices/output"/>    
+    <remap from="~input" to="/extract_indices/output"/>
     <remap from="~indices" to="organized_multi_plane_segmentation/output_refined"/>
     <remap from="~input_polygons" to="organized_multi_plane_segmentation/output_refined_polygon"/>
     <remap from="~input_coefficients" to="organized_multi_plane_segmentation/output_refined_coefficients"/>
@@ -201,39 +203,41 @@
   </node>
 
   <!-- マスク画像を抽出した動画に適用o -->
-  <node name="apply_mask_image"
-        pkg="nodelet" type="nodelet"
-        args="load jsk_perception/ApplyMaskImage $(arg manager)">
-    <!-- <remap from="~input" to="background_subtraction/output" /> -->
-    <remap from="~input" to="dilate_mask_image/output" />    
-    <remap from="~input/mask" to="/robot_to_mask_image/output" />
-    <rosparam>
-      approximate_sync: true
-    </rosparam>
-  </node>
+  <!-- <node name="apply_mask_image" -->
+  <!--       pkg="nodelet" type="nodelet" -->
+  <!--       args="load jsk_perception/ApplyMaskImage $(arg manager)"> -->
+           
+  <!--   <remap from="~input" to="dilate_mask_image/output" />     -->
+  <!--   <remap from="~input/mask" to="/robot_to_mask_image/output" /> -->
+  <!--   <rosparam> -->
+  <!--     approximate_sync: true -->
+  <!--   </rosparam> -->
+  <!-- </node> -->
   
   <!-- マスク画像の結果と点群を結びつけて、点のインダイスを出力する -->
   <arg name="camera" value="/multisense_local" />
-  <!-- <node name="mask_image_filter" pkg="jsk_pcl_ros" type="mask_image_filter"> -->
   <node pkg="nodelet" type="nodelet"
         name="mask_image_filter"
         args="load jsk_pcl/MaskImageFilter $(arg manager)"
         output="screen" clear_params="true">
     
     <param name="~negative" value="false" />
-    <remap from="~input" to="$(arg processed_pcl2)" />
+    <!-- <remap from="~input" to="$(arg processed_pcl2)" /> -->
+    <remap from="~input" to="$(arg  multisense_org_pcl2)" />
     <!-- <remap from="~input/mask" to="/apply_mask_image/output" />     -->
-    <!-- <remap from="~input/mask" to="background_subtraction/output" /> -->
-    <remap from="~input/mask" to="dilate_mask_image/output" />    
-    <remap from="~input/camera_info" to="$(arg camerainfo)" />
+    <remap from="~input/mask" to="background_subtraction/output" />
+    <!-- <remap from="~input/mask" to="dilate_mask_image/output" />  -->
+    <!-- <remap from="~input/camera_info" to="$(arg camerainfo)" /> -->
+    <remap from="~input/camera_info" to="$(arg multisense_camerainfo)" />
   </node>
 
   <!-- インダイスを使って該当点群を抽出 -->
   <node pkg="nodelet" type="nodelet"
         name="extract_indices"
         args="load jsk_pcl/ExtractIndices $(arg manager)"
-        output="screen" clear_params="true">    
-    <remap from="~input" to="$(arg processed_pcl2)" />
+        output="screen" clear_params="true">
+    <!-- <remap from="~input" to="$(arg processed_pcl2)" /> -->
+    <remap from="~input" to="$(arg  multisense_org_pcl2)" />
     <remap from="~indices" to="/mask_image_filter/output" />
     <rosparam>
       approximate_sync: true
