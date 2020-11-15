@@ -67,7 +67,6 @@
   <node name="organized_multi_plane_segmentation"
         pkg="nodelet" type="nodelet"
         args="load jsk_pcl/OrganizedMultiPlaneSegmentation $(arg manager)">
-
     <remap from="~input" to="$(arg multisense_org_pcl2)"/>
     <!-- <remap from="~input" to="/depth_image_creator/output_cloud"/> -->
     <rosparam>
@@ -81,7 +80,6 @@
   <!--     <remap from="~input" to="/depth_image_creator/output_cloud"/> -->
   <!--     <remap from="~normal" to="organized_multi_plane_segmentation/output_normal"/> -->
   <!-- </node> -->
-
 
   <node name="multi_plane_extraction"
         pkg="nodelet" type="nodelet"
