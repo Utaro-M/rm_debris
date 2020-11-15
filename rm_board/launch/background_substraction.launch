@@ -20,7 +20,6 @@
   <arg name="interactive_marker" default="false" />
   <!-- 固定してん -->
   <node pkg="rm_debris_vision" name="static_virtual_camera" type="static_virtual_camera.py" output="screen" />
-
   <node pkg="tf" type="static_transform_publisher" name="virtual_camera_broadcaster" args="0.2 -0.4 1.6 -0.5 0.5 -0.5 0.5 LLEG_LINK5 static_virtual_camera 100" unless="$(arg interactive_marker)" />
 
 
@@ -46,16 +45,18 @@
     <!-- <remap from="~info" to="$(arg multisense_camerainfo)" /> -->
     <!-- <remap from="~info" to="/static_virtual_cam/camera_info" /> -->
     <rosparam>
+      organize_cloud: true
       use_asynchronous: true
       use_approximate: true
-      max_queue_size: 5
+      max_queue_size: 2
     </rosparam>
   </node>
   
   <node name="organized_multi_plane_segmentation"
         pkg="nodelet" type="nodelet"
         args="load jsk_pcl/OrganizedMultiPlaneSegmentation $(arg manager)">
-    <remap from="~input" to="$(arg multisense_org_pcl2)"/>
+    <!-- <remap from="~input" to="$(arg multisense_org_pcl2)"/> -->
+    <remap from="~image" to="/depth_image_creator/output_cloud" />
     <rosparam>
       publish_normal: true
     </rosparam>
