@@ -29,7 +29,7 @@
 
   <!-- 固定してん -->
   <!-- rosbag -->
-  <!-- <rosparam param="/use_sim_time">true</rosparam> -->
+  <rosparam param="/use_sim_time">true</rosparam>
   <!-- <rosparam param="/use_sim_time">false</rosparam> -->
   <node pkg="rm_debris_vision" name="static_virtual_camera" type="static_virtual_camera.py" output="screen" />
   <node pkg="tf" type="static_transform_publisher" name="virtual_camera_broadcaster" args="0.1 -0.2 0.7 -0.5 0.5 -0.5 0.5 LLEG_LINK5 static_virtual_camera 100" unless="$(arg interactive_marker)" />
@@ -242,6 +242,7 @@
     <rosparam>
       approximate_sync: true
       keep_organized: true
+      max_queue_size: 20
     </rosparam>
   </node>
 
