@@ -27,7 +27,24 @@
         pkg="nodelet" type="nodelet" name="camera_nodelet_manager"
         args="manager" output="screen"/>
 
-  <node pkg="transform_coords" name="transform_pcl" type="transform_coords_node" output="screen" />
+  <!-- <node pkg="transform_coords" name="transform_pcl" type="transform_coords_node" output="screen" /> -->
+  <node name="transform_org_pcl2"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_pcl_utils/TfTransformCloud /$(arg manager)">
+    <remap from="~input" to="$(arg multisense_org_pcl2)" />
+    <rosparam>
+      target_frame_id: odom
+    </rosparam>
+  </node>
+    <node name="transform_pcl2"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_pcl_utils/TfTransformCloud /$(arg manager)">
+    <remap from="~input" to="$(arg multisense_pcl2)" />
+    <rosparam>
+      target_frame_id: odom
+    </rosparam>
+  </node>
+
   <node pkg="rm_debris_vision" name="get_plane" type="get_plane.py" output="screen" />
   <node pkg="rm_debris_vision" name="make_plane_for_ik" type="make_plane_for_ik.l" output="screen" />
   <arg name="interactive_marker" default="false" />
