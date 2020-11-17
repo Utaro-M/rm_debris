@@ -36,7 +36,7 @@
       target_frame_id: odom
     </rosparam>
   </node>
-    <node name="transform_pcl2"
+  <node name="transform_pcl2"
         pkg="nodelet" type="nodelet"
         args="load jsk_pcl_utils/TfTransformCloud /$(arg manager)">
     <remap from="~input" to="$(arg multisense_pcl2)" />
@@ -51,7 +51,7 @@
   <!-- 固定してん -->
   <rosparam param="/use_sim_time">true</rosparam>
   <node pkg="rm_debris_vision" name="static_virtual_camera" type="static_virtual_camera.py" output="screen" />
-  <node pkg="tf" type="static_transform_publisher" name="virtual_camera_broadcaster" args="0.1 -0.2 0.7 -0.5 0.5 -0.5 0.5 LLEG_LINK5 static_virtual_camera 100" unless="$(arg interactive_marker)" />
+  <node pkg="tf" type="static_transform_publisher" name="virtual_camera_broadcaster" args="0.2 0 1.0 0.612372 -0.612372 0.353553 -0.353553 odom static_virtual_camera 100" unless="$(arg interactive_marker)" />  <!-- -0.5 0.5 -0.5 0.5 -->
     <!-- <node pkg="tf" type="static_transform_publisher" name="virtual_camera_broadcaster" args="0.1 -0.2 0.7 -0.547723 0.547723 -0.547723 0.316228 LLEG_LINK5 static_virtual_camera 100" unless="$(arg interactive_marker)" /> -->
 
   <node pkg="nodelet" type="nodelet" name="passthrough"
@@ -75,22 +75,23 @@
       keep_organized: true
     </rosparam>
   </node>
-    
+ 
   <!-- get image from static virtual camera -->
   <node name="depth_image_creator"
         pkg="nodelet" type="nodelet"
         args="load jsk_pcl/DepthImageCreator $(arg manager)">
     <!-- <remap from="~input" to="/bilateral_filter/output" /> -->
-    <remap from="~input" to="$(arg multisense_pcl2)" />
+    <!-- <remap from="~input" to="$(arg multisense_pcl2)" /> -->
+    <remap from="~input" to="/passthrough/output" />
     <!-- <remap from="~input" to="/multisense_local/image_points2_color" /> -->
     <remap from="~info" to="$(arg camerainfo)" />
     <!-- <remap from="~info" to="$(arg multisense_camerainfo)" /> -->
     <!-- <remap from="~info" to="/static_virtual_cam/camera_info" /> -->
     <rosparam>
       <!-- tf_duration: 0.1 -->
-      organize_cloud: true
+      <!-- organize_cloud: false -->
       use_asynchronous: true
-      use_approximate: true
+      use_approximate: false
       max_queue_size: 2
     </rosparam>
   </node>
@@ -104,7 +105,27 @@
       publish_normal: true
     </rosparam>
   </node>
-  
+
+  <node name="multi_plane_sac_segmentation"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_pcl/MultiPlaneSACSegmentation /$(arg manager)">
+     <remap from="~input" to="$(arg multisense_pcl2)" />
+    <!-- <remap from="~input" to="/kinect_head/depth_registered/points"/> -->
+    <rosparam>
+      use_normal: false
+      use_clusters: false
+      use_imu_parallel: false
+      use_imu_perpendicular: false
+      <!-- min_inlier: 500 -->
+    </rosparam>
+  </node>
+  <!-- <node name="cluster_indices_decomposer" -->
+  <!--       pkg="nodelet" type="nodelet" -->
+  <!--       args="load jsk_pcl/ClusterPointIndicesDecomposer /$(arg manager)"> -->
+  <!--   <remap from="~input" to="/depth_image_creator/output_cloud"/> -->
+  <!--   <remap from="~target" to="multi_plane_sac_segmentation/output_indices"/> -->
+  <!-- </node> -->
+
   <node name="multi_plane_extraction"
         pkg="nodelet" type="nodelet"
         args="load jsk_pcl/MultiPlaneExtraction  $(arg manager)">
@@ -112,10 +133,14 @@
     <!-- <remap from="~input" to="depth_image_creator/output_cloud"/> -->
     <!-- <remap from="~input" to="$(arg multisense_org_pcl2)"/> -->
     <remap from="~input" to="/extract_indices/output"/>
-    <remap from="~indices" to="organized_multi_plane_segmentation/output_refined"/>
-    <remap from="~input_polygons" to="organized_multi_plane_segmentation/output_refined_polygon"/>
-    <remap from="~input_coefficients" to="organized_multi_plane_segmentation/output_refined_coefficients"/>
+    <!-- <remap from="~indices" to="organized_multi_plane_segmentation/output_refined"/> -->
+    <!-- <remap from="~input_polygons" to="organized_multi_plane_segmentation/output_refined_polygon"/> -->
+    <!-- <remap from="~input_coefficients" to="organized_multi_plane_segmentation/output_refined_coefficients"/> -->
+    <remap from="~indices" to="multi_plane_sac_segmentation/output_refined"/>
+    <remap from="~input_polygons" to="multi_plane_sac_segmentation/output_refined_polygon"/>
+    <remap from="~input_coefficients" to="multi_plane_sac_segmentation/output_refined_coefficients"/>
     <rosparam>
+      keep_organized: false
       use_indices: true
       use_coefficients: true
       min_height: -0.3
@@ -192,11 +217,11 @@
   <node name="apply_mask_image"
         pkg="nodelet" type="nodelet"
         args="load jsk_perception/ApplyMaskImage $(arg manager)">
-           
     <!-- <remap from="~input" to="dilate_mask_image/output" /> -->
     <!-- <remap from="~input" to="/background_subtraction/output" /> -->
     <!-- <remap from="~input" to="/multisense_local/left/image_rect_color" /> -->
-    <remap from="~input" to="$(arg passthrough_pcl2)" />
+    <!-- <remap from="~input" to="$(arg passthrough_pcl2)" /> -->
+    <remap from="~input" to="/depth_image_creator/output_image" />
     <remap from="~input/mask" to="/robot_to_mask_image/output" />
     <rosparam>
       approximate_sync: true
@@ -207,10 +232,10 @@
         pkg="nodelet" type="nodelet"
         args="load jsk_perception/BackgroundSubstraction  $(arg manager)"> 
     <!-- args="standalone jsk_perception/BackgroundSubstraction"> -->
-    <remap from="~image" to="/multisense_local/left/image_rect_color" />
-    <remap from="~input/mask" to="/apply_mask_image/output" />
-    <!-- <remap from="~image" to="/depth_image_creator/output_image" /> -->
+    <!-- <remap from="~image" to="/multisense_local/left/image_rect_color" /> -->
+    <remap from="~image" to="/depth_image_creator/output_image" />
     <!-- <remap from="~image" to="/passthrough_x/output" /> -->
+    <remap from="~input/mask" to="/apply_mask_image/output" />
     <rosparam>
       nmixtures : 5
     </rosparam>
@@ -248,13 +273,13 @@
         output="screen" clear_params="true">
     
     <param name="~negative" value="false" />
-    <!-- <remap from="~input" to="$(arg processed_pcl2)" /> -->
-    <remap from="~input" to="$(arg passthrough_org_pcl2)" />
+    <remap from="~input" to="$(arg processed_pcl2)" />
+    <!-- <remap from="~input" to="$(arg passthrough_org_pcl2)" /> -->
     <!-- <remap from="~input/mask" to="/apply_mask_image/output" /> -->
     <!-- <remap from="~input/mask" to="background_subtraction/output" /> -->
     <remap from="~input/mask" to="dilate_mask_image/output" />
-    <!-- <remap from="~input/camera_info" to="$(arg camerainfo)" /> -->
-    <remap from="~input/camera_info" to="$(arg multisense_camerainfo)" />
+    <remap from="~input/camera_info" to="$(arg camerainfo)" />
+    <!-- <remap from="~input/camera_info" to="$(arg multisense_camerainfo)" /> -->
   </node>
 
   <!-- インダイスを使って該当点群を抽出 -->
@@ -262,12 +287,12 @@
         name="extract_indices"
         args="load jsk_pcl/ExtractIndices $(arg manager)"
         output="screen" clear_params="true">
-    <!-- <remap from="~input" to="$(arg processed_pcl2)" /> -->
-    <remap from="~input" to="$(arg passthrough_org_pcl2)" />
+    <remap from="~input" to="$(arg processed_pcl2)" />
+    <!-- <remap from="~input" to="$(arg passthrough_org_pcl2)" /> -->
     <remap from="~indices" to="/mask_image_filter/output" />
     <rosparam>
       approximate_sync: true
-      keep_organized: true
+      keep_organized: false
       max_queue_size: 10
     </rosparam>
   </node>
