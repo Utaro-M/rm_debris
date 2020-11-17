@@ -9,7 +9,7 @@
 (require "./class.l")
 (load "./my-ik.l")
 (require "../../euslisp/save-log.l")
-;; (require "~/research/rm_debris/src/predict_from_multi_pose.l")
+(require "~/research/rm_debris/src/predict_from_multi_pose.l")
 
 (unless (and (boundp '*robot*) (boundp '*ri*))
   (jaxon_red-init)
