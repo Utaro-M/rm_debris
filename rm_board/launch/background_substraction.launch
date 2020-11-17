@@ -46,7 +46,8 @@
   </node>
 
   <node pkg="rm_debris_vision" name="get_plane" type="get_plane.py" output="screen" />
-  <node pkg="rm_debris_vision" name="make_plane_for_ik" type="make_plane_for_ik.l" output="screen" />
+  <node pkg="rm_debris_vision" name="make_plane_realtime" type="make_plane_for_ik.l" output="screen" />
+  <node pkg="rm_debris_vision" name="make_plane_for_ik_loop" type="make_plane_for_ik_server.l" output="screen" />
   <arg name="interactive_marker" default="false" />
   <!-- 固定してん -->
   <rosparam param="/use_sim_time">true</rosparam>
