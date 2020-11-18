@@ -148,7 +148,7 @@
       max_height: 0.3
     </rosparam>
   </node>
-
+  
   <node name="robot_to_mask_image"
         pkg="nodelet" type="nodelet"
         args="load jsk_perception/RobotToMaskImage $(arg manager)">
@@ -266,7 +266,7 @@
     </rosparam>
   </node>
 
-  <!-- マスク画像の結果と点p群を結びつけて、点のインダイスを出力する -->
+  <!-- マスク画像の結果と点群を結びつけて、点のインダイスを出力する -->
   <arg name="camera" value="/multisense_local" />
   <node pkg="nodelet" type="nodelet"
         name="mask_image_filter"

@@ -38,7 +38,6 @@
   (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700) :wait? nil)
   (setq flag  (check-while-working))
   (retry-flag-checker flag)
-
   )
 ;;   (setq  (send *robot* :angle-vector))
 ;;   (setq rarm-coords (send *robot* arm :end-coords))

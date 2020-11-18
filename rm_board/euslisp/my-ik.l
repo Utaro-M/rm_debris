@@ -691,13 +691,15 @@
      (reset? t)
      (rleg-pos-shift #f(0 0 0))
      (lleg-pos-shift #f(0 0 0))
+     (face (make-cube 800 600 20))
      &allow-other-keys
      )
   (setq rleg-pos-shift (v+ rleg-pos-shift #f(0 0 -10)))
   (setq lleg-pos-shift (v+ lleg-pos-shift #f(0 0 -10)))  
   (setq *ground-rleg* (make-cube 800 400 20))
   (setq *ground-lleg* (make-cube 800 400 20))
-  (setq *ground-larm* (make-cube 800 600 20))
+  ;; (setq *ground-larm* (make-cube 800 600 20))
+  (setq *ground-larm* face)
   (send *ground-rleg* :newcoords
         (make-coords :pos (send (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate rleg-pos-shift) :worldpos)  :rpy (list (deg2rad -70) 0 0))
         )

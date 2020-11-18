@@ -245,7 +245,9 @@
                (wait? t) (reset? t) (apply-external-force? t) (avoid-collision? t)
                (rleg-pos-shift #f(0 0 -10))
                (lleg-pos-shift #f(0 0 -10))
-               (look-at-hands? nil))
+               (look-at-hands? nil)
+               (face (cube 800 600 20))
+               )
 
   ;; needless??
   ;; (send *robot* :angle-vector (send *ri* :state :angle-vector))
@@ -258,7 +260,7 @@
   (setq lleg-coords-old (send *robot* :lleg :end-coords :copy-worldcoords))
   (setq pre-pose (send *robot* :angle-vector))
   (setq pre-lleg (send *robot* :lleg :end-coords :copy-worldcoords))
-  (ik-opt-with-larmcontact rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :reset? reset? :apply-external-force? apply-external-force? :avoid-collision? avoid-collision? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift)
+  (ik-opt-with-larmcontact rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :reset? reset? :apply-external-force? apply-external-force? :avoid-collision? avoid-collision? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :face face)
   (setq zmp-vector (send *ri*  :zmp-vector))
   (setq rleg-coords-new (send *robot* :rleg :end-coords :copy-worldcoords))
   (setq lleg-coords-new (send *robot* :lleg :end-coords :copy-worldcoords))
