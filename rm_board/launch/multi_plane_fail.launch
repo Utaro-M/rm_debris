@@ -39,6 +39,7 @@
       use_imu_perpendicular: false
       <!-- min_inlier: 500 -->
       max_iterations: 500
+      min_inliers:3000
       
 
     </rosparam>

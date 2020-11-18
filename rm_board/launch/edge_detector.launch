@@ -1,0 +1,94 @@
+<launch>
+  <arg name="input_cloud"
+       default="/multisense_local/organized_image_points2_color" />
+  <arg name="camera_info"
+       default="/multisense_local/left/camera_info" />
+  <arg name="transformed_cloud"
+       default="transform_org_cloud/output" />
+  <arg name="filtered_cloud"
+       default="extract_indices/output" />
+  <arg name="manager" default="edge_detector_manager" />
+
+  <rosparam param="/use_sim_time">true</rosparam>
+
+  <group ns="edge_detector">
+    <node name="$(arg manager)"
+          pkg="nodelet" type="nodelet"
+          args="manager" output="screen" />
+
+    <node name="transform_org_cloud"
+          pkg="nodelet" type="nodelet"
+          args="load jsk_pcl_utils/TfTransformCloud $(arg manager)">
+      <remap from="~input" to="$(arg input_cloud)" />
+      <rosparam>
+        target_frame_id: odom
+      </rosparam>
+    </node>
+    <node name="bounding_box_array_publisher"
+          pkg="jsk_recognition_utils" type="bounding_box_array_publisher.py">
+      <rosparam>
+        frame_id: odom
+        boxes:
+        - position: [1, 0, 1.1]
+          dimension: [3, 1.5, 2]
+      </rosparam>
+    </node>
+    <node name="attention_clipper"
+          pkg="nodelet" type="nodelet"
+          args="load jsk_pcl/AttentionClipper $(arg manager)">
+      <remap from="~input/points" to="$(arg transformed_cloud)" />
+      <remap from="~input/box_array" to="bounding_box_array_publisher/output" />
+      <rosparam>
+        use_multiple_attention: true
+      </rosparam>
+    </node>
+    <node name="extract_indices"
+          pkg="nodelet" type="nodelet"
+          args="load jsk_pcl/ExtractIndices $(arg manager)">
+      <remap from="~input" to="$(arg transformed_cloud)" />
+      <remap from="~indices" to="attention_clipper/output/point_indices" />
+      <rosparam>
+        keep_organized: true
+      </rosparam>
+    </node>
+
+    
+    <node name="organized_edge_detector"
+          pkg="nodelet" type="nodelet"
+          args="load jsk_pcl/OrganizedEdgeDetector $(arg manager)">
+      <remap from="~input" to="$(arg filtered_cloud)" />
+      <remap from="~edge_detector/organized_edge_detector/output_rgb_edge_indices" to="edge_indices" />
+      <remap from="~edge_detector/organized_edge_detector/output_rgb_edge" to="edge_cloud" />      
+      <rosparam>
+        publish_normal: true
+        use_nan_boundary: true
+        use_rgb: true
+        use_straightline_detection: true
+      </rosparam>
+    </node>
+  </group>
+
+
+  <node name="multi_plane_extraction"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_pcl/MultiPlaneExtraction  $(arg manager)">
+    <remap from="~input" to="/edge"/>
+    <!-- <remap from="~indices" to="organized_multi_plane_segmentation/output_refined"/> -->
+    <!-- <remap from="~input_polygons" to="organized_multi_plane_segmentation/output_refined_polygon"/> -->
+    <!-- <remap from="~input_coefficients" to="organized_multi_plane_segmentation/output_refined_coefficients"/> -->
+    <remap from="~indices" to="edge_cloud"/>
+    <remap from="~input_polygons" to="multi_plane_segmentation/output_refined_polygon"/>
+    <remap from="~input_coefficients" to="multi_plane_segmentation/output_refined_coefficients"/>
+    <rosparam>
+      keep_organized: false
+      use_indices: true
+      use_coefficients: true
+      min_height: -0.3
+      max_height: 0.3
+    </rosparam>
+  </node>
+  
+  <node name="rviz"
+        pkg="rviz" type="rviz"
+        args="-d /home/utaro/research/rm_debris/rm_board/display/edge_detector.rviz"/>
+</launch>

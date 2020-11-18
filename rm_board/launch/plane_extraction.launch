@@ -1,11 +1,20 @@
 <launch>
   <arg name="input_cloud"
        default="/multisense_local/organized_image_points2_color" />
+  <arg name="camera_info"
+       default="/multisense_local/left/camera_info" />
   <arg name="transformed_cloud"
        default="transform_org_cloud/output" />
   <arg name="filtered_cloud"
        default="extract_indices/output" />
   <arg name="manager" default="plane_extraction_manager" />
+
+  <rosparam param="/use_sim_time">true</rosparam>
+  <node pkg="rm_debris_vision" name="get_plane" type="get_plane.py" output="screen" >
+    <remap from="~output" to="~focus_plane" />
+  </node>
+  <node pkg="rm_debris_vision" name="make_plane_realtime" type="make_plane_for_ik.l" output="screen" />
+  <node pkg="rm_debris_vision" name="make_plane_for_ik_loop" type="make_plane_for_ik_server.l" output="screen" />
 
   <group ns="plane_extraction">
     <node name="$(arg manager)"
@@ -65,7 +74,7 @@
       <param name="~angular_threshold" value="0.05" />
       <param name="~connect_plane_angle_threshold" value="0.1" />
     </node>
-
+  
     <node name="plane_normal_filter"
           pkg="nodelet" type="nodelet"
           args="load jsk_pcl_utils/PlaneRejector $(arg manager)">
@@ -96,5 +105,42 @@
         fill_boxes_label_with_nearest_plane_index: true
       </rosparam>
     </node>
-  </group>  <!-- end of plane_extraction namespace-->
+
+  <node name="organized_edge_detector"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_pcl/OrganizedEdgeDetector $(arg manager)">
+    <remap from="~input" to="$(arg filtered_cloud)" />
+    <!-- <remap from="~/output_rgb_edge_indices" to="edge_indices" /> -->
+    <!-- <remap from="~/output_rgb_edge" to="edge_cloud" />       -->
+    <remap from="~/output_straight_edges_indices" to="edge_indices" />
+    <remap from="~/output" to="edge_cloud" />      
+    <rosparam>
+      publish_normal: true
+      use_nan_boundary: true
+      use_rgb: true
+      use_straightline_detection: true
+    </rosparam>
+  </node>
+
+  <node name="multi_plane_extraction"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_pcl/MultiPlaneExtraction  $(arg manager)">
+    <remap from="~input" to="edge_cloud"/>
+    <remap from="~indices" to="edge_indices"/>
+    <remap from="~input_polygons" to="plane_polygons"/>
+    <remap from="~input_coefficients" to="plane_coefficients"/>
+    <rosparam>
+      keep_organized: false
+      use_indices: true
+      use_coefficients: true
+      min_height: -0.3
+      max_height: 0.3
+    </rosparam>
+  </node>  
+</group>  <!-- end of plane_extraction namespace-->
+
+  <node name="rviz"
+        pkg="rviz" type="rviz"
+        args="-d /home/utaro/research/rm_debris/rm_board/display/plane_extraction.rviz"/>
+  
 </launch>
