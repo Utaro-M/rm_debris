@@ -38,7 +38,6 @@
   (heave #f(0 -200 0) #f(0 200 0) :cog #f(100 0 700) :wait? nil)
   (setq flag  (check-while-working))
   (retry-flag-checker flag)
-
   )
 ;;   (setq  (send *robot* :angle-vector))
 ;;   (setq rarm-coords (send *robot* arm :end-coords))
@@ -258,7 +257,7 @@
 
   )
 ;;1026実機実験用
-(defun dem-bigboard-pre()
+(defun dem-bigboard-pre(simulator?)
   ;; (setq flag-simulator nil)
 
   (my-init-pose :move-foot? nil)
@@ -275,17 +274,21 @@
   (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t :rleg-pos-shift #f(0 -100 -10) :lleg-pos-shift #f(0 100 -10) :look-at-hands? t)
 
   (setq pre-angle (send *robot* :angle-vector))
-  (setq movetime 20000)
+  (if simulator? nil
+    (setq movetime 20000)
+    )
   
   (heave #f(-110 -900 0) #f(-110 900 0) :reset? t :fix-contact? 2 :wait? t :look-at-hands? t)
 
   ;; (heave #f(-110 -1200 0) #f(-110 1200 0) :reset? t :fix-contact? nil :wait? t)
   ;;jikkide tamesita
-  ;; (heave #f(-110 -600 0) #f(-110 600 0) :reset? t :fix-contact? 2 :wait? t)  
-  (setq movetime 16000)
+  ;; (heave #f(-110 -600 0) #f(-110 600 0) :reset? t :fix-contact? 2 :wait? t)
+  (if simulator? nil
+    (setq movetime 16000)
+    )
   )
 
-(defun dem-bigboard-mid()
+(defun dem-bigboard-mid(simulator?)
   (change-arm 120 :rarm)
   (change-arm 120 :larm)
   

@@ -1,0 +1,41 @@
+<launch>
+  <arg name="create_manager" default="true" />
+  <arg name="manager" default="camera_nodelet_manager" />
+  <arg name="gui" default="true" />
+  <arg name="rosbag_file" default="/home/utaro/.ros/backgroud_subtraction_2020-11-12-19-51-10.bag --clock --loop " />
+  
+  <arg name="/multisense_pcl2" default="/multisense_local/image_points2_color" />
+  <arg name="/multisense_org_pcl2" default="/multisense_local/organized_image_points2_color" />
+  <arg name="/multisense_camerainfo" default="/multisense_local/left/camera_info" />
+  
+  <arg name="/processed_pcl2" default="/depth_image_creator/output_cloud" />
+  <arg name="/camerainfo" default="/static_virtual_camera/camera_info" />
+
+  <node name="rosbag_play"
+        pkg="rosbag" type="play"
+        args="$(arg rosbag_file)" />
+  <!-- args="/home/utaro/research/rm_debris/rm_board/ros_bag/backgroud_subtraction_2020-11-11-13-17-00.bag -\-clock -\-loop" /> -->
+  <!-- <node name="rosbag_play" -->
+  <!--       pkg="rosbag" type="play" -->
+  <!--       args="/home/utaro/.ros/backgroud_subtraction_2020-11-12-19-32-58.bag  -\-clock -\-loop " /> -->
+
+  <node if="$(arg create_manager)"
+        pkg="nodelet" type="nodelet" name="camera_nodelet_manager"
+        args="manager" output="screen"/>
+
+  <node name="organized_multi_plane_segmentation"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_pcl/OrganizedMultiPlaneSegmentation $(arg manager)">
+    <remap from="~input" to="$(arg /multisense_org_pcl2)"/>
+    <rosparam>
+      publish_normal: true
+    </rosparam>
+  </node>
+  
+  <node name="normal_concatenater"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_pcl_utils/NormalConcatenater $(arg manager)">
+    <remap from="~input" to="$(arg /multisense_org_pcl2)"/>
+    <remap from="~normal" to="organized_multi_plane_segmentation/output_normal"/>
+  </node>
+</launch>

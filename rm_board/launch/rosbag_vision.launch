@@ -1,0 +1,19 @@
+<launch>
+  <arg name="bagfile"
+       default="/home/leus/matsuura/ros_bag/backgroud_subtraction_no_virtualcamera_with_info.bag"/>
+  <node name="rosbag_record"
+	pkg="rosbag" type="record"
+	args="-o $(arg bagfile)
+	      -b 0
+	      /multisense_local/image_points2_color
+	      /multisense_local/organized_image_points2_color
+	      /multisense_local/left/camera_info
+	      /multisense_local/left/image_rect_color
+	      /tf
+	      /tf_static"
+	output="screen">
+  </node>
+</launch>
+
+	      <!-- /static_virtual_camera/camera_info -->
+	      <!-- /multisense_local/left/image_rect_color -->
