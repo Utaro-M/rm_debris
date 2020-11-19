@@ -9,7 +9,7 @@
 (require "./class.l")
 (load "./my-ik.l")
 (require "../../euslisp/save-log.l")
-(require "~/research/rm_debris/src/predict_from_multi_pose.l")
+;; (require "~/research/rm_debris/src/predict_from_multi_pose.l")
 
 (unless (and (boundp '*robot*) (boundp '*ri*))
   (jaxon_red-init)
@@ -130,6 +130,8 @@
   (setq pre-pose (send *robot* :angle-vector))
   (setq pre-lleg (send *robot* :lleg :end-coords :copy-worldcoords))
   (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift)
+  ;;板を見たい
+  (send *robot* :head-neck-p :joint-angle -15)
   (setq zmp-vector (send *ri*  :zmp-vector))
   (setq rleg-coords-new (send *robot* :rleg :end-coords :copy-worldcoords))
   (setq lleg-coords-new (send *robot* :lleg :end-coords :copy-worldcoords))
@@ -189,6 +191,7 @@
   (setq pre-pose (send *robot* :angle-vector))
   (setq pre-lleg (send *robot* :lleg :end-coords :copy-worldcoords))
   (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :reset? reset? :apply-external-force? apply-external-force? :avoid-collision? avoid-collision? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift)
+  (send *robot* :head-neck-p :joint-angle (+ (send *robot* :head-neck-p :joint-angle) -10))
   (setq zmp-vector (send *ri*  :zmp-vector))
   (setq rleg-coords-new (send *robot* :rleg :end-coords :copy-worldcoords))
   (setq lleg-coords-new (send *robot* :lleg :end-coords :copy-worldcoords))
