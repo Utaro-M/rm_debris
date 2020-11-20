@@ -69,7 +69,7 @@
         )
     (progn
       (send *robot* :angle-vector pre-pose)
-      (send *robot* :move-coords (send pre-lleg :translate #f(0 0 100)) (send *robot* :link "LLEG_LINK5"))
+      (send *robot* :move-coords (send pre-lleg :translate #f(0 0 140)) (send *robot* :link "LLEG_LINK5"))
       (objects)
       (print "pre pose")
       )
