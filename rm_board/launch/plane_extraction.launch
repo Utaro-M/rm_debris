@@ -39,11 +39,12 @@
       <rosparam>
         frame_id: odom
         boxes:
-        - position: [1, 0, 1.1]
+        - position: [1, 0, 0]
           dimension: [3, 1.5, 2]
       </rosparam>
     </node>
-
+        <!-- - position: [1, 0, 1.1] -->
+        <!--   dimension: [3, 1.5, 2] -->
     <node name="attention_clipper"
           pkg="nodelet" type="nodelet"
           args="load jsk_pcl/AttentionClipper $(arg manager)">
@@ -283,7 +284,7 @@
       - name: RLEG_LINK2
       - name: RLEG_LINK3
       - name: RLEG_LINK4
-      - name: RLEG_LINK
+      - name: RLEG_LINK5
       - name: LLEG_LINK2
       - name: LLEG_LINK3
       - name: LLEG_LINK4
@@ -298,24 +299,22 @@
       - name: LARM_LINK5
       - name: LARM_LINK6
       - name: LARM_LINK7
-      - name: LARM_FINGER0
-      - name: LARM_FINGER1
-      - name: RARM_FINGER0
-      - name: RARM_FINGER1
+      <!-- - name: LARM_FINGER0 -->
+      <!-- - name: LARM_FINGER1 -->
+      <!-- - name: RARM_FINGER0 -->
+      <!-- - name: RARM_FINGER1 -->
       <!-- jikki -->
-      <!-- - name: R_thk_finger1 -->
-      <!-- - name: R_thk_finger2 -->
-      <!-- - name: R_thk_palm -->
+      - name: R_thk_finger1
+      - name: R_thk_finger2
+      - name: R_thk_palm
 
-      <!-- jikki -->
-      <!-- - name: L_thk_finger1 -->
-      <!-- - name: L_thk_finger2 -->
-      <!-- - name: L_thk_palm -->
+      - name: L_thk_finger1
+      - name: L_thk_finger2
+      - name: L_thk_palm
       self_see_default_padding: 0.1
     </rosparam>
   </node>
-
-
+<!-- <node pkg="rgbd_self_filter" name="get_plane" type="get_plane.py" output="screen"/> -->
   <node name="rviz"
         pkg="rviz" type="rviz"
         args="-d /home/utaro/research/rm_debris/rm_board/display/plane_extraction.rviz"/>
