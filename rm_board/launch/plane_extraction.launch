@@ -19,6 +19,8 @@
   </node>
   <node pkg="rm_debris_vision" name="make_plane_realtime" type="make_plane_for_ik.l" output="screen" />
   <node pkg="rm_debris_vision" name="make_plane_for_ik_loop" type="make_plane_for_ik_server.l" output="screen" />
+  <node pkg="rm_debris_vision" name="get_larm_remove_indices_server" type="get_larm_remove_indices_server.l" output="screen" />
+  <node pkg="rm_debris_vision" name="get_rarm_remove_indices_server" type="get_rarm_remove_indices_server.l" output="screen" />
 
   <group ns="plane_extraction">
     <node name="$(arg manager)"
@@ -148,37 +150,37 @@
     </node>
 
     <!-- 物体把持判定 -->
-    <node name="apply_mask_image"
-          pkg="nodelet" type="nodelet"
-          args="load jsk_perception/ApplyMaskImage $(arg manager)">
-      <remap from="~input" to="/multisense_local/left/image_rect_color" />
-      <remap from="~input/mask" to="/robot_to_mask_image/output" />
-      <rosparam>
-        approximate_sync: true
-      </rosparam>
-    </node>
+    <!-- <node name="apply_mask_image" -->
+    <!--       pkg="nodelet" type="nodelet" -->
+    <!--       args="load jsk_perception/ApplyMaskImage $(arg manager)"> -->
+    <!--   <remap from="~input" to="/multisense_local/left/image_rect_color" /> -->
+    <!--   <remap from="~input/mask" to="/robot_to_mask_image/output" /> -->
+    <!--   <rosparam> -->
+    <!--     approximate_sync: true -->
+    <!--   </rosparam> -->
+    <!-- </node> -->
 
-    <node pkg="nodelet" type="nodelet"
-          name="mask_image_filter"
-          args="load jsk_pcl/MaskImageFilter $(arg manager)"
-          output="screen" clear_params="true">
-      <param name="~negative" value="false" />
-      <remap from="~input" to="$(arg input_cloud)" />
-      <remap from="~input/mask" to="apply_mask_image/output" />
-      <remap from="~input/camera_info" to="$(arg camera_info)" />
-    </node>
-    <node pkg="nodelet" type="nodelet"
-          name="mask_extract_indices"
-          args="load jsk_pcl/ExtractIndices $(arg manager)"
-          output="screen" clear_params="true">
-      <remap from="~input" to="$(arg input_cloud)" />
-      <remap from="~indices" to="mask_image_filter/output" />
-      <rosparam>
-        approximate_sync: true
-        keep_organized: true
-        max_queue_size: 10
-      </rosparam>
-    </node>
+    <!-- <node pkg="nodelet" type="nodelet" -->
+    <!--       name="mask_image_filter" -->
+    <!--       args="load jsk_pcl/MaskImageFilter $(arg manager)" -->
+    <!--       output="screen" clear_params="true"> -->
+    <!--   <param name="~negative" value="false" /> -->
+    <!--   <remap from="~input" to="$(arg input_cloud)" /> -->
+    <!--   <remap from="~input/mask" to="apply_mask_image/output" /> -->
+    <!--   <remap from="~input/camera_info" to="$(arg camera_info)" /> -->
+    <!-- </node> -->
+    <!-- <node pkg="nodelet" type="nodelet" -->
+    <!--       name="mask_extract_indices" -->
+    <!--       args="load jsk_pcl/ExtractIndices $(arg manager)" -->
+    <!--       output="screen" clear_params="true"> -->
+    <!--   <remap from="~input" to="$(arg input_cloud)" /> -->
+    <!--   <remap from="~indices" to="mask_image_filter/output" /> -->
+    <!--   <rosparam> -->
+    <!--     approximate_sync: true -->
+    <!--     keep_organized: true -->
+    <!--     max_queue_size: 10 -->
+    <!--   </rosparam> -->
+    <!-- </node> -->
 
     <node name="transform_larm"
           pkg="nodelet" type="nodelet"
@@ -198,22 +200,25 @@
       <rosparam>
         filter_field_name: x
         filter_limit_min: 0
-        filter_limit_max: 0.15
+        filter_limit_max: 0.2
         filter_limit_negative: False
       </rosparam>
     </node>
-
+        <!-- filter_limit_max: 0.15 -->
     <node pkg="nodelet" type="nodelet" name="passthrough_larm_y"
           args="load pcl/PassThrough $(arg manager)" >
       <remap from="~input" to="larm_x"/>
       <remap from = "~/output" to="larm_y"/>
       <rosparam>
         filter_field_name: y
-        filter_limit_min: -0.08
-        filter_limit_max:  0.08
+        filter_limit_min: -0.1
+        filter_limit_max:  0.2
         filter_limit_negative: False
       </rosparam>
-    </node>
+      </node>
+        <!-- filter_limit_min: -0.08 -->
+        <!-- filter_limit_max:  0.08 -->
+        
 
     <node pkg="nodelet" type="nodelet" name="passthrough_larm_z"
           args="load pcl/PassThrough $(arg manager)" output="screen">
@@ -243,27 +248,28 @@
       <rosparam>
         filter_field_name: x
         filter_limit_min: 0
-        filter_limit_max: 0.15
+        filter_limit_max: 0.2
         filter_limit_negative: False
       </rosparam>
     </node>
-
+    <!-- filter_limit_max: 0.15 -->
     <node pkg="nodelet" type="nodelet" name="passthrough_rarm_y"
           args="load pcl/PassThrough $(arg manager)" >
-      <remap from="~input" to="passthrough_rarm_x/output"/>
-      <remap from="~input" to="trarm_x"/>
+      <!-- <remap from="~input" to="passthrough_rarm_y/output"/> -->
+      <remap from="~input" to="rarm_x"/>
       <remap from = "~/output" to="rarm_y"/>
       <rosparam>
         filter_field_name: y
-        filter_limit_min: -0.08
-        filter_limit_max:  0.08
+        filter_limit_min: -0.2
+        filter_limit_max:  0.1
         filter_limit_negative: False
       </rosparam>
       </node>
-
+        <!-- filter_limit_min: -0.08 -->
+        <!-- filter_limit_max:  0.08 -->
     <node pkg="nodelet" type="nodelet" name="passthrough_rarm_z"
           args="load pcl/PassThrough $(arg manager)" output="screen">
-      <remap from="~input" to="trarm_y"/>
+      <remap from="~input" to="rarm_y"/>
       <remap from = "~/output" to="rarm_z"/>
       <rosparam>
         filter_field_name: z
@@ -272,48 +278,95 @@
         filter_limit_negative: False
       </rosparam>
     </node>
-  </group>  <!-- end of plane_extraction namespace-->
-  <node name="robot_to_mask_image"
-        pkg="nodelet" type="nodelet"
-        args="standalone jsk_perception/RobotToMaskImage">
-    <!-- args="load jsk_perception/RobotToMaskImage $(arg manager)"> -->
-    <remap from="~input/camera_info" to="$(arg camera_info)"/>
-    <rosparam>
-      robot_description: "JAXON_RED"
-      self_see_links:
-      - name: RLEG_LINK2
-      - name: RLEG_LINK3
-      - name: RLEG_LINK4
-      - name: RLEG_LINK5
-      - name: LLEG_LINK2
-      - name: LLEG_LINK3
-      - name: LLEG_LINK4
-      - name: LLEG_LINK5          
-      - name: RARM_LINK3
-      - name: RARM_LINK4
-      - name: RARM_LINK5
-      - name: RARM_LINK6
-      - name: RARM_LINK7  
-      - name: LARM_LINK3
-      - name: LARM_LINK4
-      - name: LARM_LINK5
-      - name: LARM_LINK6
-      - name: LARM_LINK7
-      <!-- - name: LARM_FINGER0 -->
-      <!-- - name: LARM_FINGER1 -->
-      <!-- - name: RARM_FINGER0 -->
-      <!-- - name: RARM_FINGER1 -->
-      <!-- jikki -->
-      - name: R_thk_finger1
-      - name: R_thk_finger2
-      - name: R_thk_palm
 
-      - name: L_thk_finger1
-      - name: L_thk_finger2
-      - name: L_thk_palm
-      self_see_default_padding: 0.1
-    </rosparam>
-  </node>
+    <node name="cloud_to_indices_larm"
+          pkg="nodelet" type="nodelet"
+          args="load jsk_pcl_utils/PointCloudToPointIndices $(arg manager)">
+      <remap from="~input" to="larm_z" />
+      <remap from="~output" to="larm_indices" />
+    </node>
+
+    <node name="cloud_to_indices_rarm"
+          pkg="nodelet" type="nodelet"
+          args="load jsk_pcl_utils/PointCloudToPointIndices $(arg manager)">
+      <remap from="~input" to="rarm_z" />
+      <remap from="~output" to="rarm_indices" />
+    </node>
+
+    <node name="subtract_point_indices_larm"
+          pkg="nodelet" type="nodelet"
+          args="load jsk_pcl_utils/SubtractPointIndices $(arg manager)">
+      <remap from="~input/src1" to="larm_indices" />
+      <remap from="~input/src2" to="/larm_remove_indices" />
+      <rosparam>
+        approximate_sync: true
+      </rosparam>
+    </node>
+
+    <node name="subtract_point_indices_rarm"
+          pkg="nodelet" type="nodelet"
+          args="load jsk_pcl_utils/SubtractPointIndices $(arg manager)">
+      <remap from="~input/src1" to="rarm_indices" />
+      <remap from="~input/src2" to="/rarm_remove_indices" />
+      <rosparam>
+        approximate_sync: true
+      </rosparam>
+    </node>
+
+    <node name="extract_indices_larm_box"
+          pkg="nodelet" type="nodelet"
+          args="load jsk_pcl/ExtractIndices $(arg manager)">
+      <remap from="~input" to="larm_z" />
+      <remap from="~indices" to="subtract_point_indices_rarm/output" />
+      <rosparam>
+        keep_organized: true
+      </rosparam>
+    </node>
+
+
+  </group>  <!-- end of plane_extraction namespace-->
+  
+  <!-- <node name="robot_to_mask_image" -->
+  <!--       pkg="nodelet" type="nodelet" -->
+  <!--       args="standalone jsk_perception/RobotToMaskImage"> -->
+  <!--   <!-\- args="load jsk_perception/RobotToMaskImage $(arg manager)"> -\-> -->
+  <!--   <remap from="~input/camera_info" to="$(arg camera_info)"/> -->
+  <!--   <rosparam> -->
+  <!--     robot_description: "JAXON_RED" -->
+  <!--     self_see_links: -->
+  <!--     - name: RLEG_LINK2 -->
+  <!--     - name: RLEG_LINK3 -->
+  <!--     - name: RLEG_LINK4 -->
+  <!--     - name: RLEG_LINK5 -->
+  <!--     - name: LLEG_LINK2 -->
+  <!--     - name: LLEG_LINK3 -->
+  <!--     - name: LLEG_LINK4 -->
+  <!--     - name: LLEG_LINK5           -->
+  <!--     - name: RARM_LINK3 -->
+  <!--     - name: RARM_LINK4 -->
+  <!--     - name: RARM_LINK5 -->
+  <!--     - name: RARM_LINK6 -->
+  <!--     - name: RARM_LINK7   -->
+  <!--     - name: LARM_LINK3 -->
+  <!--     - name: LARM_LINK4 -->
+  <!--     - name: LARM_LINK5 -->
+  <!--     - name: LARM_LINK6 -->
+  <!--     - name: LARM_LINK7 -->
+  <!--     <!-\- - name: LARM_FINGER0 -\-> -->
+  <!--     <!-\- - name: LARM_FINGER1 -\-> -->
+  <!--     <!-\- - name: RARM_FINGER0 -\-> -->
+  <!--     <!-\- - name: RARM_FINGER1 -\-> -->
+  <!--     <!-\- jikki -\-> -->
+  <!--     - name: R_thk_finger1 -->
+  <!--     - name: R_thk_finger2 -->
+  <!--     - name: R_thk_palm -->
+
+  <!--     - name: L_thk_finger1 -->
+  <!--     - name: L_thk_finger2 -->
+  <!--     - name: L_thk_palm -->
+  <!--     self_see_default_padding: 0.1 -->
+  <!--   </rosparam> -->
+  <!-- </node> -->
 <!-- <node pkg="rgbd_self_filter" name="get_plane" type="get_plane.py" output="screen"/> -->
   <node name="rviz"
         pkg="rviz" type="rviz"
@@ -321,64 +374,3 @@
   
 </launch>
 
-
-    <!-- <node name="bounding_box_array_publisher_larm" -->
-    <!--       pkg="jsk_recognition_utils" type="bounding_box_array_publisher.py"> -->
-    <!--   <rosparam> -->
-    <!--     frame_id: larm_end_coords -->
-    <!--     boxes: -->
-    <!--     - position: [0.05, 0, 0] -->
-    <!--       dimension: [0.15, 0.16, 0.1] -->
-    <!--   </rosparam> -->
-    <!-- </node> -->
-
-    <!-- <node name="attention_clipper_larm" -->
-    <!--       pkg="nodelet" type="nodelet" -->
-    <!--       args="load jsk_pcl/AttentionClipper $(arg manager)"> -->
-    <!--   <remap from="~input/points" to="/transform_larm/output" /> -->
-    <!--   <remap from="~input/box_array" to="/bounding_box_array_publisher_larm/output" /> -->
-    <!--   <rosparam> -->
-    <!--     use_multiple_attention: true -->
-    <!--   </rosparam> -->
-    <!-- </node> -->
-
-    <!-- <node name="extract_indices_larm" -->
-    <!--       pkg="nodelet" type="nodelet" -->
-    <!--       args="load jsk_pcl/ExtractIndices $(arg manager)"> -->
-    <!--   <remap from="~input" to="/transform_larm/output" /> -->
-    <!--   <remap from="~indices" to="attention_clipper_larm/output/point_indices" /> -->
-    <!--   <rosparam> -->
-    <!--     keep_organized: true -->
-    <!--   </rosparam> -->
-    <!-- </node> -->
-
-
-    <!-- <node name="bounding_box_array_publisher_rarm" -->
-    <!--       pkg="jsk_recognition_utils" type="bounding_box_array_publisher.py"> -->
-    <!--   <rosparam> -->
-    <!--     frame_id: rarm_end_coords -->
-    <!--     boxes: -->
-    <!--     - position: [0.05, 0, 0] -->
-    <!--       dimension: [0.15, 0.16, 0.1] -->
-    <!--   </rosparam> -->
-    <!-- </node> -->
-
-    <!-- <node name="attention_clipper_rarm" -->
-    <!--       pkg="nodelet" type="nodelet" -->
-    <!--       args="load jsk_pcl/AttentionClipper $(arg manager)"> -->
-    <!--   <remap from="~input/points" to="/transform_rarm/output" /> -->
-    <!--   <remap from="~input/box_array" to="bounding_box_array_publisher_rarm/output" /> -->
-    <!--   <rosparam> -->
-    <!--     use_multiple_attention: true -->
-    <!--   </rosparam> -->
-    <!-- </node> -->
-
-    <!-- <node name="extract_indices_rarm" -->
-    <!--       pkg="nodelet" type="nodelet" -->
-    <!--       args="load jsk_pcl/ExtractIndices $(arg manager)"> -->
-    <!--   <remap from="~input" to="transform_rarm/output" /> -->
-    <!--   <remap from="~indices" to="attention_clipper_rarm/output/point_indices" /> -->
-    <!--   <rosparam> -->
-    <!--     keep_organized: true -->
-    <!--   </rosparam> -->
-    <!-- </node> -->
