@@ -1,5 +1,7 @@
-(load "demo.l")
 (load "make_plane_for_opt.l")
+(load "demo.l")
+(load "change_clip_box_client.l")
+(load "get-handle-target.l")
 ;; change :arm "larm" :arm-coords (send *robot* :rarm :end-coords) :rleg-pos-shift #f(200 0 0) :lleg-pos-shift #f(200 0 0) :send? nil :avoid-collision? nil :fix-contact? nil
 ;; progn (send *robot* :angle-vector pre-angle) (send *robot* :move-coords (send pre-lleg :translate #f(0 0 100)) (send *robot* :link "LLEG_LINK5")) (load "change_arm_with_ik.l") (prepare-simulator)
 
@@ -427,7 +429,11 @@
           (arm-coords (send *robot* :rarm :end-coords))
           )
   
-  (setq face-arm (make_plane))
+  (setq origin-face (make_plane))
+  (setq vertices-list (send origin-face :vertices))
+  (progn (setq sum 0) (setq len-lis (length vertices-list)) (dotimes (i len-lis) (progn  (setq sum (+ sum (elt (elt vertices-list i) 0))))) (setq ave (/ sum len-lis)) (setq new-vertices-list (mapcar #'(lambda (l) (progn (if (< (elt l 0) (+ ave 50)) l))) vertices-list)))
+  (setq new-vertices-list (intersection new-vertices-list vertices-list))
+  (setq face-arm (make-prism new-vertices 10))
   (format t "face =~A~%" face-arm)
   (format t "face com =~A~%" (send face-arm :centroid))
   (setq pre-angle (send *robot* :angle-vector))
@@ -461,23 +467,40 @@
 (defun test-change-arm()
   (my-init-pose :move-foot? nil)
   (start-coords)
+  (send_box_size :size-vector #f(3 1.5 2.0) :box-position #f(1 0 1))
   (send *ri* :start-impedance :arms)
   (send *ri* :set-reference-force-updater-param :arms :motion-dir #f(0 0 -1) :p-gain 0.01 :update-time-ratio 1.0)
   (send *ri* :start-reference-force-updater :arms)
   (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5))
+  
   (setq rarm-coords (make-coords :pos (float-vector 360 -310 300) :rpy (float-vector (deg2rad 0) (deg2rad  30) (deg2rad -90))))
   (setq larm-coords (make-coords :pos (float-vector 360  310 300)  :rpy (float-vector (deg2rad 0) (deg2rad  30) (deg2rad  90))))
 
   ;; (send *ri* :set-log-maxlength (* 500 60))
   ;; (send *ri* :start-log)
   (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t :rleg-pos-shift #f(0 -100 -10) :lleg-pos-shift #f(0 100 -10) :look-at-object? t)
-  ;; (heave #f(-110 -900 0) #f(-110 900 0) :reset? t :fix-contact? 2 :wait? t  :rleg-pos-shift #f(200 0 0) :lleg-pos-shift #f(200 0 0) :look-at-object? t)
-  (heave #f(-110 -1000 0) #f(-110 1000 0) :reset? t :fix-contact? 2 :wait? t  :rleg-pos-shift #f(200 0 0) :lleg-pos-shift #f(200 0 0) :look-at-object? t)
+  (heave #f(-110 -900 0) #f(-110 900 0) :reset? t :fix-contact? 2 :wait? t  :rleg-pos-shift #f(200 0 0) :lleg-pos-shift #f(200 0 0) :look-at-object? t)
+  ;; (heave #f(-110 -1000 0) #f(-110 1000 0) :reset? t :fix-contact? 2 :wait? t  :rleg-pos-shift #f(200 0 0) :lleg-pos-shift #f(200 0 0) :look-at-object? t)
 
     (move-on-foot (send *robot* :rleg :end-coords :copy-worldcoords) (send *robot* :lleg :end-coords :copy-worldcoords) (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate #f(100 0 0)) (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(100 0 0)) :only-move? t)
   (move-on-foot (send *robot* :rleg :end-coords :copy-worldcoords) (send *robot* :lleg :end-coords :copy-worldcoords) (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate #f(100 0 0)) (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(100 0 0)) :only-move? t)
   (move-on-foot (send *robot* :rleg :end-coords :copy-worldcoords) (send *robot* :lleg :end-coords :copy-worldcoords) (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate #f(0 0 0)) (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(100 0 0)) :only-move? t)
+
+  ;; (send_box_size :size-vector #f(0.5 1.5 1.0) :box-position #f(1 0 1))
   ;; (move-hand :larm #f(-140 0 0) :sync? nil)
   ;; (setq face (make_plane))
   ;; (change)
 )
+
+;;memo
+;; (defun memo(origin-face-obj)
+;;   (let* ((origin-face (copy-object origin-face-obj))
+;;          (origin-vertices-list (send origin-face :vertices)))
+
+;;   (setq com-origin-face (send origin-face :centorid))
+;;   (setq new-vertices-list (mapcar #'(lambda (l) (progn (if (< (elt l 0) (elt com-origin-face 0)) l))) vertices-list))
+;;   (setq new-vertices (intersection new-vertices-list origin-vertices-list)) ;;andを取る
+  
+;;   (setq com-new-obj (send origin-face :centorid))  (setq face-arm (make-prism new-vertices 10))
+;;   )
+;;   (progn (setq sum 0) (setq len-lis (length vertices-list)) (dotimes (i len-lis) (progn  (setq sum (+ sum (elt (elt vertices-list i) 0))))) (setq ave (/ sum len-lis)) (setq new-vertices-list (mapcar #'(lambda (l) (progn (if (< (elt l 0) (+ ave 50)) l))) vertices-list)))

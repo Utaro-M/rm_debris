@@ -1,3 +1,11 @@
+(require "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
+
+(load "make_plane_for_opt.l")
+(unless (and (boundp '*robot*) (boundp '*ri*))
+  (jaxon_red-init)
+  (setq *robot* *jaxon_red*)
+  )
+
 (defun quick-sort(seq)
     (if (< (length seq) 1)
       (return-from quick-sort seq))
@@ -33,8 +41,8 @@
         (setq left (list-insert (elt seq (+ i 1)) (length seq) left))
       (setq right (list-insert (elt seq (+ i 1)) (length seq) right))
       ))
-  (format t "left = ~A~%" left)
-  (format t "right = ~A~%" right)
+  ;; (format t "left = ~A~%" left)
+  ;; (format t "right = ~A~%" right)
   (setq left (quick-sort-vector-list left))
   (setq right (quick-sort-vector-list right))
   (setq fwd (append left (list pivot-vec)))
@@ -48,15 +56,15 @@
   (subseq ret-lis 0 num))
 
 ;;plane　オブジェクト(prismなど）をコピーして渡す
-(defun get-pose(contact-wall arm)
+(defun get-target-pose(contact-wall arm)
   (let* ((idx-x 0)
         (idx-y 0)
         (longest-len 0)
-        (vertices-list (get-min-val (send contact-wall :vertices) 4))
+        (vertices-list (get-min-val (send contact-wall :vertices) 20))
         (vertices-list-reverse (reverse vertices-list))
         (plane-normal (send (elt (send contact-wall :faces) 0) :normal)))
   (dotimes (i (length vertices-list))
-    (dotimes (j (- (length vertices-list) i))
+    (dotimes (j (- (length vertices-list) (+ 1 i)))
       (setq len-tmp (norm (v- (elt vertices-list i) (elt vertices-list-reverse j))))
       (if (< longest-len len-tmp)
           (progn
@@ -64,23 +72,33 @@
             (setq idx-y j) ;;reverseされているがそのままいく
             (setq longest-len len-tmp)))))
   (setq longest-edge (make-line (elt vertices-list idx-x) (elt vertices-list-reverse idx-y)))
-
+  (format t "longest-len = ~A~%" longest-len)
+  (format t "vertice = ~A~%" (elt vertices-list idx-x))
+  (format t "vertice = ~A~%" (elt vertices-list-reverse idx-y))  
   (setq normal-line (make-line #f(0 0 0) plane-normal))
   ;;手先の目標
+  (setq sum #f(0 0 0))
+  (dotimes (i (length vertices-list))
+    (setq sum (v+ sum (elt vertices-list i))))
+  (setq pos (scale (/ 1.0 (length vertices-list)) sum))
+  ;; ((scale 0.5 (v+ (elt vertices-list idx-x) (elt vertices-list-reverse idx-y))))
+  (format t "mid-pos = ~A~%" pos)
   (setq x-vec (car (send longest-edge :common-perpendicular normal-line))) ;;x-vec
   (setq y-vec  plane-normal)
-  (setq z-vec (v- (elt vertices-list idx-y) (elt vertices-list-reverse idx-x)))
+  (setq z-vec (v- (elt vertices-list idx-x) (elt vertices-list-reverse idx-y)))
   ;;x-vecは正面方向
   (if (< (elt x-vec 0) 0)
       (setq x-vec (scale -1 x-vec)))
 
   (if (equal arm "larm")
       (progn
+        (setq pos (v+ pos #f(0 +300 0)))
         (if (< (elt y-vec 2) 0)
           (setq y-vec (scale -1 y-vec)))
         (if (> (elt z-vec 1) 0)
             (setq z-vec (scale -1 z-vec))))
     (progn
+      (setq pos (v+ pos #f(0 -300 0)))
       (if (> (elt y-vec 2) 0)
         (setq y-vec (scale -1 y-vec)))
       (if (< (elt z-vec 1) 0)
@@ -89,10 +107,27 @@
   (setq x-vec (normalize-vector x-vec))
   (setq y-vec (normalize-vector y-vec))
   (setq z-vec (normalize-vector z-vec))
-  (format t "plane-normal = ~A~%" plane-normal)
+  ;; (format t "plane-normal = ~A~%" plane-normal)
   (format t "x-vec = ~A~%" x-vec)
   (format t "y-vec = ~A~%" y-vec)
   (format t "z-vec = ~A~%" z-vec)
   (setq rot (transpose (matrix x-vec y-vec z-vec)))
-  rot
+  (format t "pos = ~A~%" pos)
+  (format t "rot = ~A~%" rot)
+  (list pos rot)
   ))
+
+(defun get-both-arm-targets()
+  (setq cu (make_plane))
+  ;; (setq cu (send (make-cube 1000 800 100) :translate #f(600 0 100)))
+  (setq obj-larm (copy-object cu))
+  (setq obj-rarm (copy-object cu))
+  (setq ret-larm (get-target-pose obj-larm "larm"))
+  (setq ret-rarm (get-target-pose obj-rarm "rarm"))
+  ;; (print ret)
+  (setq coords1 (make-coords))
+  (setq coords-larm (make-coords :pos (elt ret-larm 0) :rpy (car (rpy-angle (elt ret-larm 1)))))
+  (setq coords-rarm (make-coords :pos (elt ret-rarm 0) :rpy (car (rpy-angle (elt ret-rarm 1)))))
+  (objects (list cu coords1 coords-larm coords-rarm))
+  (list coords-rarm coords-larm))
+
