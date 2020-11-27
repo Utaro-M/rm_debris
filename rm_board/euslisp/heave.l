@@ -56,7 +56,9 @@
 (defun send-pose
     (time &key (pre-pose (send *robot* :angle-vector)) (pre-lleg  (send *robot* :lleg :end-coords :copy-worldcoords) ) (force-move nil) (wait? t) (look-at-object? nil))
   (if look-at-object?
-  (send *robot* :head :look-at (v+ (midpoint 0.5 (send (send *robot* :rarm :end-coords :copy-worldcoords) :worldpos) (send (send *robot* :larm :end-coords :copy-worldcoords) :worldpos)) #f(0 0 100))))
+      (send *robot* :head :look-at (v+ (midpoint 0.5 (send (send *robot* :rarm :end-coords :copy-worldcoords) :worldpos) (send (send *robot* :larm :end-coords :copy-worldcoords) :worldpos)) #f(0 0 100))))
+  (if (> (send *robot* :head-neck-p :joint-angle) 20)
+      (send *robot* :head-neck-p :joint-angle 20))
   (objects)
   (if (or force-move (setq ans (y-or-n-p "Do you move real machine?")))
       (progn

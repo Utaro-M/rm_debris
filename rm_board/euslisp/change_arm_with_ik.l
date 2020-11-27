@@ -408,15 +408,6 @@
   (send *sqp-opt* :optimize :loop-num 100)
   )
 
-;; (setq face-arm (make-cube 800 600 20))
-;; (send face-arm :newcoords
-;;       (make-coords :pos (send (send (send *robot* :larm :end-coords :copy-worldcoords) :translate #f(100 0 0)) :worldpos)  :rpy (list (deg2rad 0) 0 0))
-;;       )
-;; (setq face-arm-com (make-coords :pos (send (send (send *robot* :larm :end-coords :copy-worldcoords) :translate #f(100 0 0)) :worldpos)))
-;; (setq arm-coords  (make-coords :pos (send (send (send *robot* :larm :end-coords :copy-worldcoords) :translate #f(100 0 0)) :worldpos)  :rpy (list (deg2rad 0) 0 0)))
-;; (setq arm "larm")
-
-;; (setq face-arm #<body #X55bf453f0680 (:prism (#f(780.832 362.775 1066.53) #f(796.528 384.094 1054.73) #f(1066.71 560.061 851.996) #f(1079.91 561.567 842.109) #f(1229.43 562.613 730.138) #f(1728.12 563.938 356.671) #f(1987.63 563.588 162.329) #f(2069.67 559.374 100.902) #f(2069.92 542.961 100.747) #f(2004.84 -527.635 151.879) #f(1863.39 -534.389 257.822) #f(1421.3 -536.015 588.902) #f(1267.51 -517.724 704.027) #f(1171.87 -487.669 775.588) #f(1110.0 -467.569 821.873) #f(661.544 -282.75 1157.3) #f(609.61 -245.413 1196.11) #f(606.127 -239.885 1198.71) #f(604.848 -237.506 1199.66)) 10) 0.0 0.0 0.0 / 0.0 0.0 0.0>)
 ;;change :arm "larm" :arm-coords (send *robot* :rarm :end-coords) :rleg-pos-shift #f(200 0 0) :lleg-pos-shift #f(200 0 0) :send? nil
 (defun change
     (&key (fix-contact? nil)
@@ -507,30 +498,8 @@
   (send *ri* :start-reference-force-updater :arms)
   (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5))
 )
-(defun test-reach()  
-  (setq coords-list (get-both-arm-targets))
+(defun test-reach()
+  (setq coords-list (auto-set-reaching-targets))
   (setq larm-coords (elt coords-list 0))
   (setq rarm-coords (elt coords-list 1))
-  ;;少し回転
-  (setq larm-coords (send larm-coords :rotate (deg2rad -20) :z))
-  (setq rarm-coords (send rarm-coords :rotate (deg2rad 20) :z))
-
-  (setq larm-coords (send larm-coords :translate #f(-100 0 0)))
-  (setq rarm-coords (send rarm-coords :translate #f(-100 0 0)))
-  (format t "ik larm-coords = ~A~%" larm-coords)
-  (format t "ik rarm-coords = ~A~%" rarm-coords)  
-  (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? nil :avoid-collision? t :apply-external-force? t :rleg-pos-shift #f(0 -120 -10) :lleg-pos-shift #f(0 120 -10) :look-at-object? t)
-  ;; (objects (list *robot* larm-coords rarm-coords))
-  )
-;;memo
-;; (defun memo(origin-face-obj)
-;;   (let* ((origin-face (copy-object origin-face-obj))
-;;          (origin-vertices-list (send origin-face :vertices)))
-
-;;   (setq com-origin-face (send origin-face :centorid))
-;;   (setq new-vertices-list (mapcar #'(lambda (l) (progn (if (< (elt l 0) (elt com-origin-face 0)) l))) vertices-list))
-;;   (setq new-vertices (intersection new-vertices-list origin-vertices-list)) ;;andを取る
-  
-;;   (setq com-new-obj (send origin-face :centorid))  (setq face-arm (make-prism new-vertices 10))
-;;   )
-;;   (progn (setq sum 0) (setq len-lis (length vertices-list)) (dotimes (i len-lis) (progn  (setq sum (+ sum (elt (elt vertices-list i) 0))))) (setq ave (/ sum len-lis)) (setq new-vertices-list (mapcar #'(lambda (l) (progn (if (< (elt l 0) (+ ave 50)) l))) vertices-list)))
+  (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t :rleg-pos-shift #f(0 -100 -10) :lleg-pos-shift #f(0 100 -10) :look-at-object? t))

@@ -1,5 +1,4 @@
 (require "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
-
 (load "make_plane_for_opt.l")
 (unless (and (boundp '*robot*) (boundp '*ri*))
   (jaxon_red-init)
@@ -134,3 +133,19 @@
   (objects (list cu coords1 coords-larm coords-rarm))
   (list coords-larm coords-rarm))
 
+(defun auto-set-reaching-targets()
+  (setq coords-list (get-both-arm-targets))
+  (setq larm-coords (elt coords-list 0))
+  (setq rarm-coords (elt coords-list 1))
+  ;;少し回転
+  (setq larm-coords (send larm-coords :rotate (deg2rad -20) :z))
+  (setq rarm-coords (send rarm-coords :rotate (deg2rad 20) :z))
+
+  (setq larm-coords (send larm-coords :translate #f(-100 0 0)))
+  (setq rarm-coords (send rarm-coords :translate #f(-100 0 0)))
+  (format t "ik larm-coords = ~A~%" larm-coords)
+  (format t "ik rarm-coords = ~A~%" rarm-coords)
+
+  (list larm-coords rarm-coords)
+  ;; (objects (list *robot* larm-coords rarm-coords))
+  )
