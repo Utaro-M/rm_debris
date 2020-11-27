@@ -733,6 +733,19 @@
     )
   )
 
+(setq pre-angle nil)
+(setq pre-lleg nil)
+(defun set-pre-pose()
+  (setq pre-angle (send *robot* :angle-vector))
+  (pre-lleg  (send *robot* :lleg :end-coords :copy-worldcoords))
+  (list pre-angle pre-lleg))
+
+(defun resume (pre-angle pre-lleg)
+  (send *robot* :angle-vector pre-angle)
+  (send *robot* :move-coords (send pre-lleg :translate #f(0 0 0)) (send *robot* :lleg lend-coords))
+  (load "change_arm_with_ik.l")
+  (prepare-simulator))
+
 ;; (defun save(&key (fname "emergency"))
 ;;   ;; (setq path "~/google-drive/JSK/log")
 ;;     (setq path "/home/utaro/google-drive/JSK/log")
