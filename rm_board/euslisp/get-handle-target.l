@@ -63,6 +63,7 @@
         (vertices-list (get-min-val (send contact-wall :vertices) 20))
         (vertices-list-reverse (reverse vertices-list))
         (plane-normal (send (elt (send contact-wall :faces) 0) :normal)))
+    (format t "plane normal = ~A~%" plane-normal)
   (dotimes (i (length vertices-list))
     (dotimes (j (- (length vertices-list) (+ 1 i)))
       (setq len-tmp (norm (v- (elt vertices-list i) (elt vertices-list-reverse j))))
@@ -83,22 +84,23 @@
   (setq pos (scale (/ 1.0 (length vertices-list)) sum))
   ;; ((scale 0.5 (v+ (elt vertices-list idx-x) (elt vertices-list-reverse idx-y))))
   (format t "mid-pos = ~A~%" pos)
-  (setq x-vec (car (send longest-edge :common-perpendicular normal-line))) ;;x-vec
+  ;; (setq x-vec (car (send longest-edge :common-perpendicular normal-line))) ;;x-vec
   (setq y-vec  plane-normal)
   (setq z-vec (v- (elt vertices-list idx-x) (elt vertices-list-reverse idx-y)))
+  (setq x-vec (v* y-vec z-vec))
   ;;x-vecは正面方向
   (if (< (elt x-vec 0) 0)
       (setq x-vec (scale -1 x-vec)))
 
   (if (equal arm "larm")
       (progn
-        (setq pos (v+ pos #f(0 +300 0)))
+        (setq pos (v+ pos #f(0 +320 0)))
         (if (< (elt y-vec 2) 0)
           (setq y-vec (scale -1 y-vec)))
         (if (> (elt z-vec 1) 0)
             (setq z-vec (scale -1 z-vec))))
     (progn
-      (setq pos (v+ pos #f(0 -300 0)))
+      (setq pos (v+ pos #f(0 -320 0)))
       (if (> (elt y-vec 2) 0)
         (setq y-vec (scale -1 y-vec)))
       (if (< (elt z-vec 1) 0)
@@ -111,7 +113,8 @@
   (format t "x-vec = ~A~%" x-vec)
   (format t "y-vec = ~A~%" y-vec)
   (format t "z-vec = ~A~%" z-vec)
-  (setq rot (transpose (matrix x-vec y-vec z-vec)))
+  (setq rot (transpose
+             (matrix x-vec y-vec z-vec)))
   (format t "pos = ~A~%" pos)
   (format t "rot = ~A~%" rot)
   (list pos rot)
@@ -126,8 +129,8 @@
   (setq ret-rarm (get-target-pose obj-rarm "rarm"))
   ;; (print ret)
   (setq coords1 (make-coords))
-  (setq coords-larm (make-coords :pos (elt ret-larm 0) :rpy (car (rpy-angle (elt ret-larm 1)))))
-  (setq coords-rarm (make-coords :pos (elt ret-rarm 0) :rpy (car (rpy-angle (elt ret-rarm 1)))))
+  (setq coords-larm (make-coords :pos (elt ret-larm 0) :rpy (elt (rpy-angle (elt ret-larm 1)) 0)))
+  (setq coords-rarm (make-coords :pos (elt ret-rarm 0) :rpy (elt (rpy-angle (elt ret-rarm 1)) 0)))
   (objects (list cu coords1 coords-larm coords-rarm))
-  (list coords-rarm coords-larm))
+  (list coords-larm coords-rarm))
 

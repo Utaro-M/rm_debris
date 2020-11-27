@@ -54,6 +54,9 @@
   ;; (send (send *robot* :joint "LLEG_JOINT0") :max-angle 35)
   ;; (send (send *robot* :joint "RLEG_JOINT2") :min-angle -70)
   ;; (send (send *robot* :joint "LLEG_JOINT2") :min-angle -70)
+
+  (send (send *robot* :joint "HEAD_JOINT1") :max-angle 18)
+  
   (send (send *robot* :joint "CHEST_JOINT1") :min-angle 0)
   (send (send *robot* :joint "CHEST_JOINT1") :max-angle 30)
   
@@ -473,9 +476,11 @@
   (send *ri* :start-reference-force-updater :arms)
   (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5))
   
-  (setq rarm-coords (make-coords :pos (float-vector 360 -310 300) :rpy (float-vector (deg2rad 0) (deg2rad  30) (deg2rad -90))))
-  (setq larm-coords (make-coords :pos (float-vector 360  310 300)  :rpy (float-vector (deg2rad 0) (deg2rad  30) (deg2rad  90))))
-
+  ;; (setq rarm-coords (make-coords :pos (float-vector 360 -310 300) :rpy (float-vector (deg2rad 0) (deg2rad  30) (deg2rad -90))))
+  ;; (setq larm-coords (make-coords :pos (float-vector 360  310 300)  :rpy (float-vector (deg2rad 0) (deg2rad  30) (deg2rad  90))))
+  (setq coords-list (get-both-arm-targets))
+  (setq rarm-coords (elt coords-list 0))
+  (setq larm-coords (elt coords-list 1))
   ;; (send *ri* :set-log-maxlength (* 500 60))
   ;; (send *ri* :start-log)
   (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t :rleg-pos-shift #f(0 -100 -10) :lleg-pos-shift #f(0 100 -10) :look-at-object? t)
@@ -490,8 +495,33 @@
   ;; (move-hand :larm #f(-140 0 0) :sync? nil)
   ;; (setq face (make_plane))
   ;; (change)
-)
+  )
 
+;;rerach targets 確認用
+(defun test-reach-prepare()
+  (my-init-pose :move-foot? nil)
+  (start-coords)
+  (send_box_size :size-vector #f(3 1.5 2.0) :box-position #f(1 0 1))
+  (send *ri* :start-impedance :arms)
+  (send *ri* :set-reference-force-updater-param :arms :motion-dir #f(0 0 -1) :p-gain 0.01 :update-time-ratio 1.0)
+  (send *ri* :start-reference-force-updater :arms)
+  (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5))
+)
+(defun test-reach()  
+  (setq coords-list (get-both-arm-targets))
+  (setq larm-coords (elt coords-list 0))
+  (setq rarm-coords (elt coords-list 1))
+  ;;少し回転
+  (setq larm-coords (send larm-coords :rotate (deg2rad -20) :z))
+  (setq rarm-coords (send rarm-coords :rotate (deg2rad 20) :z))
+
+  (setq larm-coords (send larm-coords :translate #f(-100 0 0)))
+  (setq rarm-coords (send rarm-coords :translate #f(-100 0 0)))
+  (format t "ik larm-coords = ~A~%" larm-coords)
+  (format t "ik rarm-coords = ~A~%" rarm-coords)  
+  (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? nil :avoid-collision? t :apply-external-force? t :rleg-pos-shift #f(0 -120 -10) :lleg-pos-shift #f(0 120 -10) :look-at-object? t)
+  ;; (objects (list *robot* larm-coords rarm-coords))
+  )
 ;;memo
 ;; (defun memo(origin-face-obj)
 ;;   (let* ((origin-face (copy-object origin-face-obj))
