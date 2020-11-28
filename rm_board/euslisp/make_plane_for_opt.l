@@ -6,7 +6,7 @@
 
 (setq req (instance rm_debris_vision::PolygonRequest :init))
 (setq res (ros::service-call "make_plane" req t))
-(print res)
+;; (print res)
 
 (setq coords (make-coords))
 (setq com-box (make-cube 100 100 100))
@@ -29,7 +29,7 @@
   ;; (send com :translate  tmp)
 (setq my-plane (make-prism vertices 10))
 (setq com (scale 1 (send my-plane :centroid)))
-(print com)
+;; (print com)
 (send com-box :translate com)
 (objects (list my-plane com-box coords))
 (send com-box :translate (scale -1 com))

@@ -376,33 +376,33 @@
 ;; progn (setq x-list nil y-list nil z-list nil) (mapc #'(lambda (force) (push-back (elt force 0) x-list) (push-back (elt force 1) y-list) (push-back (elt force 2) z-list)) (setq force-list (mapcar #'(lambda (val) (unix:usleep 50000) (send *ri* :state :absolute-force-vector :rarm) ) (range 100)))) (average force-list)
 ;; (send *gp* :draw x-list y-list z-list)
 ;;呼ばれた瞬間から0.1秒間で5回分のセンサ値をlow-pass filterでならしてその平均を出力
-(defun low-pass-online
-    (target coords arm &key (times 40) (r 0.3) (sleep 10000) (flag nil))
-  (let* (
-         (y-data (list (send *ri* :state (read-from-string (format nil ":~A-~A-vector" coords target)) arm)))
-         (y-predict (list (send *ri* :state (read-from-string (format nil ":~A-~A-vector" coords target)) arm)))
-         )
+;; (defun low-pass-online
+;;     (target coords arm &key (times 40) (r 0.3) (sleep 10000) (flag nil))
+;;   (let* (
+;;          (y-data (list (send *ri* :state (read-from-string (format nil ":~A-~A-vector" coords target)) arm)))
+;;          (y-predict (list (send *ri* :state (read-from-string (format nil ":~A-~A-vector" coords target)) arm)))
+;;          )
     
-    (dotimes (i times)
-           (setq data (send *ri* :state (read-from-string (format nil ":~A-~A-vector" coords target)) arm))
-      (setq y (v+ (scale r data) (scale (- 1 r) (elt y-predict i))))
-      (list-insert y (+ i 1) y-predict)
-      (list-insert data (+ i 1) y-data)
-      ;; (unix:usleep 1000)
-      (unix:usleep sleep)      
-      )
-    (setq ret (cdr y-predict))
-;;    (print (format nil "~A vector through filter = ~A" target ret))
-    (setq ret-average (average ret))
+;;     (dotimes (i times)
+;;            (setq data (send *ri* :state (read-from-string (format nil ":~A-~A-vector" coords target)) arm))
+;;       (setq y (v+ (scale r data) (scale (- 1 r) (elt y-predict i))))
+;;       (list-insert y (+ i 1) y-predict)
+;;       (list-insert data (+ i 1) y-data)
+;;       ;; (unix:usleep 1000)
+;;       (unix:usleep sleep)      
+;;       )
+;;     (setq ret (cdr y-predict))
+;; ;;    (print (format nil "~A vector through filter = ~A" target ret))
+;;     (setq ret-average (average ret))
 
-    (if flag
-        (list  (cdr y-data) ret)
-      (progn
-        (print (format nil "~A vector through filter and average = ~A" target ret-average))
-        ret-average)
-    )
-    )
-  )
+;;     (if flag
+;;         (list  (cdr y-data) ret)
+;;       (progn
+;;         (print (format nil "~A vector through filter and average = ~A" target ret-average))
+;;         ret-average)
+;;     )
+;;     )
+;;   )
 
 ;;filterをかけるとたしかに滑らかになった気がする
 (defun compare-filter()

@@ -109,6 +109,8 @@
   ;; (send (send *robot* :joint "LLEG_JOINT0") :max-angle 35)
   ;; (send (send *robot* :joint "RLEG_JOINT2") :min-angle -70)
   ;; (send (send *robot* :joint "LLEG_JOINT2") :min-angle -70)
+  (send (send *robot* :joint "HEAD_JOINT1") :max-angle 18)
+  
   (send (send *robot* :joint "CHEST_JOINT1") :min-angle 0)
   (send (send *robot* :joint "CHEST_JOINT1") :max-angle 30)
   
@@ -164,6 +166,8 @@
      (only-kinematics? nil)
      (pre-process-func)
      (reset? t)
+     (external-force-list  (list (float-vector 0 0 -80 0 0 0)
+                              (float-vector 0 0 -80 0 0 0)))
      ;; (rleg-pos #f( 0 -200 -10))
      ;; (lleg-pos #f( 0  200 -10))
      (rleg-pos-shift #f(0 0 0))
@@ -230,7 +234,7 @@
     ;;big board version
     (format t "avoid collision~%")
     (setq *obst* (make-cube 100 1000 200)) 
-    (send *obst* :translate (float-vector (- (/ (+ (elt (send rarm-coords :worldpos) 0) (elt (send larm-coords :worldpos) 0)) 2) 50) 0 100))
+    (send *obst* :translate (float-vector (- (/ (+ (elt (send rarm-coords :worldpos) 0) (elt (send larm-coords :worldpos) 0)) 2) 0) 0 100))
     (send *obst* :set-color (float-vector 1 0 0) 0.5)
     )
   ;; setup robot
@@ -422,8 +426,9 @@
                         ;; (list (float-vector 0 -80 0 0 0 0))
                         ;; (list (float-vector 0 80 0 0 0 0))
                         ;; 力の正負が微妙かも
-                        (list (float-vector 0 0 -80 0 0 0)
-                              (float-vector 0 0 -80 0 0 0))
+                        ;; (list (float-vector 0 0 -80 0 0 0)
+                        ;;       (float-vector 0 0 -80 0 0 0))
+                        external-force-list
                         ;;pivot
                         ;; (list (float-vector 0 -50 0 0 0 0))
                         ;; ;;support
@@ -460,104 +465,105 @@
 (warn "(jaxon_red-sqp-optimization-instant)~%")
 
 ;;潜り込み
-(defun setup-jaxon_red-ik-opt-with-larmcontact
-    (&key (only-kinematics? nil))
-  ;; (setq *robot* (instance hrp2jsknts-robot :init))
-  (setq *robot* (instance jaxon_red-robot :init))
-  ;; assoc contact coords
-  (send *robot* :put :rleg-contact-coords
-        (make-cascoords :name :rleg-contact-coords
-                        :parent (send *robot* :link "RLEG_LINK5")
-                        :coords (send (send *robot* :rleg-end-coords) :copy-worldcoords)
-                        ))
-  (send *robot* :put :lleg-contact-coords
-        (make-cascoords :name :lleg-contact-coords
-                        :parent (send *robot* :link "LLEG_LINK5")
-                        :coords (send (send *robot* :lleg-end-coords) :copy-worldcoords)
-                        ))
-  (send *robot* :put :rarm-contact-coords
-        (make-cascoords :name :rarm-contact-coords
-                        :parent (send *robot* :link "RARM_LINK7")
-                        :coords (send (send (send *robot* :link "RARM_LINK7") :copy-worldcoords)
-                                      :translate (scale 1e3 (float-vector -0.0042 -0.0233 -0.2345)))
-                        ))
-  (send *robot* :put :larm-contact-coords
-        (make-cascoords :name :larm-contact-coords
-                        :parent (send *robot* :link "LARM_LINK3")
-                        :coords ;; (send
-                        ;; (send (send (send (send *robot* :link "LARM_LINK3") :copy-worldcoords) :rotate (deg2rad 90) :y) :rotate (deg2rad 30) :x)
-                        (send (send (send (send (send *robot* :link "LARM_LINK4") :copy-worldcoords) :rotate (deg2rad 90) :x) :rotate (deg2rad -90) :z) :rotate (deg2rad -50) :x)
-                        ;; (send (send (send (send *robot* :link "LARM_LINK5") :copy-worldcoords) :rotate (deg2rad 90) :x) :rotate (deg2rad -90) :z)
-                                      ;; :translate (scale 1e3 (float-vector -0.0042 0.0233 -0.2345))
-                                      ;; )
-                        ))
-  (send *robot* :init-pose)
-  (send *robot* :fix-leg-to-coords (make-coords))
-  (unless only-kinematics?
-    ;; create support polygon
-    ;; (create-support-polygon *robot* (send *robot* :hand :rarm :link "RARM_LINK7"))
-    ;; (create-support-polygon *robot* (send *robot* :hand :larm :link "LARM_LINK7"))
-    (create-support-polygon *robot* (send *robot* :link "RARM_LINK7"))
-    (create-support-polygon *robot* (send *robot* :link "LARM_LINK4"))
-    (create-support-polygon *robot* (send *robot* :link "RLEG_LINK5"))
-    (create-support-polygon *robot* (send *robot* :link "LLEG_LINK5"))
-    )
-  ;; disable min-max table
-  (dolist (jnt (send *robot* :joint-list))
-    (send jnt :set-val 'joint-min-max-table nil)
-    (send jnt :set-val 'joint-min-max-target nil)
-    )
-  ;;set narrow limit of min/max angle instead of min-max table
-  ;; (send (send *robot* :joint "RLEG_JOINT0") :min-angle -35)
-  ;; (send (send *robot* :joint "LLEG_JOINT0") :max-angle 35)
-  ;; (send (send *robot* :joint "RLEG_JOINT2") :min-angle -70)
-  ;; (send (send *robot* :joint "LLEG_JOINT2") :min-angle -70)
+;; (defun setup-jaxon_red-ik-opt-with-larmcontact
+;;     (&key (only-kinematics? nil))
+;;   ;; (setq *robot* (instance hrp2jsknts-robot :init))
+;;   (setq *robot* (instance jaxon_red-robot :init))
+;;   ;; assoc contact coords
+;;   (send *robot* :put :rleg-contact-coords
+;;         (make-cascoords :name :rleg-contact-coords
+;;                         :parent (send *robot* :link "RLEG_LINK5")
+;;                         :coords (send (send *robot* :rleg-end-coords) :copy-worldcoords)
+;;                         ))
+;;   (send *robot* :put :lleg-contact-coords
+;;         (make-cascoords :name :lleg-contact-coords
+;;                         :parent (send *robot* :link "LLEG_LINK5")
+;;                         :coords (send (send *robot* :lleg-end-coords) :copy-worldcoords)
+;;                         ))
+;;   (send *robot* :put :rarm-contact-coords
+;;         (make-cascoords :name :rarm-contact-coords
+;;                         :parent (send *robot* :link "RARM_LINK7")
+;;                         :coords (send (send (send *robot* :link "RARM_LINK7") :copy-worldcoords)
+;;                                       :translate (scale 1e3 (float-vector -0.0042 -0.0233 -0.2345)))
+;;                         ))
+;;   (send *robot* :put :larm-contact-coords
+;;         (make-cascoords :name :larm-contact-coords
+;;                         :parent (send *robot* :link "LARM_LINK3")
+;;                         :coords ;; (send
+;;                         ;; (send (send (send (send *robot* :link "LARM_LINK3") :copy-worldcoords) :rotate (deg2rad 90) :y) :rotate (deg2rad 30) :x)
+;;                         (send (send (send (send (send *robot* :link "LARM_LINK4") :copy-worldcoords) :rotate (deg2rad 90) :x) :rotate (deg2rad -90) :z) :rotate (deg2rad -50) :x)
+;;                         ;; (send (send (send (send *robot* :link "LARM_LINK5") :copy-worldcoords) :rotate (deg2rad 90) :x) :rotate (deg2rad -90) :z)
+;;                                       ;; :translate (scale 1e3 (float-vector -0.0042 0.0233 -0.2345))
+;;                                       ;; )
+;;                         ))
+;;   (send *robot* :init-pose)
+;;   (send *robot* :fix-leg-to-coords (make-coords))
+;;   (unless only-kinematics?
+;;     ;; create support polygon
+;;     ;; (create-support-polygon *robot* (send *robot* :hand :rarm :link "RARM_LINK7"))
+;;     ;; (create-support-polygon *robot* (send *robot* :hand :larm :link "LARM_LINK7"))
+;;     (create-support-polygon *robot* (send *robot* :link "RARM_LINK7"))
+;;     (create-support-polygon *robot* (send *robot* :link "LARM_LINK4"))
+;;     (create-support-polygon *robot* (send *robot* :link "RLEG_LINK5"))
+;;     (create-support-polygon *robot* (send *robot* :link "LLEG_LINK5"))
+;;     )
+;;   ;; disable min-max table
+;;   (dolist (jnt (send *robot* :joint-list))
+;;     (send jnt :set-val 'joint-min-max-table nil)
+;;     (send jnt :set-val 'joint-min-max-target nil)
+;;     )
+;;   ;;set narrow limit of min/max angle instead of min-max table
+;;   ;; (send (send *robot* :joint "RLEG_JOINT0") :min-angle -35)
+;;   ;; (send (send *robot* :joint "LLEG_JOINT0") :max-angle 35)
+;;   ;; (send (send *robot* :joint "RLEG_JOINT2") :min-angle -70)
+;;   ;; (send (send *robot* :joint "LLEG_JOINT2") :min-angle -70)
   
-  ;; (send (send *robot* :joint "CHEST_JOINT1") :min-angle 0)
-  ;; (send (send *robot* :joint "CHEST_JOINT1") :max-angle 30)
+;;   ;; (send (send *robot* :joint "CHEST_JOINT1") :min-angle 0)
+;;   ;; (send (send *robot* :joint "CHEST_JOINT1") :max-angle 30)
   
-  (send (send *robot* :joint "RLEG_JOINT0") :max-angle 20)
-  (send (send *robot* :joint "LLEG_JOINT0") :min-angle -20)
-  (send (send *robot* :joint "RLEG_JOINT3") :max-angle 60)
-  (send (send *robot* :joint "LLEG_JOINT3") :max-angle 60)
+;;   (send (send *robot* :joint "RLEG_JOINT0") :max-angle 20)
+;;   (send (send *robot* :joint "LLEG_JOINT0") :min-angle -20)
+;;   (send (send *robot* :joint "RLEG_JOINT3") :max-angle 60)
+;;   (send (send *robot* :joint "LLEG_JOINT3") :max-angle 60)
   
-  (send (send *robot* :joint "RARM_JOINT0") :min-angle 0)
-  (send (send *robot* :joint "RARM_JOINT0") :max-angle 40)
-  (send (send *robot* :joint "LARM_JOINT0") :min-angle -40)
-  (send (send *robot* :joint "LARM_JOINT0") :max-angle 0)
+;;   (send (send *robot* :joint "RARM_JOINT0") :min-angle 0)
+;;   (send (send *robot* :joint "RARM_JOINT0") :max-angle 40)
+;;   (send (send *robot* :joint "LARM_JOINT0") :min-angle -40)
+;;   (send (send *robot* :joint "LARM_JOINT0") :max-angle 0)
   
-  ;;肩の特異点問題dem-step-simulator
-  ;; (send (send *robot* :joint "RARM_JOINT1") :min-angle -100)
-  ;; (send (send *robot* :joint "RARM_JOINT1") :max-angle 80)
-  ;; (send (send *robot* :joint "LARM_JOINT1") :min-angle -100)
-  ;; (send (send *robot* :joint "LARM_JOINT1") :max-angle 80)
+;;   ;;肩の特異点問題dem-step-simulator
+;;   ;; (send (send *robot* :joint "RARM_JOINT1") :min-angle -100)
+;;   ;; (send (send *robot* :joint "RARM_JOINT1") :max-angle 80)
+;;   ;; (send (send *robot* :joint "LARM_JOINT1") :min-angle -100)
+;;   ;; (send (send *robot* :joint "LARM_JOINT1") :max-angle 80)
 
-  (send (send *robot* :joint "RARM_JOINT1") :min-angle -140)
-  (send (send *robot* :joint "RARM_JOINT1") :max-angle 140)
-  (send (send *robot* :joint "LARM_JOINT1") :min-angle -140)
-  (send (send *robot* :joint "LARM_JOINT1") :max-angle 30)
+;;   (send (send *robot* :joint "RARM_JOINT1") :min-angle -140)
+;;   (send (send *robot* :joint "RARM_JOINT1") :max-angle 140)
+;;   (send (send *robot* :joint "LARM_JOINT1") :min-angle -140)
+;;   (send (send *robot* :joint "LARM_JOINT1") :max-angle 30)
 
-  (send (send *robot* :joint "LARM_JOINT4") :max-angle 0)
-  ;; (send (send *robot* :joint "RARM_JOINT4") :max-angle 0)
+;;   (send (send *robot* :joint "LARM_JOINT4") :max-angle 0)
+;;   ;; (send (send *robot* :joint "RARM_JOINT4") :max-angle 0)
   
-  ;; (send (send *robot* :joint "RARM_JOINT6") :min-angle -50)
-  ;; (send (send *robot* :joint "RARM_JOINT6") :max-angle 50)
-  ;; (send (send *robot* :joint "LARM_JOINT5") :min-angle -50)
-  ;; (send (send *robot* :joint "LARM_JOINT5") :max-angle 50)
-  ;; (send (send *robot* :joint "LARM_JOINT6") :min-angle -50)
-  ;; (send (send *robot* :joint "LARM_JOINT6") :max-angle 50)
+;;   ;; (send (send *robot* :joint "RARM_JOINT6") :min-angle -50)
+;;   ;; (send (send *robot* :joint "RARM_JOINT6") :max-angle 50)
+;;   ;; (send (send *robot* :joint "LARM_JOINT5") :min-angle -50)
+;;   ;; (send (send *robot* :joint "LARM_JOINT5") :max-angle 50)
+;;   ;; (send (send *robot* :joint "LARM_JOINT6") :min-angle -50)
+;;   ;; (send (send *robot* :joint "LARM_JOINT6") :max-angle 50)
 
-  ;; (send (send *robot* :joint "RARM_JOINT6") :min-angle -50)
-  ;; (send (send *robot* :joint "RARM_JOINT6") :max-angle 50)
-  ;; (send (send *robot* :joint "RARM_JOINT7") :min-angle -50)
-  ;; (send (send *robot* :joint "RARM_JOINT7") :max-angle 50)
-  ;; (send (send *robot* :joint "LARM_JOINT6") :min-angle -50)
-  ;; (send (send *robot* :joint "LARM_JOINT6") :max-angle 50)
-  ;; (send (send *robot* :joint "LARM_JOINT7") :min-angle -50)
-  ;; (send (send *robot* :joint "LARM_JOINT7") :max-angle 50) 
+;;   ;; (send (send *robot* :joint "RARM_JOINT6") :min-angle -50)
+;;   ;; (send (send *robot* :joint "RARM_JOINT6") :max-angle 50)
+;;   ;; (send (send *robot* :joint "RARM_JOINT7") :min-angle -50)
+;;   ;; (send (send *robot* :joint "RARM_JOINT7") :max-angle 50)
+;;   ;; (send (send *robot* :joint "LARM_JOINT6") :min-angle -50)
+;;   ;; (send (send *robot* :joint "LARM_JOINT6") :max-angle 50)
+;;   ;; (send (send *robot* :joint "LARM_JOINT7") :min-angle -50)
+;;   ;; (send (send *robot* :joint "LARM_JOINT7") :max-angle 50) 
   
-  )
-   
+;;   )
+
+
 ;;contact coordsの位置を関節から少しずらす
 (defun setup-jaxon_red-ik-opt-with-larmcontact-face
     (&key (only-kinematics? nil))
@@ -627,6 +633,8 @@
   ;; (send (send *robot* :joint "LLEG_JOINT0") :max-angle 35)
   ;; (send (send *robot* :joint "RLEG_JOINT2") :min-angle -70)
   ;; (send (send *robot* :joint "LLEG_JOINT2") :min-angle -70)
+  (send (send *robot* :joint "HEAD_JOINT1") :max-angle 18)
+  
   (send (send *robot* :joint "CHEST_JOINT1") :min-angle 0)
   (send (send *robot* :joint "CHEST_JOINT1") :max-angle 30)
 
