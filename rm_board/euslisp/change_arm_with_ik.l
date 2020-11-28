@@ -500,7 +500,8 @@
   (send *ri* :start-reference-force-updater :arms)
   (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5))
   )
-
+(setq pre-angle (send *robot* :reset-manip-pose))
+(setq pre-lleg (make-coords :pos #f(0 -100 0)))
 (defun test-reach()
   (set-pre-pose)
   (setq coords-list (auto-set-reaching-targets))

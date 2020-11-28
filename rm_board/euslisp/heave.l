@@ -733,8 +733,8 @@
     )
   )
 
-(setq pre-angle nil)
-(setq pre-lleg nil)
+(setq pre-angle (send *robot* :reset-manip-pose))
+(setq pre-lleg (make-coords :pos #f(0 -100 0)))
 (defun set-pre-pose()
   (setq pre-angle (send *robot* :angle-vector))
   (pre-lleg  (send *robot* :lleg :end-coords :copy-worldcoords))
@@ -742,7 +742,7 @@
 
 (defun resume (pre-angle pre-lleg)
   (send *robot* :angle-vector pre-angle)
-  (send *robot* :move-coords (send pre-lleg :translate #f(0 0 0)) (send *robot* :lleg lend-coords))
+  (send *robot* :move-coords (send pre-lleg :translate #f(0 0 0)) (send *robot* :lleg :end-coords))
   (load "change_arm_with_ik.l")
   (prepare-simulator))
 
