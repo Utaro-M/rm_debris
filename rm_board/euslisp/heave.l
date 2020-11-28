@@ -733,6 +733,65 @@
     )
   )
 
+(defun average
+    (lis &key  (axis 10))
+  (let* ((len (list-length lis))
+         ;; (sum (list 0 0 0)))
+         (sum_x 0)
+         (sum_y 0)
+         (sum_z 0))
+         
+    (dotimes (i len)
+      (setq sum_x (+ sum_x (elt (elt lis i) 0)))
+      (setq sum_y (+ sum_y (elt (elt lis i) 1)))
+      (setq sum_z (+ sum_z (elt (elt lis i) 2)))      
+      )
+        
+    (setq ave (float-vector (/ sum_x (float len)) (/ sum_y (float len)) (/ sum_z (float len))))
+
+    ;; (print (format nil "ave = ~A" ave))
+    ;; (print len)
+    (cond
+     ((equal axis 0)
+      (float (elt ave 0)))
+     ((equal axis 1)
+      (elt ave 1))
+     ((equal axis 2)
+      (float (elt ave 2)))
+     (t (progn ;;(print "output vector")
+               ave))
+     )
+    )
+  )
+
+(defun low-pass-online
+    (target coords arm &key (times 40) (r 0.3) (sleep 10000) (flag nil))
+  (let* (
+         (y-data (list (send *ri* :state (read-from-string (format nil ":~A-~A-vector" coords target)) arm)))
+         (y-predict (list (send *ri* :state (read-from-string (format nil ":~A-~A-vector" coords target)) arm)))
+         )
+    
+    (dotimes (i times)
+           (setq data (send *ri* :state (read-from-string (format nil ":~A-~A-vector" coords target)) arm))
+      (setq y (v+ (scale r data) (scale (- 1 r) (elt y-predict i))))
+      (list-insert y (+ i 1) y-predict)
+      (list-insert data (+ i 1) y-data)
+      ;; (unix:usleep 1000)
+      (unix:usleep sleep)      
+      )
+    (setq ret (cdr y-predict))
+;;    (print (format nil "~A vector through filter = ~A" target ret))
+    (setq ret-average (average ret))
+
+    (if flag
+        (list  (cdr y-data) ret)
+      (progn
+        (print (format nil "~A vector through filter and average = ~A" target ret-average))
+        ret-average)
+    )
+    )
+  )
+
 (setq pre-angle (send *robot* :reset-manip-pose))
 (setq pre-lleg (make-coords :pos #f(0 -100 0)))
 (defun set-pre-pose()

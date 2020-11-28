@@ -132,36 +132,36 @@
 ;;力の平均
 ;;average lis :axis 2とするとz軸方向の力の平均値が出る
 ;;average lis　だけだと力のベクトルがでる
-(defun average
-    (lis &key  (axis 10))
-  (let* ((len (list-length lis))
-         ;; (sum (list 0 0 0)))
-         (sum_x 0)
-         (sum_y 0)
-         (sum_z 0))
+;; (defun average
+;;     (lis &key  (axis 10))
+;;   (let* ((len (list-length lis))
+;;          ;; (sum (list 0 0 0)))
+;;          (sum_x 0)
+;;          (sum_y 0)
+;;          (sum_z 0))
          
-    (dotimes (i len)
-      (setq sum_x (+ sum_x (elt (elt lis i) 0)))
-      (setq sum_y (+ sum_y (elt (elt lis i) 1)))
-      (setq sum_z (+ sum_z (elt (elt lis i) 2)))      
-      )
+;;     (dotimes (i len)
+;;       (setq sum_x (+ sum_x (elt (elt lis i) 0)))
+;;       (setq sum_y (+ sum_y (elt (elt lis i) 1)))
+;;       (setq sum_z (+ sum_z (elt (elt lis i) 2)))      
+;;       )
         
-    (setq ave (float-vector (/ sum_x (float len)) (/ sum_y (float len)) (/ sum_z (float len))))
+;;     (setq ave (float-vector (/ sum_x (float len)) (/ sum_y (float len)) (/ sum_z (float len))))
 
-    ;; (print (format nil "ave = ~A" ave))
-    ;; (print len)
-    (cond
-     ((equal axis 0)
-      (float (elt ave 0)))
-     ((equal axis 1)
-      (elt ave 1))
-     ((equal axis 2)
-      (float (elt ave 2)))
-     (t (progn ;;(print "output vector")
-               ave))
-     )
-    )
-  )
+;;     ;; (print (format nil "ave = ~A" ave))
+;;     ;; (print len)
+;;     (cond
+;;      ((equal axis 0)
+;;       (float (elt ave 0)))
+;;      ((equal axis 1)
+;;       (elt ave 1))
+;;      ((equal axis 2)
+;;       (float (elt ave 2)))
+;;      (t (progn ;;(print "output vector")
+;;                ave))
+;;      )
+;;     )
+;;   )
 
 ;;plot したい
 ;;うまく行ってない
