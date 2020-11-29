@@ -141,8 +141,8 @@
   (setq larm-coords (send larm-coords :rotate (deg2rad -20) :z))
   (setq rarm-coords (send rarm-coords :rotate (deg2rad 20) :z))
 
-  (setq larm-coords (send larm-coords :translate #f(-100 0 0)))
-  (setq rarm-coords (send rarm-coords :translate #f(-100 0 0)))
+  (setq larm-coords (send larm-coords :translate #f(-150 0 0)))
+  (setq rarm-coords (send rarm-coords :translate #f(-150 0 0)))
   (format t "ik larm-coords = ~A~%" larm-coords)
   (format t "ik rarm-coords = ~A~%" rarm-coords)
 

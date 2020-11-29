@@ -2,7 +2,7 @@
   <arg name="input_cloud"
        default="/multisense_local/organized_image_points2_color" />
   <arg name="manager" default="plane_extraction_manager" />
-  <node pkg="rm_debris_vision" name="get_larm_remove_indices_server" type="get_larm_remove_indices_server.l" output="screen" />
+
 
   <group ns="subtract_point_indices_larm">
     <node name="$(arg manager)"

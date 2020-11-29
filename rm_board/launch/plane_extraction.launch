@@ -11,7 +11,7 @@
        default="mask_extract_indices/output" />
   <arg name="manager" default="plane_extraction_manager" />
 
-  <rosparam param="/use_sim_time">true</rosparam>
+  <!-- <rosparam param="/use_sim_time">true</rosparam> -->
 
   <!-- 自作  -->
   <node pkg="rm_debris_vision" name="get_plane" type="get_plane.py" output="screen" >
@@ -19,8 +19,8 @@
   </node>
   <node pkg="rm_debris_vision" name="make_plane_realtime" type="make_plane_for_ik.l" output="screen" />
   <node pkg="rm_debris_vision" name="make_plane_for_ik_loop" type="make_plane_for_ik_server.l" output="screen" />
-  <node pkg="rm_debris_vision" name="get_larm_remove_indices_server" type="get_larm_remove_indices_server.l" output="screen" />
-  <node pkg="rm_debris_vision" name="get_rarm_remove_indices_server" type="get_rarm_remove_indices_server.l" output="screen" />
+  <!-- <node pkg="rm_debris_vision" name="get_larm_remove_indices_server" type="get_larm_remove_indices_server.l" output="screen" /> -->
+  <!-- <node pkg="rm_debris_vision" name="get_rarm_remove_indices_server" type="get_rarm_remove_indices_server.l" output="screen" /> -->
   <node pkg="rm_debris_vision" name="change_clip_box" type="change_clip_box_server.l" output="screen" />
 
   <group ns="plane_extraction">
@@ -33,41 +33,42 @@
           args="load jsk_pcl_utils/TfTransformCloud $(arg manager)">
       <remap from="~input" to="$(arg input_cloud)" />
       <rosparam>
-        target_frame_id: odom
+        target_frame_id: ground
       </rosparam>
     </node>
 
-    <!-- <node name="bounding_box_array_publisher" -->
-    <!--       pkg="jsk_recognition_utils" type="bounding_box_array_publisher.py"> -->
-    <!--   <rosparam> -->
-    <!--     frame_id: odom -->
-    <!--     boxes: -->
-    <!--     - position: [1, 0, 0] -->
-    <!--       dimension: [3, 1.5, 2] -->
-    <!--   </rosparam> -->
-    <!-- </node> -->
-    <node name="bounding_box_publisher"
-          pkg="topic_publisher" type="pub_box.py">
+    <node name="bounding_box_array_publisher"
+          pkg="jsk_recognition_utils" type="bounding_box_array_publisher.py">
       <rosparam>
-        frame_id: odom
-        x: 1
-        y: 0
-        z: 0
-        w: 3
-        d: 1.5
-        h: 2
+        frame_id: ground
+        boxes:
+        - position: [1, 0, 1]
+          dimension: [3, 1.5, 2]
       </rosparam>
     </node>
+    <!-- <node name="bounding_box_publisher" -->
+    <!--       pkg="topic_publisher" type="pub_box.py"> -->
+    <!--   <rosparam> -->
+    <!--     frame_id: odom -->
+    <!--     x: 1 -->
+    <!--     y: 0 -->
+    <!--     z: 0 -->
+    <!--     w: 3 -->
+    <!--     d: 1.5 -->
+    <!--     h: 2 -->
+    <!--   </rosparam> -->
+    <!-- </node> -->
         <!-- - position: [1, 0, 1.1] -->
         <!--   dimension: [3, 1.5, 2] -->
     <node name="attention_clipper"
           pkg="nodelet" type="nodelet"
           args="load jsk_pcl/AttentionClipper $(arg manager)">
       <remap from="~input/points" to="$(arg transformed_cloud)" />
-      <!-- <remap from="~input/box_array" to="bounding_box_array_publisher/output" /> -->
-      <remap from="~input/box" to="bounding_box_publisher/output" />
+      <!-- <remap from="~input/points" to="$(arg input_cloud)" /> -->
+      <remap from="~input/box_array" to="bounding_box_array_publisher/output" />
+      <!-- <remap from="~input/box" to="bounding_box_publisher/output" /> -->
       <rosparam>
-        use_multiple_attention: false
+        use_multiple_attention: true
       </rosparam>
     </node>
 
@@ -75,6 +76,7 @@
           pkg="nodelet" type="nodelet"
           args="load jsk_pcl/ExtractIndices $(arg manager)">
       <remap from="~input" to="$(arg transformed_cloud)" />
+      <!-- <remap from="~input" to="$(arg input_cloud)" /> -->
       <remap from="~indices" to="attention_clipper/output/point_indices" />
       <rosparam>
         keep_organized: true
@@ -129,40 +131,41 @@
     </node>
 
     <!-- 平面のエッジ検出 -->
-    <node name="organized_edge_detector"
-          pkg="nodelet" type="nodelet"
-          args="load jsk_pcl/OrganizedEdgeDetector $(arg manager)">
-      <remap from="~input" to="$(arg filtered_cloud)" />
+
+    <!-- <node name="organized_edge_detector" -->
+    <!--       pkg="nodelet" type="nodelet" -->
+    <!--       args="load jsk_pcl/OrganizedEdgeDetector $(arg manager)"> -->
+    <!--   <remap from="~input" to="$(arg filtered_cloud)" /> -->
       <!-- <remap from="~/output_rgb_edge_indices" to="edge_indices" /> -->
       <!-- <remap from="~/output_rgb_edge" to="edge_cloud" />       -->
-      <remap from="~/output_straight_edges_indices" to="edge_indices" />
-      <remap from="~/output" to="edge_cloud" />      
-      <rosparam>
-        publish_normal: true
-        use_nan_boundary: true
-        use_rgb: true
-        use_straightline_detection: true
+    <!--   <remap from="~/output_straight_edges_indices" to="edge_indices" /> -->
+    <!--   <remap from="~/output" to="edge_cloud" />       -->
+    <!--   <rosparam> -->
+    <!--     publish_normal: true -->
+    <!--     use_nan_boundary: true -->
+    <!--     use_rgb: true -->
+    <!--     use_straightline_detection: true -->
         <!-- min_line_length: 1000 -->
-      </rosparam>
-    </node>
+    <!--   </rosparam> -->
+    <!-- </node> -->
 
-    <node name="multi_plane_extraction"
-          pkg="nodelet" type="nodelet"
-          args="load jsk_pcl/MultiPlaneExtraction  $(arg manager)">
-      <remap from="~input" to="edge_cloud"/>
-      <remap from="~indices" to="edge_indices"/>
+    <!-- <node name="multi_plane_extraction" -->
+    <!--       pkg="nodelet" type="nodelet" -->
+    <!--       args="load jsk_pcl/MultiPlaneExtraction  $(arg manager)"> -->
+    <!--   <remap from="~input" to="edge_cloud"/> -->
+    <!--   <remap from="~indices" to="edge_indices"/> -->
       <!-- <remap from="~input_polygons" to="plane_polygons"/> -->
       <!-- <remap from="~input_coefficients" to="plane_coefficients"/> -->
-      <remap from="~input_polygons" to="/get_plane/output_polygon"/>
-      <remap from="~input_coefficients" to="/get_plane/output_coefficient"/>
-      <rosparam>
-        keep_organized: false
-        use_indices: true
-        use_coefficients: true
-        min_height: -0.1
-        max_height: 0.1
-      </rosparam>
-    </node>
+    <!--   <remap from="~input_polygons" to="/get_plane/output_polygon"/> -->
+    <!--   <remap from="~input_coefficients" to="/get_plane/output_coefficient"/> -->
+    <!--   <rosparam> -->
+    <!--     keep_organized: false -->
+    <!--     use_indices: true -->
+    <!--     use_coefficients: true -->
+    <!--     min_height: -0.1 -->
+    <!--     max_height: 0.1 -->
+    <!--   </rosparam> -->
+    <!-- </node> -->
     
     <!-- 物体把持判定 -->
     
