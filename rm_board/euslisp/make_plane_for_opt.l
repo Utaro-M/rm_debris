@@ -2,11 +2,18 @@
 (ros::load-ros-manifest "rm_debris_vision")
 (ros::roseus "make_plane_for_ik_client")
 (ros::wait-for-service "make_plane")
+
 (defun make_plane()
 
 (setq req (instance rm_debris_vision::PolygonRequest :init))
 (setq res (ros::service-call "make_plane" req t))
-;; (print res)
+(if (not (send res :pts :polygon :points))
+    (progn ;; (print "can not find any plane")
+           (return-from make_plane nil)))
+;; (while (not (send res :pts :polygon :points))
+;;   (print "can not find any plane")
+;;   (setq res (ros::service-call "make_plane" req t)))
+(format t "res =~A~%" res )
 
 (setq coords (make-coords))
 (setq com-box (make-cube 100 100 100))
