@@ -1,0 +1,79 @@
+<launch>
+  <arg name="input_cloud"
+       default="/multisense_local/organized_image_points2_color" />
+  <arg name="manager" default="plane_extraction_manager" />
+  <rosparam param="/use_sim_time">true</rosparam>
+  <node pkg="count_points" name="count_points" type="count_points.py" output="screen" />  
+  <group ns="in_hand_point">
+
+    <node name="$(arg manager)"
+          pkg="nodelet" type="nodelet"
+          args="manager" output="screen" />
+
+    <node name="bounding_box_array_publisher_larm"
+          pkg="jsk_recognition_utils" type="bounding_box_array_publisher.py">
+      <rosparam>
+        frame_id: larm_end_coords
+        boxes:
+        - position: [0.1, 0.1, 0]
+          dimension: [0.3, 0.25, 0.2]
+      </rosparam>
+    </node>
+
+    <node name="attention_clipper_larm"
+          pkg="nodelet" type="nodelet"
+          args="load jsk_pcl/AttentionClipper $(arg manager)">
+      <remap from="~input/points" to="$(arg input_cloud)" />
+      <remap from="~input/box_array" to="bounding_box_array_publisher_larm/output" />
+      <rosparam>
+        use_multiple_attention: true
+      </rosparam>
+    </node>
+
+    <node name="extract_indices_larm"
+          pkg="nodelet" type="nodelet"
+          args="load jsk_pcl/ExtractIndices $(arg manager)">
+      <remap from="~input" to="$(arg input_cloud)"/>
+      <remap from="~indices" to="attention_clipper_larm/output/point_indices"/>
+      <rosparam>
+        keep_organized: true
+      </rosparam>
+    </node>
+
+    <node name="bounding_box_array_publisher_rarm"
+          pkg="jsk_recognition_utils" type="bounding_box_array_publisher.py">
+      <rosparam>
+        frame_id: rarm_end_coords
+        boxes:
+        - position: [0.1, -0.1, 0]
+          dimension: [0.3, 0.25, 0.2]
+      </rosparam>
+    </node>
+
+    <node name="attention_clipper_rarm"
+          pkg="nodelet" type="nodelet"
+          args="load jsk_pcl/AttentionClipper $(arg manager)">
+      <remap from="~input/points" to="$(arg input_cloud)" />
+      <remap from="~input/box_array" to="bounding_box_array_publisher_rarm/output" />
+      <rosparam>
+        use_multiple_attention: true
+      </rosparam>
+    </node>
+
+    <node name="extract_indices_rarm"
+          pkg="nodelet" type="nodelet"
+          args="load jsk_pcl/ExtractIndices $(arg manager)">
+      <remap from="~input" to="$(arg input_cloud)" />
+      <remap from="~indices" to="attention_clipper_rarm/output/point_indices" />
+      <rosparam>
+        keep_organized: true
+      </rosparam>
+    </node>
+
+  </group>
+  
+    <node name="rviz"
+          pkg="rviz" type="rviz"
+          args="-d /home/utaro/research/rm_debris/rm_board/display/subtract_point_indices_test_modified.rviz"/>
+
+  </launch>
