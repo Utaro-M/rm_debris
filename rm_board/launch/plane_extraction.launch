@@ -21,6 +21,7 @@
   <node pkg="rm_debris_vision" name="make_plane_for_ik_loop" type="make_plane_for_ik_server.l" output="screen" />
   <node pkg="rm_debris_vision" name="get_larm_remove_indices_server" type="get_larm_remove_indices_server.l" output="screen" />
   <node pkg="rm_debris_vision" name="get_rarm_remove_indices_server" type="get_rarm_remove_indices_server.l" output="screen" />
+  <node pkg="rm_debris_vision" name="change_clip_box" type="change_clip_box_server.l" output="screen" />
 
   <group ns="plane_extraction">
     <node name="$(arg manager)"
@@ -36,13 +37,25 @@
       </rosparam>
     </node>
 
-    <node name="bounding_box_array_publisher"
-          pkg="jsk_recognition_utils" type="bounding_box_array_publisher.py">
+    <!-- <node name="bounding_box_array_publisher" -->
+    <!--       pkg="jsk_recognition_utils" type="bounding_box_array_publisher.py"> -->
+    <!--   <rosparam> -->
+    <!--     frame_id: odom -->
+    <!--     boxes: -->
+    <!--     - position: [1, 0, 0] -->
+    <!--       dimension: [3, 1.5, 2] -->
+    <!--   </rosparam> -->
+    <!-- </node> -->
+    <node name="bounding_box_publisher"
+          pkg="topic_publisher" type="pub_box.py">
       <rosparam>
         frame_id: odom
-        boxes:
-        - position: [1, 0, 0]
-          dimension: [3, 1.5, 2]
+        x: 1
+        y: 0
+        z: 0
+        w: 3
+        d: 1.5
+        h: 2
       </rosparam>
     </node>
         <!-- - position: [1, 0, 1.1] -->
@@ -51,9 +64,10 @@
           pkg="nodelet" type="nodelet"
           args="load jsk_pcl/AttentionClipper $(arg manager)">
       <remap from="~input/points" to="$(arg transformed_cloud)" />
-      <remap from="~input/box_array" to="bounding_box_array_publisher/output" />
+      <!-- <remap from="~input/box_array" to="bounding_box_array_publisher/output" /> -->
+      <remap from="~input/box" to="bounding_box_publisher/output" />
       <rosparam>
-        use_multiple_attention: true
+        use_multiple_attention: false
       </rosparam>
     </node>
 
@@ -128,6 +142,7 @@
         use_nan_boundary: true
         use_rgb: true
         use_straightline_detection: true
+        <!-- min_line_length: 1000 -->
       </rosparam>
     </node>
 
@@ -144,12 +159,13 @@
         keep_organized: false
         use_indices: true
         use_coefficients: true
-        min_height: -0.3
-        max_height: 0.3
+        min_height: -0.1
+        max_height: 0.1
       </rosparam>
     </node>
-
+    
     <!-- 物体把持判定 -->
+    
     <!-- <node name="apply_mask_image" -->
     <!--       pkg="nodelet" type="nodelet" -->
     <!--       args="load jsk_perception/ApplyMaskImage $(arg manager)"> -->
@@ -191,7 +207,6 @@
         target_frame_id: larm_end_coords
       </rosparam>
     </node>
-
     
     <node pkg="nodelet" type="nodelet" name="passthrough_larm_x"
           args="load pcl/PassThrough $(arg manager)" >
@@ -204,7 +219,8 @@
         filter_limit_negative: False
       </rosparam>
     </node>
-        <!-- filter_limit_max: 0.15 -->
+    
+    <!-- filter_limit_max: 0.15 -->
     <node pkg="nodelet" type="nodelet" name="passthrough_larm_y"
           args="load pcl/PassThrough $(arg manager)" >
       <remap from="~input" to="larm_x"/>
@@ -317,7 +333,8 @@
           pkg="nodelet" type="nodelet"
           args="load jsk_pcl/ExtractIndices $(arg manager)">
       <remap from="~input" to="larm_z" />
-      <remap from="~indices" to="subtract_point_indices_rarm/output" />
+      <!-- <remap from="~indices" to="subtract_point_indices_larm/output" /> -->
+      <remap from="~indices" to="/larm_remove_indices" />
       <rosparam>
         keep_organized: true
       </rosparam>
@@ -368,9 +385,9 @@
   <!--   </rosparam> -->
   <!-- </node> -->
 <!-- <node pkg="rgbd_self_filter" name="get_plane" type="get_plane.py" output="screen"/> -->
-  <node name="rviz"
-        pkg="rviz" type="rviz"
-        args="-d /home/utaro/research/rm_debris/rm_board/display/plane_extraction.rviz"/>
+  <!-- <node name="rviz" -->
+  <!--       pkg="rviz" type="rviz" -->
+  <!--       args="-d /home/utaro/research/rm_debris/rm_board/display/plane_extraction.rviz"/> -->
   
 </launch>
 
