@@ -1,0 +1,332 @@
+<launch>
+  <arg name="create_manager" default="true" />
+  <arg name="manager" default="camera_nodelet_manager" />
+  <arg name="gui" default="true" />
+  <!-- <arg name="rosbag_file" default="/home/utaro/.ros/backgroud_subtraction_2020-11-12-19-51-10.bag  -\-loop " /> -->
+  <!-- <arg name="rosbag_file" default="/home/utaro/.ros/backgroud_subtraction_2020-11-12-19-32-58.bag  -\-loop " /> -->
+  <!-- <arg name="rosbag_file" default="/home/utaro/.ros/backgroud_subtraction_with_virtualcamera_2020-11-13-15-47-40.bag  -\-loop " /> -->
+  <!-- <arg name="rosbag_file" default="/home/utaro/.ros/backgroud_subtraction_no_virtualcamera_2020-11-13-15-45-38.bag  -\-clock -\-loop " /> -->
+  <!-- <arg name="rosbag_file" default="/home/utaro/.ros/backgroud_subtraction_no_virtualcamera_2020-11-13-16-08-54.bag  -\-clock -\-loop " /> -->
+  <arg name="rosbag_file" default="/home/utaro/.ros/backgroud_subtraction_no_virtualcamera_with_info_2020-11-14-21-54-02.bag  --clock --loop " />
+
+  <arg name="multisense_pcl2" default="/multisense_local/image_points2_color" />
+  <arg name="multisense_pcl2_transformed" default="/transform_pcl2/output" />
+  <arg name="multisense_org_pcl2" default="/multisense_local/organized_image_points2_color" />
+  <arg name="multisense_org_pcl2_transformed" default="/transform_org_pcl2/output" />
+  <arg name="passthrough_pcl2" default="/passthrough/output" />
+  <arg name="passthrough_org_pcl2" default="/passthrough_org/output" />
+  <arg name="processed_pcl2" default="/depth_image_creator/output_cloud" />
+  <arg name="multisense_camerainfo" default="/multisense_local/left/camera_info" />  
+  <arg name="camerainfo" default="/static_virtual_camera/camera_info" />
+
+  <!-- <node name="rosbag_play" -->
+  <!--       pkg="rosbag" type="play" -->
+  <!--       args="$(arg rosbag_file)" /> -->
+
+  <node if="$(arg create_manager)"
+        pkg="nodelet" type="nodelet" name="camera_nodelet_manager"
+        args="manager" output="screen"/>
+
+  <!-- <node pkg="transform_coords" name="transform_pcl" type="transform_coords_node" output="screen" /> -->
+  <node name="transform_org_pcl2"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_pcl_utils/TfTransformCloud /$(arg manager)">
+    <remap from="~input" to="$(arg multisense_org_pcl2)" />
+    <rosparam>
+      target_frame_id: odom
+    </rosparam>
+  </node>
+  <node name="transform_pcl2"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_pcl_utils/TfTransformCloud /$(arg manager)">
+    <remap from="~input" to="$(arg multisense_pcl2)" />
+    <rosparam>
+      target_frame_id: odom
+    </rosparam>
+  </node>
+
+  <node pkg="rm_debris_vision" name="get_plane" type="get_plane.py" output="screen" />
+  <node pkg="rm_debris_vision" name="make_plane_realtime" type="make_plane_for_ik.l" output="screen" />
+  <node pkg="rm_debris_vision" name="make_plane_for_ik_loop" type="make_plane_for_ik_server.l" output="screen" />
+  <arg name="interactive_marker" default="false" />
+  <!-- 固定してん -->
+  <rosparam param="/use_sim_time">true</rosparam>
+  <node pkg="rm_debris_vision" name="static_virtual_camera" type="static_virtual_camera.py" output="screen" />
+  <node pkg="tf" type="static_transform_publisher" name="virtual_camera_broadcaster" args="0.2 0 1.0 0.612372 -0.612372 0.353553 -0.353553 odom static_virtual_camera 100" unless="$(arg interactive_marker)" />  <!-- -0.5 0.5 -0.5 0.5 -->
+    <!-- <node pkg="tf" type="static_transform_publisher" name="virtual_camera_broadcaster" args="0.1 -0.2 0.7 -0.547723 0.547723 -0.547723 0.316228 LLEG_LINK5 static_virtual_camera 100" unless="$(arg interactive_marker)" /> -->
+
+  <node pkg="nodelet" type="nodelet" name="passthrough"
+        args="load pcl/PassThrough $(arg manager)" output="screen">
+    <remap from="~input" to="$(arg multisense_pcl2_transformed)" />
+    <rosparam>
+      filter_field_name: z
+      filter_limit_min:  0.08
+      filter_limit_max:  2.0
+      filter_limit_negative: False
+    </rosparam>
+  </node>
+  <node pkg="nodelet" type="nodelet" name="passthrough_org"
+        args="load pcl/PassThrough $(arg manager)" output="screen">
+    <remap from="~input" to="$(arg multisense_org_pcl2_transformed)" />
+    <rosparam>
+      filter_field_name: z
+      filter_limit_min:  0.08
+      filter_limit_max:  2.0
+      filter_limit_negative: False
+      keep_organized: true
+    </rosparam>
+  </node>
+ 
+  <!-- get image from static virtual camera -->
+  <node name="depth_image_creator"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_pcl/DepthImageCreator $(arg manager)">
+    <!-- <remap from="~input" to="/bilateral_filter/output" /> -->
+    <!-- <remap from="~input" to="$(arg multisense_pcl2)" /> -->
+    <remap from="~input" to="/passthrough/output" />
+    <!-- <remap from="~input" to="/multisense_local/image_points2_color" /> -->
+    <remap from="~info" to="$(arg camerainfo)" />
+    <!-- <remap from="~info" to="$(arg multisense_camerainfo)" /> -->
+    <!-- <remap from="~info" to="/static_virtual_cam/camera_info" /> -->
+    <rosparam>
+      <!-- tf_duration: 0.1 -->
+      <!-- organize_cloud: false -->
+      use_asynchronous: true
+      use_approximate: false
+      max_queue_size: 2
+    </rosparam>
+  </node>
+  
+  <node name="organized_multi_plane_segmentation"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_pcl/OrganizedMultiPlaneSegmentation $(arg manager)">
+    <remap from="~input" to="$(arg passthrough_org_pcl2)"/>
+    <!-- <remap from="~input" to="/depth_image_creator/output_cloud"/> -->
+    <rosparam>
+      publish_normal: true
+    </rosparam>
+  </node>
+
+  <node name="multi_plane_sac_segmentation"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_pcl/MultiPlaneSACSegmentation /$(arg manager)">
+     <remap from="~input" to="$(arg multisense_pcl2)" />
+    <!-- <remap from="~input" to="/kinect_head/depth_registered/points"/> -->
+    <rosparam>
+      use_normal: false
+      use_clusters: false
+      use_imu_parallel: false
+      use_imu_perpendicular: false
+      <!-- min_inlier: 500 -->
+    </rosparam>
+  </node>
+  <!-- <node name="cluster_indices_decomposer" -->
+  <!--       pkg="nodelet" type="nodelet" -->
+  <!--       args="load jsk_pcl/ClusterPointIndicesDecomposer /$(arg manager)"> -->
+  <!--   <remap from="~input" to="/depth_image_creator/output_cloud"/> -->
+  <!--   <remap from="~target" to="multi_plane_sac_segmentation/output_indices"/> -->
+  <!-- </node> -->
+
+  <node name="multi_plane_extraction"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_pcl/MultiPlaneExtraction  $(arg manager)">
+    <!-- <remap from="~input" to="/kinect_head/depth_registered/points"/>-->
+    <!-- <remap from="~input" to="depth_image_creator/output_cloud"/> -->
+    <!-- <remap from="~input" to="$(arg multisense_org_pcl2)"/> -->
+    <remap from="~input" to="/extract_indices/output"/>
+    <!-- <remap from="~indices" to="organized_multi_plane_segmentation/output_refined"/> -->
+    <!-- <remap from="~input_polygons" to="organized_multi_plane_segmentation/output_refined_polygon"/> -->
+    <!-- <remap from="~input_coefficients" to="organized_multi_plane_segmentation/output_refined_coefficients"/> -->
+    <remap from="~indices" to="multi_plane_sac_segmentation/output_refined"/>
+    <remap from="~input_polygons" to="multi_plane_sac_segmentation/output_refined_polygon"/>
+    <remap from="~input_coefficients" to="multi_plane_sac_segmentation/output_refined_coefficients"/>
+    <rosparam>
+      keep_organized: false
+      use_indices: true
+      use_coefficients: true
+      min_height: -0.3
+      max_height: 0.3
+    </rosparam>
+  </node>
+  
+  <node name="robot_to_mask_image"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_perception/RobotToMaskImage $(arg manager)">
+    <!-- args="standalone jsk_perception/RobotToMaskImage"> -->
+    <remap from="~input/camera_info" to="$(arg multisense_camerainfo)"/>
+    <rosparam>
+      robot_description : "jaxon_red"
+      self_see_links:
+        - name: RLEG_LINK0
+        - name: RLEG_LINK1
+        - name: RLEG_LINK2
+        - name: RLEG_LINK3
+        - name: RLEG_LINK4
+        - name: RLEG_LINK5
+        - name: LLEG_LINK0
+        - name: LLEG_LINK1
+        - name: LLEG_LINK2
+        - name: LLEG_LINK3
+        - name: LLEG_LINK4
+        - name: LLEG_LINK5
+        <!-- - name: CHEST_LINK0 -->
+        <!-- - name: CHEST_LINK1 -->
+        <!-- - name: CHEST_LINK2 -->
+        <!-- - name: HEAD_LINK0 -->
+        <!-- - name: HEAD_LINK1 -->
+        
+        - name: RARM_FINGER0
+        - name: RARM_FINGER1
+        <!-- jikki -->
+        <!-- - name: R_thk_finger1 -->
+        <!-- - name: R_thk_finger2 -->
+        <!-- - name: R_thk_palm -->
+        
+        - name: RARM_LINK0
+        - name: RARM_LINK1
+        - name: RARM_LINK2
+        - name: RARM_LINK3
+        - name: RARM_LINK4
+        - name: RARM_LINK5
+        - name: RARM_LINK6
+        - name: RARM_LINK7
+        - name: LARM_FINGER0
+        - name: LARM_FINGER1
+        <!-- jikki -->
+        <!-- - name: L_thk_finger1 -->
+        <!-- - name: L_thk_finger2 -->
+        <!-- - name: L_thk_palm -->
+
+        - name: LARM_LINK0
+        - name: LARM_LINK1
+        - name: LARM_LINK2
+        - name: LARM_LINK3
+        - name: LARM_LINK4
+        - name: LARM_LINK5
+        - name: LARM_LINK6
+        - name: LARM_LINK7
+      self_see_default_padding: 0.1
+    </rosparam>
+  </node>
+
+  <!-- <node name="rviz" -->
+  <!--       pkg="rviz" type="rviz" -->
+  <!--       args="-d $(find jsk_perception)/sample/config/sample_robot_to_mask_image.rviz"/> -->
+
+  
+  <!-- マスク画像を抽出した動画に適用o -->
+  <node name="apply_mask_image"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_perception/ApplyMaskImage $(arg manager)">
+    <!-- <remap from="~input" to="dilate_mask_image/output" /> -->
+    <!-- <remap from="~input" to="/background_subtraction/output" /> -->
+    <!-- <remap from="~input" to="/multisense_local/left/image_rect_color" /> -->
+    <!-- <remap from="~input" to="$(arg passthrough_pcl2)" /> -->
+    <remap from="~input" to="/depth_image_creator/output_image" />
+    <remap from="~input/mask" to="/robot_to_mask_image/output" />
+    <rosparam>
+      approximate_sync: true
+    </rosparam>
+  </node>
+  <!-- 動いているところだけ抽出 -->
+  <node name="background_subtraction"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_perception/BackgroundSubstraction  $(arg manager)"> 
+    <!-- args="standalone jsk_perception/BackgroundSubstraction"> -->
+    <!-- <remap from="~image" to="/multisense_local/left/image_rect_color" /> -->
+    <remap from="~image" to="/depth_image_creator/output_image" />
+    <!-- <remap from="~image" to="/passthrough_x/output" /> -->
+    <remap from="~input/mask" to="/apply_mask_image/output" />
+    <rosparam>
+      nmixtures : 5
+    </rosparam>
+  </node>
+
+  <!-- remove noise -->
+  <!-- 収縮の後に膨張 -->
+
+  <!-- 収縮 -->
+  <node name="erode_mask_image"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_perception/ErodeMaskImage $(arg manager)">
+    <remap from="~input" to="/background_subtraction/output" />
+    <rosparam>
+      method: 0
+      size: 1
+    </rosparam>
+  </node>
+    <!-- 膨張 -->
+  <node name="dilate_mask_image"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_perception/DilateMaskImage $(arg manager)">
+    <remap from="~input" to="/erode_mask_image/output" />
+    <rosparam>
+      method: 0
+      size: 4
+    </rosparam>
+  </node>
+
+  <!-- マスク画像の結果と点群を結びつけて、点のインダイスを出力する -->
+  <arg name="camera" value="/multisense_local" />
+  <node pkg="nodelet" type="nodelet"
+        name="mask_image_filter"
+        args="load jsk_pcl/MaskImageFilter $(arg manager)"
+        output="screen" clear_params="true">
+    
+    <param name="~negative" value="false" />
+    <remap from="~input" to="$(arg processed_pcl2)" />
+    <!-- <remap from="~input" to="$(arg passthrough_org_pcl2)" /> -->
+    <!-- <remap from="~input/mask" to="/apply_mask_image/output" /> -->
+    <!-- <remap from="~input/mask" to="background_subtraction/output" /> -->
+    <remap from="~input/mask" to="dilate_mask_image/output" />
+    <remap from="~input/camera_info" to="$(arg camerainfo)" />
+    <!-- <remap from="~input/camera_info" to="$(arg multisense_camerainfo)" /> -->
+  </node>
+
+  <!-- インダイスを使って該当点群を抽出 -->
+  <node pkg="nodelet" type="nodelet"
+        name="extract_indices"
+        args="load jsk_pcl/ExtractIndices $(arg manager)"
+        output="screen" clear_params="true">
+    <remap from="~input" to="$(arg processed_pcl2)" />
+    <!-- <remap from="~input" to="$(arg passthrough_org_pcl2)" /> -->
+    <remap from="~indices" to="/mask_image_filter/output" />
+    <rosparam>
+      approximate_sync: true
+      keep_organized: false
+      max_queue_size: 10
+    </rosparam>
+  </node>
+
+  <!-- クラスタリング -->
+  <node pkg="nodelet" type="nodelet"
+        name="clustering"
+        args="load jsk_pcl/EuclideanClustering $(arg manager)"
+        output="screen" clear_params="true">
+    <remap from="~input" to="/extract_indices/output" />
+    <rosparam>
+      tolerance: 0.15
+      min_size: 300
+    </rosparam>
+  </node>
+
+  <node pkg="nodelet" type="nodelet"
+        name="cluster_decomposer"
+        args="load jsk_pcl/ClusterPointIndicesDecomposer $(arg manager)"
+        output="screen" clear_params="true">
+    <remap from="~input" to="/extract_indices/output" />
+    <remap from="~target" to="/clustering/output" />
+    <rosparam>
+      min_size: 300
+    </rosparam>
+  </node>
+
+    <!-- <node name="normal_concatenater" -->
+  <!--         pkg="nodelet" type="nodelet" -->
+  <!--         args="load jsk_pcl_utils/NormalConcatenater $(arg manager)"> -->
+  <!--     <remap from="~input" to="/depth_image_creator/output_cloud"/> -->
+  <!--     <remap from="~normal" to="organized_multi_plane_segmentation/output_normal"/> -->
+  <!-- </node> -->
+
+</launch>
+

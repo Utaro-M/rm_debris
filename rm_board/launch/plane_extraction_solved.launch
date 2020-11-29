@@ -7,6 +7,11 @@
        default="extract_indices/output" />
   <arg name="manager" default="plane_extraction_manager" />
 
+  <arg name="rosbag_arg" default="/home/utaro/.ros/backgroud_subtraction_no_virtualcamera_with_info_2020-11-14-21-54-02.bag  --clock --loop " />
+  <node name="rosbag_play"
+        pkg="rosbag" type="play"
+        args="$(arg rosbag_file)" />
+
   <group ns="plane_extraction">
     <node name="$(arg manager)"
           pkg="nodelet" type="nodelet"

@@ -244,13 +244,13 @@
 
   (send *ri* :set-log-maxlength (* 500 60))
   (send *ri* :start-log)
-  (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t :rleg-pos-shift #f(0 -100 -10) :lleg-pos-shift #f(0 100 -10) :look-at-hands? t)
+  (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t :rleg-pos-shift #f(0 -100 -10) :lleg-pos-shift #f(0 100 -10) :look-at-object? t)
 
   (setq pre-angle (send *robot* :angle-vector))
   
-  ;; (heave #f(-110 -900 0) #f(-110 900 0) :reset? t :fix-contact? 2 :wait? t :look-at-hands? t)
-  ;; (heave #f(-110 -800 0) #f(-110 800 0) :reset? t :fix-contact? 2 :wait? t :look-at-hands? t)
-  (heave #f(-80 -800 0) #f(-80 800 0) :reset? t :fix-contact? 2 :wait? t :look-at-hands? t)
+  ;; (heave #f(-110 -900 0) #f(-110 900 0) :reset? t :fix-contact? 2 :wait? t :look-at-object? t)
+  ;; (heave #f(-110 -800 0) #f(-110 800 0) :reset? t :fix-contact? 2 :wait? t :look-at-object? t)
+  (heave #f(-80 -800 0) #f(-80 800 0) :reset? t :fix-contact? 2 :wait? t :look-at-object? t)
   ;; (heave #f(-110 -1200 0) #f(-110 1200 0) :reset? t :fix-contact? nil :wait? t)
   ;;jikkide tamesita
   ;; (heave #f(-110 -600 0) #f(-110 600 0) :reset? t :fix-contact? 2 :wait? t)  
@@ -271,14 +271,14 @@
 
   (send *ri* :set-log-maxlength (* 500 60))
   (send *ri* :start-log)
-  (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t :rleg-pos-shift #f(0 -100 -10) :lleg-pos-shift #f(0 100 -10) :look-at-hands? t)
+  (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t :rleg-pos-shift #f(0 -100 -10) :lleg-pos-shift #f(0 100 -10) :look-at-object? t)
 
   (setq pre-angle (send *robot* :angle-vector))
   (if simulator? nil
     (setq movetime 20000)
     )
   
-  (heave #f(-110 -900 0) #f(-110 900 0) :reset? t :fix-contact? 2 :wait? t :look-at-hands? t)
+  (heave #f(-110 -900 0) #f(-110 900 0) :reset? t :fix-contact? 2 :wait? t :look-at-object? t)
 
   ;; (heave #f(-110 -1200 0) #f(-110 1200 0) :reset? t :fix-contact? nil :wait? t)
   ;;jikkide tamesita
@@ -572,7 +572,7 @@
 
   (send *ri* :start-log)
   ;; (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t)
-  (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t :rleg-pos-shift #f(0 -100 -10) :lleg-pos-shift #f(0 100 -10) :look-at-hands? t)
+  (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t :rleg-pos-shift #f(0 -100 -10) :lleg-pos-shift #f(0 100 -10) :look-at-object? t)
   ;; (heave #f(-100 -900 0) #f(-100 900 0) :reset? t :fix-contact? 2 :wait? t)
   (heave #f(-110 -900 0) #f(-110 900 0) :reset? t :fix-contact? 2 :wait? t)
   (change-arm 130 :rarm)
@@ -604,8 +604,8 @@
   ;; (send *robot* :move-coords (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate #f(300 0 100)) (send *robot* :link "RLEG_LINK5"))
 
 
-  ;; (heave #f(0 -300 0) #f(0 300 0) :reset? t :fix-contact? nil :wait? t :look-at-hands? t :rleg-pos-shift #f(100 0 0) :lleg-pos-shift #f(300 0 0))
-  ;; (heave #f(100 0 0) #f(100 0 0) :reset? t :fix-contact? nil :wait? t :look-at-hands? t :rleg-pos-shift #f(100 0 0) :lleg-pos-shift #f(300 0 0))
+  ;; (heave #f(0 -300 0) #f(0 300 0) :reset? t :fix-contact? nil :wait? t :look-at-object? t :rleg-pos-shift #f(100 0 0) :lleg-pos-shift #f(300 0 0))
+  ;; (heave #f(100 0 0) #f(100 0 0) :reset? t :fix-contact? nil :wait? t :look-at-object? t :rleg-pos-shift #f(100 0 0) :lleg-pos-shift #f(300 0 0))
 )
 (defun dive-board-no-walk()
   (my-init-pose :move-foot? nil)
@@ -624,7 +624,7 @@
 
   (send *ri* :start-log)
   ;; (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t)
-  (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t :rleg-pos-shift #f(0 -100 -10) :lleg-pos-shift #f(0 100 -10) :look-at-hands? t)
+  (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t :rleg-pos-shift #f(0 -100 -10) :lleg-pos-shift #f(0 100 -10) :look-at-object? t)
   ;; (heave #f(-100 -900 0) #f(-100 900 0) :reset? t :fix-contact? 2 :wait? t)
   (heave #f(-110 -900 0) #f(-110 900 0) :reset? t :fix-contact? 2 :wait? t  :rleg-pos-shift #f(200 0 0) :lleg-pos-shift #f(200 0 0))
   (change-arm 130 :rarm)
