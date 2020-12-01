@@ -81,3 +81,14 @@
   (:set-rarm-points-num (val)
                     (setq rarm-points-num val))      
   )
+(setq *coords* (instance my-coords :init
+                       (copy-object (send *robot* :rarm :end-coords :copy-worldcoords))
+                       (copy-object (send *robot* :larm :end-coords :copy-worldcoords))
+                       (copy-object (send *robot* :rleg :end-coords :copy-worldcoords))
+                       (copy-object (send *robot* :lleg :end-coords :copy-worldcoords))
+                       #f(0 0 700)
+                       ))
+
+(setq *poses* (instance poses :init
+                       (send *robot* :angle-vector)
+                       (send *ri* :state :angle-vector)))

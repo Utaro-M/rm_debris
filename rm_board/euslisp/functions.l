@@ -6,6 +6,7 @@
 (load "./my-ik.l")
 (require "../../euslisp/save-log.l")
 ;; (require "~/research/rm_debris/src/predict_from_multi_pose.l")
+
 (print "load functions.l")
 
 (unless (and (boundp '*robot*) (boundp '*ri*))
@@ -18,20 +19,7 @@
   (setq flag-simulator nil) ;;simulatorではｔ
   (setq movetime 16000))
 
-(setq *coords* (instance my-coords :init
-                       (copy-object (send *robot* :rarm :end-coords :copy-worldcoords))
-                       (copy-object (send *robot* :larm :end-coords :copy-worldcoords))
-                       (copy-object (send *robot* :rleg :end-coords :copy-worldcoords))
-                       (copy-object (send *robot* :lleg :end-coords :copy-worldcoords))
-                       #f(0 0 700)
-                       ))
-
-(setq *poses* (instance poses :init
-                       (send *robot* :angle-vector)
-                       (send *ri* :state :angle-vector)))
-
 (defun prepare-simulator()
-
   (setq flag-simulator t) ;;simulatorではｔ
   (setq movetime 4000)
   (send *ri* :start-auto-balancer :limbs (list :lleg :rleg :larm :rarm))
@@ -39,7 +27,6 @@
   (unless (= (send (send *ri* :get-st-param) :emergency_check_mode) 0)
     (warn "disable emergency-check~%")
     ;;COPのemergencyをきる
-    
     (send *ri* :stop-st)
     (send *ri* :set-st-param :emergency-check-mode 0)
     (send *ri* :start-st))
@@ -138,13 +125,11 @@
   (setq rleg-ratio (abs (norm (v- (send rleg-coords-new :worldpos) zmp-vector))))
   (if send?
       (progn
-        ;; (send-pose movetime :force-move flag-simulator :wait? wait? :pre-pose pre-pose :pre-lleg pre-lleg)
         (if (not fix-contact?)
             (progn
               (send *ri* :set-gait-generator-param :zmp-weight-map (float-vector rleg-ratio lleg-ratio 1 1))
-              ;; (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5) :is-hand-fix-mode t)
               (move-on-foot rleg-coords-old lleg-coords-old rleg-coords-new lleg-coords-new :wait? nil)
-              ;; (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5) :is-hand-fix-mode nil))
+              
               ))
         (send-pose movetime :force-move flag-simulator :wait? wait? :pre-pose pre-pose :pre-lleg pre-lleg :look-at-object? look-at-object?)
         ))
@@ -194,48 +179,42 @@
       (progn
         (send-pose (- movetime 1500) :force-move flag-simulator )))
   )
-
-
-
 (defun move-on-foot
     (init-rcoords init-lcoords next-rcoords  next-lcoords &key (which? :lleg) (only-move? nil) (wait? t))
-  ;; (setq ldif (send (send init-lcoords :copy-worldcoords) :transformation init-lcoords))
-  ;; (setq rdif (send (send init-rcoords :copy-worldcoords) :transformation next-rcoords))
   (format t "init-lcoords = ~A~%" init-lcoords)
   (format t "next-rcoords = ~A~%" next-rcoords)
-  (format t "next-lcoords = ~A~%" next-lcoords)  
-  (if (eq which? :lleg)
-      ;; (send *ri* :set-foot-steps
-      ;; (send *ri* :set-foot-steps-with-param-no-wait
-      (if wait?
-          (send *ri* :set-foot-steps
+  (format t "next-lcoords = ~A~%" next-lcoords)
+  (if (setq ans (y-or-n-p "Do you move real machine?"))
+      (if (eq which? :lleg)
+          (if wait?
+              (send *ri* :set-foot-steps
+                    (list
+                     (make-coords :coords init-rcoords :name :rleg)
+                     (make-coords :coords  next-lcoords :name :lleg)
+                     (make-coords :coords  next-rcoords :name :rleg)
+                     ))
+            (send *ri* :set-foot-steps-no-wait            
+                  (list
+                   (make-coords :coords init-rcoords :name :rleg)
+                   (make-coords :coords  next-lcoords :name :lleg)
+                   (make-coords :coords  next-rcoords :name :rleg)
+                   
+                   )))
+        (if wait?
+            (send *ri* :set-foot-steps
+                  (list
+                   (make-coords :coords init-rcoords :name :rleg)
+                   (make-coords :coords  next-lcoords :name :lleg)
+                   (make-coords :coords  next-rcoords :name :rleg)
+                   ))
+          (send *ri* :set-foot-steps-no-wait
                 (list
-                 (make-coords :coords init-rcoords :name :rleg)
-                 (make-coords :coords  next-lcoords :name :lleg)
+                 (make-coords :coords init-lcoords :name :lleg)
                  (make-coords :coords  next-rcoords :name :rleg)
-                 ))
-        (send *ri* :set-foot-steps-no-wait            
-        (list
-         (make-coords :coords init-rcoords :name :rleg)
-         (make-coords :coords  next-lcoords :name :lleg)
-         (make-coords :coords  next-rcoords :name :rleg)
-         
-         )))
-    (if wait?
-          (send *ri* :set-foot-steps
-                (list
-                 (make-coords :coords init-rcoords :name :rleg)
                  (make-coords :coords  next-lcoords :name :lleg)
-                 (make-coords :coords  next-rcoords :name :rleg)
+                 
                  ))
-        (send *ri* :set-foot-steps-no-wait
-        (list
-         (make-coords :coords init-lcoords :name :lleg)
-         (make-coords :coords  next-rcoords :name :rleg)
-         (make-coords :coords  next-lcoords :name :lleg)
-         
-         ))
-    ))
+          )))
   (if only-move? 
       (send *robot* :angle-vector (send *ri* :state :angle-vector)))
   (send *robot* :move-coords (send (send next-lcoords :copy-worldcoords) :translate #f(0 0 100)) (send *robot* :link "LLEG_LINK5"))
@@ -316,139 +295,96 @@
         ))
   )
 
-(defun check-while-working
-    (&key (checking-time 6) (sleep-time 20000) (thre-list (list 22 22)) (fin 3))
-  (format t "~%~%check while working~%")
+;;output flag   0 ::both arms holding , 1 ::rarm drop , 2 ::larm drop , 3 ::both arms drop, 10 ::finish smoothly
+(defun check-force-pcl
+    (&key (checking-time 6) (sleep-time 20000) (working? t) (thre-list (list 22 22)) (fin 3))
   (setq initial (send *robot* :angle-vector)
         rarm-f-pre  (low-pass-online "force" "absolute" :rarm :times 10 :sleep 100 :flag nil)
         larm-f-pre  (low-pass-online "force" "absolute" :larm :times 10 :sleep 100 :flag nil)
-        angle-pre (send *ri* :state :angle-vector))
+        angle-pre (send *ri* :state :angle-vector)
+        flag 0)
 
+  (if working? 
+      (format t "~%~%check while working~%")
+    (format t "~%~%check while still~%"))
   
   (dotimes (i (/ (* checking-time 1000000) sleep-time))
+    (setq flag 0)
+    (format t "flag = ~A~%" flag)
     (setq rarm-f  (low-pass-online "force" "absolute" :rarm :times 10 :sleep 100 :flag nil))
     (setq larm-f  (low-pass-online "force" "absolute" :larm :times 10 :sleep 100 :flag nil))
     ;;絶対値バージョン
-    ;; (setq rarm-f-dif (abs (elt (v- rarm-f rarm-f-pre) 2)))
-    ;; (setq larm-f-dif (abs (elt (v- larm-f larm-f-pre) 2)))
-    (setq rarm-f-dif (elt (v- rarm-f rarm-f-pre) 2))
-    (setq larm-f-dif (elt (v- larm-f larm-f-pre) 2))
-
+    (setq rarm-f-dif (abs (elt (v- rarm-f rarm-f-pre) 2)))
+    (setq larm-f-dif (abs (elt (v- larm-f larm-f-pre) 2)))
+    ;; (setq rarm-f-dif (elt (v- rarm-f rarm-f-pre) 2))
+    ;; (setq larm-f-dif (elt (v- larm-f larm-f-pre) 2))
     (setq drop (list nil nil))
     (format t "rarm-f-dif       = ~A~%" rarm-f-dif)
     (format t "larm-f-dif       = ~A~%" larm-f-dif)
 
-
-    ;;drop判定
+    ;;drop判定 ;;へんこうする
+    (if (>  larm-f-dif (* +1 (elt thre-list 1)))
+        (print "larm dif")
+        (setq flag (+ flag 1)))
     (if (>  rarm-f-dif (* +1 (elt thre-list 0)))
-        (setq drop (list-insert t 0 drop)))
-
-    (if (>  larm-f-dif (* +1 (elt thre-list 1)))
-        (setq drop (list-insert t 1 drop)))
-
-    (if (or (elt drop 0) (elt drop 1))
-        (progn
-          (print "drop")
-          (send *ri* :stop-motion)
-          (print "stop motion")
-          (if (and (elt drop 0) (elt drop 1))
-              (progn
-                (print "drop both arm")
-                (setq flag 0)
-                (return 0))
-            (progn
-              (cond ((elt drop 0)
-                     (progn
-                       (print "drop rarm")
-                       (setq flag 1)
-                       (return 1)))
-                    ((elt drop 1)
-                     (progn
-                       (print "drop larm")
-                       (setq flag 2)
-                       (return 2))))))))
-
-    ;;動作終了判定
-    (setq tmp (send *ri* :reference-vector))
-    (setq angle-vector-dif (abs (norm (v- initial tmp))))
-    (format t "angle-vector-dif = ~A~%" angle-vector-dif)
-    (if (< angle-vector-dif 0.5)
-        (progn
-          (print "goal")
-          (setq flag 10)
-          (return angle-vector-dif))
-      )
-    
-    (setq angle-pre (send *ri* :state :angle-vector))
-    (setq rarm-f-pre rarm-f)
-    (setq larm-f-pre larm-f)
-    (unix:usleep sleep-time)
-    )
-  (format t "flag = ~A~%" flag)
-  flag
-
-  )
-
-
-  
-;;静止時の異常検知
-;;前の動作終了時の力をref-fとして与えておｓ子から外れると落としたと判断
-(defun check-while-still
-    (rarm-ref-f larm-ref-f &key (checking-time 6) (sleep-time 100000) (thre-list (list 10 10)) (fin 3))
-
-  (format t "~%~%check while still~%")
-  (setq angle-pre (send *ri* :state :angle-vector))
-
-  (setq flag 10)
-  (dotimes (i (/ (* checking-time 1000000) sleep-time))
-    (setq rarm-f  (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
-    (setq larm-f  (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
-
-    ;;絶対値バージョン
-    ;; (setq rarm-f-dif (abs (elt (v- rarm-ref-f rarm-f) 2)))
-    ;; (setq larm-f-dif (abs (elt (v- larm-ref-f larm-f) 2)))
-    (setq rarm-f-dif (elt (v- rarm-ref-f rarm-f) 2))
-    (setq larm-f-dif (elt (v- larm-ref-f larm-f) 2))
+        (setq flag (+ flag 2)))
+    (format t "flag = ~A~%" flag)
+    (setq flag-pcl (check-pcl))
+    (format t "flags = ~A ~A ~%" flag flag-pcl)
+    (if (= flag flag-pcl)
+        (if (= flag 0)
+            (print "holding")
+          (progn
+            (cond 
+             ((= flag 1)
+              (print "drop larm"))
+             ((= flag 2)
+              (print "drop rarm"))
+             ((= flag 3)
+              (print "drop both arm")))
+            (return-from check-force-pcl flag))))
       
-    (setq drop (list nil nil))
-    (format t "rarm-f-dif      = ~A~%" rarm-f-dif)
-    (format t "larm-f-dif      = ~A~%" larm-f-dif)
-
-    ;;drop判定
-    (if (> rarm-f-dif (* +1 (elt thre-list 0)))
-        (setq drop (list-insert t 0 drop)))
-    (if (>  larm-f-dif (* +1 (elt thre-list 1)))
-        (setq drop (list-insert t 1 drop)))
-    
-    (if (or (elt drop 0) (elt drop 1))  
+      
+    (if working?
         (progn
-          (print "drop")
-          (send *ri* :stop-motion)
-          (print "stop motion")
-          (if (and (elt drop 0) (elt drop 1))
+          ;;動作終了判定
+          (setq tmp (send *ri* :reference-vector))
+          (setq angle-vector-dif (abs (norm (v- initial tmp))))
+          (format t "angle-vector-dif = ~A~%" angle-vector-dif)
+          (if (< angle-vector-dif 0.5)
               (progn
-                (print "drop both arm")
-                (setq flag 0)
-                (return 0))
-            (progn
-              (cond ((elt drop 0)
-                     (progn
-                       (print "drop rarm")
-                       (setq flag 1)
-                       (return 1)))
-                    ((elt drop 1)
-                     (progn
-                       (print "drop larm")
-                       (setq flag 2)
-                       (return 2))))))))
-
+                (print "finish")
+                (setq flag 10)
+                (return angle-vector-dif))
+            )
+          (setq rarm-f-pre rarm-f)
+          (setq larm-f-pre larm-f)))
+    
     (setq angle-pre (send *ri* :state :angle-vector))
+    
     (unix:usleep sleep-time)
     )
   (format t "flag = ~A~%" flag)
   flag
-
   )
+
+;;output flag   0 ::both arms holding , 1 ::rarm drop , 2 ::larm drop , 3 ::both arms drop, 10 ::finish smoothly
+(defun check-pcl()
+  (let*
+      ((drop_flag_larm (one-shot-subscribe "/drop_flag_larm" std_msgs::Bool :timeout 2000))
+       (drop_flag_rarm (one-shot-subscribe "/drop_flag_rarm" std_msgs::Bool :timeout 2000))
+       (flag 0))
+    (format t "get larm points = ~A~%" (send drop_flag_larm :data))
+    (format t "get rarm points = ~A~%" (send drop_flag_rarm :data))
+    (if (not (send drop_flag_larm :data))
+        (setq flag 2))
+    (if (not (send drop_flag_rarm :data))
+        (setq flag 1))
+    (if (and (not (send drop_flag_larm :data)) (not (send drop_flag_rarm :data)))
+        (setq flag 3))
+    flag)
+  )
+
 
 ;;もとの姿勢に戻すか、正常なハンドの位置に合わせて戻すか
 (defun retry-while-working (drop-arm &key (offset 140) (same-pose nil) (cog #f(100 0 0)))
@@ -555,9 +491,6 @@
   ;; (objects)(read-line)
   (send-pose movetime :force-move flag-simulator)
   )
-  
-
-
 
 (defun push-board ()
   (if auto-detect-p
@@ -566,12 +499,6 @@
       (send *ri* :set-ref-force (float-vector 0 0 (* 9.8 2.5 -1)) 2000 :arms)
       (send *ri* :wait-interpolation-seq))))
   
- 
-;;   (my-ik rarm-coords larm-coords)
-;;   (send-pose 3000 :force-move nil)
-;; )  
-  
-
 (defun prepare-ex ()
   (unless (= (send (send *ri* :get-st-param) :emergency_check_mode) 0)
     (warn "disable emergency-check~%")
@@ -579,7 +506,6 @@
     (send *ri* :stop-st)
     (send *ri* :set-st-param :emergency-check-mode 0)
     (send *ri* :start-st))
-
   )
 
 (defun log (name ang)
@@ -696,6 +622,7 @@
   (send *robot* :move-coords (send pre-lleg :translate #f(0 0 0)) (send *robot* :lleg :end-coords))
   (load "change_arm_with_ik.l")
   (prepare-simulator))
+
 (defun quick-sort-vector-list(seq)
   (if (< (length seq) 2)
       (return-from quick-sort-vector-list seq))
@@ -724,6 +651,7 @@
   (subseq ret-lis 0 num))
 
 ;;plane　オブジェクト(prismなど）をコピーして渡す
+;;掴みに行く目標座標
 (defun get-target-pose(contact-wall arm)
   (let* ((idx-x 0)
         (idx-y 0)
@@ -787,7 +715,7 @@
   (list pos rot)
   ))
 
-
+;;掴みに行く目標座標　微調整
 (defun auto-set-reaching-targets(&key (larm-shift #f(-150 -50 0)) (rarm-shift #f(-150 50 0)))
   (setq cu (make_plane))
   (if (not cu)

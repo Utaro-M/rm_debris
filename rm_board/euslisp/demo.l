@@ -1,9 +1,6 @@
-(load "./heave.l")
-(load "./vision.l")
+(load "./functions.l")
+(load "./old/vision.l")
 
-;;(progn (my-init-pose)   (send *robot* :fix-leg-to-coords (make-coords)) (unix:sleep1) (reach) (unix:sleep 1) (dem-with-check-simulator))
-;;(reach)
-;;(dem-with-check-simulator)
 (defun dem-with-check-simulator()
 
   (heave #f(0 -200 0) #f(100 200 0) :cog #f(100 0 700))
@@ -151,13 +148,7 @@
 
   (setq pre-angle (send *robot* :angle-vector))
   
-  ;; (heave #f(-110 -900 0) #f(-110 900 0) :reset? t :fix-contact? 2 :wait? t :look-at-object? t)
-  ;; (heave #f(-110 -800 0) #f(-110 800 0) :reset? t :fix-contact? 2 :wait? t :look-at-object? t)
   (heave #f(-80 -800 0) #f(-80 800 0) :reset? t :fix-contact? 2 :wait? t :look-at-object? t)
-  ;; (heave #f(-110 -1200 0) #f(-110 1200 0) :reset? t :fix-contact? nil :wait? t)
-  ;;jikkide tamesita
-  ;; (heave #f(-110 -600 0) #f(-110 600 0) :reset? t :fix-contact? 2 :wait? t)  
-
   )
 ;;1026実機実験用
 (defun dem-bigboard-pre(simulator?)

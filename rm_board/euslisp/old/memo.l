@@ -123,4 +123,275 @@
   ;; (if (< (elt plane-normal 2) 0)
   ;;     (setq plane-normal (scale -1 plane-normal))) ;;normalはz正方向に揃える
     
+;;output flag   0 ::both arms holding , 1 ::rarm drop , 2 ::larm drop , 3 ::both arms drop, 10 ::finish smoothly
+(defun check-force
+    (&key (checking-time 6) (sleep-time 20000) (working? t) (thre-list (list 22 22)) (fin 3))
+  (setq initial (send *robot* :angle-vector)
+        rarm-f-pre  (low-pass-online "force" "absolute" :rarm :times 10 :sleep 100 :flag nil)
+        larm-f-pre  (low-pass-online "force" "absolute" :larm :times 10 :sleep 100 :flag nil)
+        angle-pre (send *ri* :state :angle-vector)
+        flag 0)
+
+  (if working? 
+      (format t "~%~%check while working~%")
+    (format t "~%~%check while still~%"))
   
+  (dotimes (i (/ (* checking-time 1000000) sleep-time))
+    (setq rarm-f  (low-pass-online "force" "absolute" :rarm :times 10 :sleep 100 :flag nil))
+    (setq larm-f  (low-pass-online "force" "absolute" :larm :times 10 :sleep 100 :flag nil))
+    ;;絶対値バージョン
+    ;; (setq rarm-f-dif (abs (elt (v- rarm-f rarm-f-pre) 2)))
+    ;; (setq larm-f-dif (abs (elt (v- larm-f larm-f-pre) 2)))
+    (setq rarm-f-dif (elt (v- rarm-f rarm-f-pre) 2))
+    (setq larm-f-dif (elt (v- larm-f larm-f-pre) 2))
+    (setq drop (list nil nil))
+    (format t "rarm-f-dif       = ~A~%" rarm-f-dif)
+    (format t "larm-f-dif       = ~A~%" larm-f-dif)
+
+    ;;drop判定
+    (if (>  larm-f-dif (* +1 (elt thre-list 1)))
+        (setq flag (+ flag 1)))
+    (if (>  rarm-f-dif (* +1 (elt thre-list 0)))
+        (setq flag (+ flag 2)))
+
+    (cond flag
+          (0
+           (progn
+             (print "holding")
+             (return 0))           
+           )
+          (1
+           (progn
+             (print "drop larm")
+             (return 1)))
+          (2
+           (progn
+             (print "drop rarm")
+             (return 2)))
+          (3
+           (progn
+                (print "drop both arm")
+                (setq flag 0)
+                (return 3)))
+          )
+          
+    
+    ;; (if (>  rarm-f-dif (* +1 (elt thre-list 0)))
+    ;;     (setq drop (list-insert t 0 drop)))
+
+    ;; (if (>  larm-f-dif (* +1 (elt thre-list 1)))
+    ;;     (setq drop (list-insert t 1 drop)))
+
+    ;; (if (or (elt drop 0) (elt drop 1))
+    ;;     (progn
+    ;;       (print "drop")
+    ;;       (send *ri* :stop-motion)
+    ;;       (print "stop motion")
+    ;;       (if (and (elt drop 0) (elt drop 1))
+    ;;           (progn
+    ;;             (print "drop both arm")
+    ;;             (setq flag 0)
+    ;;             (return 0))
+    ;;         (progn
+    ;;           (cond ((elt drop 0)
+    ;;                  (progn
+    ;;                    (print "drop rarm")
+    ;;                    (setq flag 1)
+    ;;                    (return 1)))
+    ;;                 ((elt drop 1)
+    ;;                  (progn
+    ;;                    (print "drop larm")
+    ;;                    (setq flag 2)
+    ;;                    (return 2))))))))
+
+    (if working?
+        (progn
+          ;;動作終了判定
+          (setq tmp (send *ri* :reference-vector))
+          (setq angle-vector-dif (abs (norm (v- initial tmp))))
+          (format t "angle-vector-dif = ~A~%" angle-vector-dif)
+          (if (< angle-vector-dif 0.5)
+              (progn
+                (print "finish")
+                (setq flag 10)
+                (return angle-vector-dif))
+            )
+          (setq rarm-f-pre rarm-f)
+          (setq larm-f-pre larm-f)))
+    
+    (setq angle-pre (send *ri* :state :angle-vector))
+    (unix:usleep sleep-time)
+    )
+  (format t "flag = ~A~%" flag)
+  flag
+  )
+
+;;output flag   0 ::both arms holding , 1 ::rarm drop , 2 ::larm drop , 3 ::both arms drop, 10 ::finish smoothly
+(defun check-pcl()
+  (setq drop_flag_larm (one-shot-subscribe "/drop_flag_larm" std_msgs::Float64 :timeout 10000))
+  (setq drop_flag_rarm (one-shot-subscribe "/drop_flag_rarm" std_msgs::Float64 :timeout 10000))
+  (if (not drop_flag_larm)
+      (setq flag 2))
+  (if (not drop_flag_rarm)
+      (setq flag 1))
+  (if (and (not drop_flag_larm) (not drop_flag_rarm))
+      (setq flag 3))
+)
+
+    ;; (if (>  rarm-f-dif (* +1 (elt thre-list 0)))
+    ;;     (setq drop (list-insert t 0 drop)))
+
+    ;; (if (>  larm-f-dif (* +1 (elt thre-list 1)))
+    ;;     (setq drop (list-insert t 1 drop)))
+
+    ;; (if (or (elt drop 0) (elt drop 1))
+    ;;     (progn
+    ;;       (print "drop")
+    ;;       (send *ri* :stop-motion)
+    ;;       (print "stop motion")
+    ;;       (if (and (elt drop 0) (elt drop 1))
+    ;;           (progn
+    ;;             (print "drop both arm")
+    ;;             (setq flag 0)
+    ;;             (return 0))
+    ;;         (progn
+    ;;           (cond ((elt drop 0)
+    ;;                  (progn
+    ;;                    (print "drop rarm")
+    ;;                    (setq flag 1)
+    ;;                    (return 1)))
+    ;;                 ((elt drop 1)
+    ;;                  (progn
+    ;;                    (print "drop larm")
+    ;;                    (setq flag 2)
+    ;;                    (return 2))))))))
+
+;; (defun check-while-working
+;;     (&key (checking-time 6) (sleep-time 20000) (thre-list (list 22 22)) (fin 3))
+;;   (format t "~%~%check while working~%")
+;;   (setq initial (send *robot* :angle-vector)
+;;         rarm-f-pre  (low-pass-online "force" "absolute" :rarm :times 10 :sleep 100 :flag nil)
+;;         larm-f-pre  (low-pass-online "force" "absolute" :larm :times 10 :sleep 100 :flag nil)
+;;         angle-pre (send *ri* :state :angle-vector))
+  
+;;   (dotimes (i (/ (* checking-time 1000000) sleep-time))
+;;     (setq rarm-f  (low-pass-online "force" "absolute" :rarm :times 10 :sleep 100 :flag nil))
+;;     (setq larm-f  (low-pass-online "force" "absolute" :larm :times 10 :sleep 100 :flag nil))
+;;     ;;絶対値バージョン
+;;     ;; (setq rarm-f-dif (abs (elt (v- rarm-f rarm-f-pre) 2)))
+;;     ;; (setq larm-f-dif (abs (elt (v- larm-f larm-f-pre) 2)))
+;;     (setq rarm-f-dif (elt (v- rarm-f rarm-f-pre) 2))
+;;     (setq larm-f-dif (elt (v- larm-f larm-f-pre) 2))
+;;     (setq drop (list nil nil))
+;;     (format t "rarm-f-dif       = ~A~%" rarm-f-dif)
+;;     (format t "larm-f-dif       = ~A~%" larm-f-dif)
+
+;;     ;;drop判定
+;;     (if (>  rarm-f-dif (* +1 (elt thre-list 0)))
+;;         (setq drop (list-insert t 0 drop)))
+
+;;     (if (>  larm-f-dif (* +1 (elt thre-list 1)))
+;;         (setq drop (list-insert t 1 drop)))
+
+;;     (if (or (elt drop 0) (elt drop 1))
+;;         (progn
+;;           (print "drop")
+;;           (send *ri* :stop-motion)
+;;           (print "stop motion")
+;;           (if (and (elt drop 0) (elt drop 1))
+;;               (progn
+;;                 (print "drop both arm")
+;;                 (setq flag 0)
+;;                 (return 0))
+;;             (progn
+;;               (cond ((elt drop 0)
+;;                      (progn
+;;                        (print "drop rarm")
+;;                        (setq flag 1)
+;;                        (return 1)))
+;;                     ((elt drop 1)
+;;                      (progn
+;;                        (print "drop larm")
+;;                        (setq flag 2)
+;;                        (return 2))))))))
+
+;;     ;;動作終了判定
+;;     (setq tmp (send *ri* :reference-vector))
+;;     (setq angle-vector-dif (abs (norm (v- initial tmp))))
+;;     (format t "angle-vector-dif = ~A~%" angle-vector-dif)
+;;     (if (< angle-vector-dif 0.5)
+;;         (progn
+;;           (print "finish")
+;;           (setq flag 10)
+;;           (return angle-vector-dif))
+;;       )
+    
+;;     (setq angle-pre (send *ri* :state :angle-vector))
+;;     (setq rarm-f-pre rarm-f)
+;;     (setq larm-f-pre larm-f)
+;;     (unix:usleep sleep-time)
+;;     )
+;;   (format t "flag = ~A~%" flag)
+;;   flag
+;;   )
+
+
+  
+;; ;;静止時の異常検知
+;; ;;前の動作終了時の力をref-fとして与えておｓ子から外れると落としたと判断
+;; (defun check-while-still
+;;     (rarm-ref-f larm-ref-f &key (checking-time 6) (sleep-time 100000) (thre-list (list 10 10)) (fin 3))
+
+;;   (format t "~%~%check while still~%")
+;;   (setq angle-pre (send *ri* :state :angle-vector))
+
+;;   (setq flag 10)
+;;   (dotimes (i (/ (* checking-time 1000000) sleep-time))
+;;     (setq rarm-f  (low-pass-online "force" "absolute" :rarm :times 30 :sleep 100 :flag nil))
+;;     (setq larm-f  (low-pass-online "force" "absolute" :larm :times 30 :sleep 100 :flag nil))
+
+;;     ;;絶対値バージョン
+;;     ;; (setq rarm-f-dif (abs (elt (v- rarm-ref-f rarm-f) 2)))
+;;     ;; (setq larm-f-dif (abs (elt (v- larm-ref-f larm-f) 2)))
+;;     (setq rarm-f-dif (elt (v- rarm-ref-f rarm-f) 2))
+;;     (setq larm-f-dif (elt (v- larm-ref-f larm-f) 2))
+      
+;;     (setq drop (list nil nil))
+;;     (format t "rarm-f-dif      = ~A~%" rarm-f-dif)
+;;     (format t "larm-f-dif      = ~A~%" larm-f-dif)
+
+;;     ;;drop判定
+;;     (if (> rarm-f-dif (* +1 (elt thre-list 0)))
+;;         (setq drop (list-insert t 0 drop)))
+;;     (if (>  larm-f-dif (* +1 (elt thre-list 1)))
+;;         (setq drop (list-insert t 1 drop)))
+    
+;;     (if (or (elt drop 0) (elt drop 1))  
+;;         (progn
+;;           (print "drop")
+;;           (send *ri* :stop-motion)
+;;           (print "stop motion")
+;;           (if (and (elt drop 0) (elt drop 1))
+;;               (progn
+;;                 (print "drop both arm")
+;;                 (setq flag 0)
+;;                 (return 0))
+;;             (progn
+;;               (cond ((elt drop 0)
+;;                      (progn
+;;                        (print "drop rarm")
+;;                        (setq flag 1)
+;;                        (return 1)))
+;;                     ((elt drop 1)
+;;                      (progn
+;;                        (print "drop larm")
+;;                        (setq flag 2)
+;;                        (return 2))))))))
+
+;;     (setq angle-pre (send *ri* :state :angle-vector))
+;;     (unix:usleep sleep-time)
+;;     )
+;;   (format t "flag = ~A~%" flag)
+;;   flag
+
+;;   )
