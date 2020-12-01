@@ -64,3 +64,20 @@
                     fin-pose-robot )
     
   )
+
+
+(defclass point-num-save
+  :super propertied-object
+  :slots (larm-points-num rarm-points-num)
+  )
+(defmethod point-num-save 
+  (:init (larm-points-num-init rarm-points-num-init)
+         (send self :set-larm-points-num larm-points-num-init)
+         (send self :set-rarm-points-num rarm-points-num-init)
+         self
+         )
+  (:set-larm-points-num (val)
+                        (setq larm-points-num val))
+  (:set-rarm-points-num (val)
+                    (setq rarm-points-num val))      
+  )

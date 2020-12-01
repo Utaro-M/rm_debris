@@ -519,6 +519,7 @@
     (send *ri* :angle-vector (send *robot* :angle-vector) 1000)
     (send *ri* :wait-interpolation)
     )
+  
   (format t "neck-angle = ~A~%" neck-angle)
   (if (not coords-list)
       (return-from test-reach nil))
@@ -563,7 +564,12 @@
   (send *robot* :move-coords lleg-coords-new (send *robot* :lleg :end-coords))
   ;; (send *ri* :angle-vector (send *robot* :angle-vector) 14000)
   )
+
+(setq drop_flag_larm (one-shot-subscribe "/drop_flag_larm" std_msgs::Float64 :timeout 10000))
+(print 
+(setq drop_flag_rarm (one-shot-subscribe "/drop_flag_rarm" std_msgs::Float64 :timeout 10000))
+(send *ri* :state :rarm-ref-force)
   ;; (setq rleg-coords-new (send *robot* :rleg :end-coords :copy-worldcoords))
   ;; (setq lleg-coords-new (send *robot* :lleg :end-coords :copy-worldcoords))
 ;;板持ってるポーズ
-;;#f(-2.98947 -11.1725 -59.0636 8.42639 24.4303 12.4009 7.00572 10.9221 -59.3257 7.19791 25.9469 -11.8133 0.570165 3.0 1.84699 0.603257 15.0 37.0 35.8508 -131.711 -28.0764 -23.8558 -27.5811 24.8872 -0.448495 -37.0 35.6619 131.041 28.564 -24.874 27.783 -24.4164 0.215248)
+;;#f(-2.98947 -11.1725 -59.0636 8.42639 24.4303 12.4009 7.00572 10.9221 -59.3257 7.19791 25.9469 -11.8133 0.570165 3.0 1.84699 0.603257 15.0 37.0 35.8508 -131.711 -28.0764 -23.8558 -27.5811 24.8872 -0.448495 -37.0 35.6619 131.041 28.564 -24.874 27.783 -24.4164 0.215248

@@ -11,7 +11,7 @@
        default="mask_extract_indices/output" />
   <arg name="manager" default="plane_extraction_manager" />
 
-  <!-- <rosparam param="/use_sim_time">true</rosparam> -->
+  <rosparam param="/use_sim_time">true</rosparam>
 
   <!-- 自作  -->
   <node pkg="rm_debris_vision" name="get_plane" type="get_plane.py" output="screen" >
@@ -33,16 +33,16 @@
           args="load jsk_pcl_utils/TfTransformCloud $(arg manager)">
       <remap from="~input" to="$(arg input_cloud)" />
       <rosparam>
-        target_frame_id: ground
+        target_frame_id: odom
       </rosparam>
     </node>
 
     <node name="bounding_box_array_publisher"
           pkg="jsk_recognition_utils" type="bounding_box_array_publisher.py">
       <rosparam>
-        frame_id: ground
+        frame_id: odom
         boxes:
-        - position: [1, 0, 1]
+        - position: [1, 0, 0]
           dimension: [3, 1.5, 2]
       </rosparam>
     </node>
@@ -388,9 +388,9 @@
   <!--   </rosparam> -->
   <!-- </node> -->
 <!-- <node pkg="rgbd_self_filter" name="get_plane" type="get_plane.py" output="screen"/> -->
-  <!-- <node name="rviz" -->
-  <!--       pkg="rviz" type="rviz" -->
-  <!--       args="-d /home/utaro/research/rm_debris/rm_board/display/plane_extraction.rviz"/> -->
+  <node name="rviz"
+        pkg="rviz" type="rviz"
+        args="-d /home/utaro/research/rm_debris/rm_board/display/plane_extraction.rviz"/>
   
 </launch>
 
