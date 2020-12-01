@@ -1,0 +1,14 @@
+<launch>
+  <arg name="bagfile" default="/home/utaro/Downloads/background_bagfile.bag"/>
+  <node name="rosbag_record"
+        pkg="rosbag" type="record"
+        args="-O $(arg bagfile)
+              -b 0
+              /multisense_local/image_points2_color
+              /multisense_local/left/camera_info
+              /static_virtual_camera/camera_info
+              /tf
+              "
+        output="screen">
+  </node>
+</launch>

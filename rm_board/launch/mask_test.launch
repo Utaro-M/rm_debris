@@ -1,0 +1,48 @@
+<launch>
+    <arg name="camera_info"
+       default="/multisense_local/left/camera_info" />
+
+    <node name="robot_to_mask_image"
+          pkg="nodelet" type="nodelet"
+          args="standalone jsk_perception/RobotToMaskImage">
+      <!-- args="load jsk_perception/RobotToMaskImage "> -->
+      <remap from="~input/camera_info" to="$(arg camera_info)"/>
+      <rosparam>
+        robot_description: "JAXON_RED"
+        self_see_links:
+          - name: RLEG_LINK2
+          - name: RLEG_LINK3
+          - name: RLEG_LINK4
+          - name: RLEG_LINK
+          - name: LLEG_LINK2
+          - name: LLEG_LINK3
+          - name: LLEG_LINK4
+          - name: LLEG_LINK5          
+          - name: RARM_LINK3
+          - name: RARM_LINK4
+          - name: RARM_LINK5
+          - name: RARM_LINK6
+          - name: RARM_LINK7  
+          - name: LARM_LINK3
+          - name: LARM_LINK4
+          - name: LARM_LINK5
+          - name: LARM_LINK6
+          - name: LARM_LINK7
+          - name: LARM_FINGER0
+          - name: LARM_FINGER1
+          - name: RARM_FINGER0
+          - name: RARM_FINGER1
+          <!-- jikki -->
+          <!-- - name: R_thk_finger1 -->
+          <!-- - name: R_thk_finger2 -->
+          <!-- - name: R_thk_palm -->
+
+          <!-- jikki -->
+          <!-- - name: L_thk_finger1 -->
+          <!-- - name: L_thk_finger2 -->
+          <!-- - name: L_thk_palm -->
+        self_see_default_padding: 0.1
+      </rosparam>
+    </node>
+
+</launch>
