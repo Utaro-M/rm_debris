@@ -294,10 +294,10 @@
         (send-pose movetime :force-move flag-simulator :wait? wait? :pre-pose pre-pose :pre-lleg pre-lleg :look-at-object? look-at-object?)
         ))
   )
-
+(setq flag-pcl 0)
 ;;output flag   0 ::both arms holding , 1 ::rarm drop , 2 ::larm drop , 3 ::both arms drop, 10 ::finish smoothly
 (defun check-force-pcl
-    (&key (checking-time 6) (sleep-time 20000) (working? t) (thre-list (list 22 22)) (fin 3))
+    (&key (checking-time 6) (sleep-time 20000) (working? t) (thre-list (list 10 10)) (fin 3))
   (setq initial (send *robot* :angle-vector)
         rarm-f-pre  (low-pass-online "force" "absolute" :rarm :times 10 :sleep 100 :flag nil)
         larm-f-pre  (low-pass-online "force" "absolute" :larm :times 10 :sleep 100 :flag nil)
@@ -310,7 +310,7 @@
   
   (dotimes (i (/ (* checking-time 1000000) sleep-time))
     (setq flag 0)
-    (format t "flag = ~A~%" flag)
+    ;; (format t "flag = ~A~%" flag)
     (setq rarm-f  (low-pass-online "force" "absolute" :rarm :times 10 :sleep 100 :flag nil))
     (setq larm-f  (low-pass-online "force" "absolute" :larm :times 10 :sleep 100 :flag nil))
     ;;絶対値バージョン
@@ -344,7 +344,6 @@
               (print "drop both arm")))
             (return-from check-force-pcl flag))))
       
-      
     (if working?
         (progn
           ;;動作終了判定
@@ -367,12 +366,15 @@
   (format t "flag = ~A~%" flag)
   flag
   )
-
+(setq drop_flag_larm (instance std_msgs::Bool :init))
+(setq drop_flag_rarm (instance std_msgs::Bool :init))
+(send drop_flag_larm :data nil)
+(send drop_flag_rarm :data nil)
 ;;output flag   0 ::both arms holding , 1 ::rarm drop , 2 ::larm drop , 3 ::both arms drop, 10 ::finish smoothly
 (defun check-pcl()
   (let*
-      ((drop_flag_larm (one-shot-subscribe "/drop_flag_larm" std_msgs::Bool :timeout 2000))
-       (drop_flag_rarm (one-shot-subscribe "/drop_flag_rarm" std_msgs::Bool :timeout 2000))
+      ((drop_flag_larm (one-shot-subscribe "/drop_flag_larm" std_msgs::Bool :timeout 3000))
+       (drop_flag_rarm (one-shot-subscribe "/drop_flag_rarm" std_msgs::Bool :timeout 3000))
        (flag 0))
     (format t "get larm points = ~A~%" (send drop_flag_larm :data))
     (format t "get rarm points = ~A~%" (send drop_flag_rarm :data))
