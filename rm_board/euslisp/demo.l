@@ -508,27 +508,27 @@
   )
 
 
-(defun change
+(defun change-arm-auto
     (&key (fix-contact? nil)
           (send? t)
           (wait? t)
           (avoid-collision? nil)
           (apply-external-force? nil)
-          (lleg-pos-shift #f(0 0 -10))
-          (rleg-pos-shift #f(0 0 -10))
+          (lleg-pos-shift #f(0 0 0))
+          (rleg-pos-shift #f(0 0 0))
           (look-at-object? nil)
           (arm "larm")
-          ;; (face-arm face-arm)
           (arm-coords (send *robot* :rarm :end-coords))
           )
   
   (setq origin-face (make_plane))
-  (setq vertices-list (send origin-face :vertices))
-  (progn (setq sum 0) (setq len-lis (length vertices-list)) (dotimes (i len-lis) (progn  (setq sum (+ sum (elt (elt vertices-list i) 0))))) (setq ave (/ sum len-lis)) (setq new-vertices-list (mapcar #'(lambda (l) (progn (if (< (elt l 0) (+ ave 50)) l))) vertices-list)))
-  (setq new-vertices-list (intersection new-vertices-list vertices-list))
-  (setq face-arm (make-prism new-vertices 10))
-  (format t "face =~A~%" face-arm)
-  (format t "face com =~A~%" (send face-arm :centroid))
+  ;; (setq vertices-list (send origin-face :vertices))
+  ;; (progn (setq sum 0) (setq len-lis (length pvertices-list)) (dotimes (i len-lis) (progn  (setq sum (+ sum (elt (elt vertices-list i) 0))))) (setq ave (/ sum len-lis)) (setq new-vertices-list (mapcar #'(lambda (l) (progn (if (< (elt l 0) (+ ave 50)) l))) vertices-list)))
+  ;; (setq new-vertices (intersection new-vertices-list vertices-list))
+  ;; (setq face-arm (make-prism new-vertices 10))
+  ;; (format t "face =~A~%" face-arm)
+  ;; (format t "face com =~A~%" (send face-arm :centroid))
+  (setq face-arm (get-half-plane origin-face))
   (setq pre-angle (send *robot* :angle-vector))
   (setq pre-lleg (send *robot* :lleg :end-coords :copy-worldcoords))
   (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
@@ -536,7 +536,6 @@
   (ik-opt-change-arm  arm-coords :arm arm :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :face-arm face-arm )
   (send *robot-env* :dissoc-root-virtual)
 
-  
   (setq zmp-vector (send *ri*  :zmp-vector))
   (setq rleg-coords-new (send *robot* :rleg :end-coords :copy-worldcoords))
   (setq lleg-coords-new (send *robot* :lleg :end-coords :copy-worldcoords))
@@ -550,18 +549,14 @@
             (progn
               (send *ri* :set-gait-generator-param :zmp-weight-map (float-vector rleg-ratio lleg-ratio 1 1))
               (move-on-foot rleg-coords lleg-coords rleg-coords-new lleg-coords-new :wait? t)))
-
-        ;;もどす
-        (send-pose movetime :force-move flag-simulator :pre-pose pre-pose :pre-lleg pre-lleg :look-at-object? look-at-object?  )
+        (send-pose movetime :force-move flag-simulator :pre-pose pre-pose :pre-lleg pre-lleg :look-at-object? look-at-object?)
         ))
   (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5) :is-hand-fix-mode nil)
   )
 
 
 (defun test-change-arm()
-  (my-init-pose :move-foot? nil)
-  (start-coords)
-  (send_box_size :size-vector #f(3 1.5 2.0) :box-position #f(1 0 1))
+  (board-holding-pose)
   (send *ri* :start-impedance :arms)
   (send *ri* :set-reference-force-updater-param :arms :motion-dir #f(0 0 -1) :p-gain 0.01 :update-time-ratio 1.0)
   (send *ri* :start-reference-force-updater :arms)
@@ -624,3 +619,9 @@
   (if (not coords-list)
       (return-from test-reach nil))
   )
+(defun dem-change-arm-from-holding-pose()
+  (my-init-pose :move-foot? nil)
+  (send *robot* :angle-vector (send *robot* :state :angle-vector))
+  (move-hand :larm #f(-140 0 0) :sync? nil)
+  ))
+  

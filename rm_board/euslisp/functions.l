@@ -1,19 +1,21 @@
 (require "models/arrow-object.l")
 ;; (require "package://control_tools/log-tools.l")
-(require "package://control_tools/play-hrpsysfile.l")
-(require "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
+;; (require "package://control_tools/play-hrpsysfile.l")
+;; (require "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
+(load "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
 (require "./class.l")
 (load "./my-ik.l")
 (require "../../euslisp/save-log.l")
+(load "./client/make_plane_for_opt.l")
 ;; (require "~/research/rm_debris/src/predict_from_multi_pose.l")
 
 (print "load functions.l")
 
-(unless (and (boundp '*robot*) (boundp '*ri*))
+;; (unless (and (boundp '*robot*) (boundp '*ri*))
   (jaxon_red-init)
   (setq *robot* *jaxon_red*)
- )
-
+ ;; )
+(setq movetime 16000)
 (objects (list *robot*))
 (unless (boundp 'flag-simulator)
   (setq flag-simulator nil) ;;simulatorではｔ
@@ -463,7 +465,8 @@
     (print "do nothing"))))
 
 (defun start-coords()
-  (send *robot* :move-coords (make-coords :pos #f(0 100 100) :rpy #f(0 0 0) ) (send *robot* :link "LLEG_LINK5"))
+  (send *robot* :move-coords (make-coords :pos  #f(0 100 0)) (send *robot* :lleg :end-coords))
+  ;; (send *robot* :move-coords (make-coords :pos #f(0 100 100) :rpy #f(0 0 0) ) (send *robot* :link "LLEG_LINK5"))
   (objects))
 
   
@@ -522,7 +525,7 @@
   )
 
 (defun my-init-pose
-    (&key (move-foot? nil) (only-upper? nil))
+    (&key (move-foot? nil) (only-upper? nil) (send? t))
   ;; (send *robot* :fix-leg-to-coords (make-coords))
   (objects)
   (print "init pose ")
@@ -538,7 +541,8 @@
     (progn
       (send *robot* :reset-manip-pose)
       (start-coords)))
-  (send-pose movetime :force-move flag-simulator)
+  (if send? 
+      (send-pose movetime :force-move flag-simulator))
   ;; (send *ri* :hand-reset) ;;実機では必要？choreonoidでは不要？
   (format t "left or right ?  ~A" (elt (send (car (send *robot* :torso)) :worldpos) 1))
   (if move-foot?
@@ -745,6 +749,48 @@
   (objects (list cu coords1 larm-coords rarm-coords))
   (list larm-coords rarm-coords)
   )
+(defun quick-sort(seq)
+    (if (< (length seq) 1)
+      (return-from quick-sort seq))
+  (let ((pivot (elt seq 0))
+        ( left nil)
+        ( right nil))
 
+  (dotimes (i (- (length seq) 1))
+    ;; (print i)
+    (if (< (elt seq (+ i 1)) pivot)
+        (setq left (list-insert (elt seq (+ i 1)) (length seq) left))
+      (setq right (list-insert (elt seq (+ i 1)) (length seq) right))
+      ))
+  (format t "left = ~A~%" left)
+  (format t "right = ~A~%" right)
+  (setq left (quick-sort left))
+  (setq right (quick-sort right))
+  (setq fwd (append left (list pivot) ))
+  (setq ret (append fwd right ))
+  ret
+  ))
 
+(defun get-half-plane(obj &key (cut-rate 0.5))
+  (setq origin-obj (copy-object obj))
+  (setq origin-vertices (send (car (send origin-obj :faces)) :vertices))
+  (setq com (send origin-obj :centroid))
+  (format t "com = ~A~%" com)
+  (setq len-lis (length origin-vertices))
+  (setq cub (make-cube (* (/ 1.0 cut-rate) (abs (elt com 0))) 5000 5000))
+  (send cub :translate (scale 2.0 com))
+  (setq sub (body- origin-obj cub))
+  (send sub :set-color (float-vector 1 0 0))  
+  (objects (list  sub ))
+  sub)
 
+(defun board-holding-pose()
+  ;; (send *robot* :reset-manip-pose)
+  ;; (start-coords)
+  (my-init-pose :move-foot? nil :send? nil)
+  (send *robot* :angle-vector  #f(-2.98947 -11.1725 -59.0636 8.42639 24.4303 12.4009 7.00572 10.9221 -59.3257 7.19791 25.9469 -11.8133 0.570165 3.0 1.84699 0.603257 15.0 37.0 35.8508 -131.711 -28.0764 -23.8558 -27.5811 24.8872 -0.448495 -37.0 35.6619 131.041 28.564 -24.874 27.783 -24.4164 0.215248))
+  (send *robot* :head-neck-p :joint-angle -10)
+  (send *robot* :move-coords (make-coords :pos #f(0 200 0)) (send *robot* :lleg :end-coords))
+  (objects)
+  (send *ri* :angle-vector (send *robot* :angle-vector) movetime)
+)

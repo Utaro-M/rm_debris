@@ -1,7 +1,7 @@
 (load "~/catkin_ws/jaxon_tutorial/src/jsk_control/eus_qp/optmotiongen/euslisp/sqp-optimization.l")
 (load "~/catkin_ws/jaxon_tutorial/src/jsk_control/eus_qp/optmotiongen/euslisp/instant-configuration-task.l")
 (load "~/catkin_ws/jaxon_tutorial/src/jsk_control/eus_qp/optmotiongen/euslisp/validate-jacobian.l")
-
+(require "package://eus_qp/optmotiongen/euslisp/inverse-kinematics-statics-wrapper.l")
 (print "load my-ik.l")
 (defun my-ik
     (rarm-coords larm-coords &key rleg lleg cog (move-root-link :z) (virtual-joint-weight #f(0.5 0.5 0.5  1 1 1)))
@@ -983,7 +983,8 @@
   ;; setup robot
   (setup-jaxon_red-ik-change-arms :only-kinematics? only-kinematics? )
   
-  (setq *wall* (elt (send *ground-arm* :faces) 1))
+  ;; (setq *wall* (elt (send *ground-arm* :faces) 0))
+  (setq *wall* (car (send *ground-arm* :get-face :prism :top)))
   (send *wall* :put :normal-move-target-axis :z)
   (send *wall* :put :normal-tolerance 30.0) ;; [deg]
   ;;fix-contact nil 足を自由な位置へ
@@ -1063,7 +1064,8 @@
                         ;; (send *robot-env* :robot :get (read-from-string (format nil ":~A-contact-coords" oparm)))
                         ;; (if (equal arm "larm")
                             ;; (send
-                             (send (send *robot-env* :robot :get (read-from-string (format nil ":~A-contact-coords" arm))) ;; :copy-worldcoords)
+                             (send 
+                              (send *robot-env* :robot :get (read-from-string (format nil ":~A-contact-coords" arm))) ;; :copy-worldcoords)
                              :rotate (deg2rad 90) :x)
                           ;; (send (send (send *robot-env* :robot :get (read-from-string (format nil ":~A-contact-coords" arm))) :copy-worldcoords) :rotate (deg2rad -90) :x))
                              )
@@ -1072,8 +1074,8 @@
                       (list 1.0
                             1.0
                             1.0
-                            1.0
                             ;; (list 1 1 1 0 0 0)
+                            1.0
                             ))
 
                   :contact-target-coords-list
