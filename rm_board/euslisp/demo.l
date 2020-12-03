@@ -1,5 +1,5 @@
 (load "./functions.l")
-(load "./old/vision.l")
+;; (load "./old/vision.l")
 
 (defun dem-with-check-simulator()
 
@@ -507,7 +507,9 @@
 
   )
 
-
+;; progn (load "demo.l" ) (prepare-simulator)
+;; board-holding-pose
+;; change-arm-auto :send? nil
 (defun change-arm-auto
     (&key (fix-contact? nil)
           (send? t)
@@ -516,7 +518,7 @@
           (apply-external-force? nil)
           (lleg-pos-shift #f(0 0 0))
           (rleg-pos-shift #f(0 0 0))
-          (look-at-object? nil)
+          (look-at-object? t)
           (arm "larm")
           (arm-coords (send *robot* :rarm :end-coords))
           )
@@ -548,8 +550,10 @@
         (if (not fix-contact?)
             (progn
               (send *ri* :set-gait-generator-param :zmp-weight-map (float-vector rleg-ratio lleg-ratio 1 1))
-              (move-on-foot rleg-coords lleg-coords rleg-coords-new lleg-coords-new :wait? t)))
-        (send-pose movetime :force-move flag-simulator :pre-pose pre-pose :pre-lleg pre-lleg :look-at-object? look-at-object?)
+              (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5) :is-hand-fix-mode t)
+              (move-on-foot rleg-coords lleg-coords rleg-coords-new lleg-coords-new :wait? t)
+                (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5) :is-hand-fix-mode nil)))
+        (send-pose movetime :force-move flag-simulator :pre-pose pre-angle :pre-lleg pre-lleg :look-at-object? look-at-object?)
         ))
   (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5) :is-hand-fix-mode nil)
   )
@@ -623,5 +627,5 @@
   (my-init-pose :move-foot? nil)
   (send *robot* :angle-vector (send *robot* :state :angle-vector))
   (move-hand :larm #f(-140 0 0) :sync? nil)
-  ))
+  )
   
