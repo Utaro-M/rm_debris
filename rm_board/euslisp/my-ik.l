@@ -1,7 +1,8 @@
 (load "~/catkin_ws/jaxon_tutorial/src/jsk_control/eus_qp/optmotiongen/euslisp/sqp-optimization.l")
 (load "~/catkin_ws/jaxon_tutorial/src/jsk_control/eus_qp/optmotiongen/euslisp/instant-configuration-task.l")
 (load "~/catkin_ws/jaxon_tutorial/src/jsk_control/eus_qp/optmotiongen/euslisp/validate-jacobian.l")
-(require "package://eus_qp/optmotiongen/euslisp/inverse-kinematics-statics-wrapper.l")
+;; (require "package://eus_qp/optmotiongen/euslisp/inverse-kinematics-statics-wrapper.l")
+(require "~/catkin_ws/jaxon_tutorial/src/jsk_control/eus_qp/optmotiongen/euslisp/inverse-kinematics-statics-wrapper.l")
 (print "load my-ik.l")
 (defun my-ik
     (rarm-coords larm-coords &key rleg lleg cog (move-root-link :z) (virtual-joint-weight #f(0.5 0.5 0.5  1 1 1)))
@@ -100,7 +101,10 @@
   ;; (send (send *robot* :joint "LLEG_JOINT0") :max-angle 35)
   ;; (send (send *robot* :joint "RLEG_JOINT2") :min-angle -70)
   ;; (send (send *robot* :joint "LLEG_JOINT2") :min-angle -70)
-  (send (send *robot* :joint "HEAD_JOINT1") :max-angle 18)
+  ;; (send (send *robot* :joint "HEAD_JOINT1") :max-angle 18)
+
+  (send (send *robot* :joint "CHEST_JOINT0") :min-angle -0.5)
+  (send (send *robot* :joint "CHEST_JOINT0") :max-angle 0.5)
   
   (send (send *robot* :joint "CHEST_JOINT1") :min-angle 0)
   (send (send *robot* :joint "CHEST_JOINT1") :max-angle 30)
@@ -114,6 +118,7 @@
   (send (send *robot* :joint "RARM_JOINT0") :max-angle 40)
   (send (send *robot* :joint "LARM_JOINT0") :min-angle -40)
   (send (send *robot* :joint "LARM_JOINT0") :max-angle 0)
+  
   ;;肩の特異点問題dem-step-simulator
   ;; (send (send *robot* :joint "RARM_JOINT1") :min-angle -100)
   ;; (send (send *robot* :joint "RARM_JOINT1") :max-angle 80)
@@ -152,14 +157,17 @@
      (avoid-collision? t)
      (apply-external-force? nil)
      (fix-contact? nil)
-     (set-kin-scale? nil)
+     (set-kin-scale? t)
      (only-kinematics? nil)
      (pre-process-func)
      (reset? t)
      (external-force-list  (list (float-vector 0 0 -80 0 0 0)
                                  (float-vector 0 0 -80 0 0 0)))
-     (external-coords-list (list (send *robot-env* :robot :get :rarm-contact-coords)
-                                 (send *robot-env* :robot :get :larm-contact-coords)))
+     (external-coords-list (if (boundp '*robot-env*)
+			       (list (send *robot-env* :robot :get :rarm-contact-coords)
+				     (send *robot-env* :robot :get :larm-contact-coords))
+			     (list (send *robot* :rarm :end-coords)
+				   (send *robot* :larm :end-coords))))
      ;; (rleg-pos #f( 0 -200 -10))
      ;; (lleg-pos #f( 0  200 -10))
      (rleg-pos-shift #f(0 0 0))
@@ -357,9 +365,17 @@
                   :kin-scale-list
                   (if set-kin-scale?
                       (list 1.0
-                            10.0
-                            (list 1 2 3 4 5 6)
-                            (list 1 2 3 4 5 6)
+                            1.0
+                            ;; (list 1 1 1 0 1 0)
+                            ;; (list 1 1 1 0 1 0)
+			    ;; (list 1 1 1 0 0 1)
+                            ;; (list 1 1 1 0 0 1)
+			    ;; (list 1 1 1 1 0 0)
+                            ;; (list 1 1 1 1 0 0)
+			    ;;axis y周りは自由
+			    (list 1 1 1 1 0 1)
+                            (list 1 1 1 1 0 1)			    
+			    
                             ))
                   :collision-pair-list
 
@@ -411,7 +427,7 @@
                         ;; (validate-jacobian :config-task (send sqp :config-task))
                         ))
                   ))
-  (send *sqp-opt* :optimize :loop-num 70)
+  (send *sqp-opt* :optimize :loop-num 100)
   (send *sqp-opt* :status)
   )
 (warn "(jaxon_red-sqp-optimization-instant)~%")
@@ -886,7 +902,7 @@
   ;; (send (send *robot* :joint "RLEG_JOINT2") :min-angle -70)
   ;; (send (send *robot* :joint "LLEG_JOINT2") :min-angle -70)
 
-  (send (send *robot* :joint "HEAD_JOINT1") :max-angle 18)
+  ;; (send (send *robot* :joint "HEAD_JOINT1") :max-angle 18)
   
   (send (send *robot* :joint "CHEST_JOINT1") :min-angle 0)
   (send (send *robot* :joint "CHEST_JOINT1") :max-angle 30)
@@ -943,14 +959,14 @@
   (setq rleg-pos-shift (v+ rleg-pos-shift #f(0 0 -10)))
   (setq lleg-pos-shift (v+ lleg-pos-shift #f(0 0 -10)))  
 
-  ;; (setq *ground-rleg* (make-cube 800 400 20))
-  (setq *ground-rleg* (make-cube 2000 2000 20))  
+  (setq *ground-rleg* (make-cube 800 400 20))
+  ;; (setq *ground-rleg* (make-cube 2000 2000 20))  
   (send *ground-rleg* :set-color (float-vector 1 0 0))
   (send *ground-rleg* :newcoords
         (make-coords :pos (send (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate rleg-pos-shift) :worldpos)  :rpy (list (deg2rad 0) 0 0)))
   
-  ;; (setq *ground-lleg* (make-cube 800 400 20))
-  (setq *ground-lleg* (make-cube 2000 2000 20))
+  (setq *ground-lleg* (make-cube 800 400 20))
+  ;; (setq *ground-lleg* (make-cube 2000 2000 20))
   (send *ground-lleg* :set-color (float-vector 0 0 1))
   (send *ground-lleg* :newcoords
         (make-coords :pos (send (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate lleg-pos-shift) :worldpos)  :rpy (list (deg2rad 0) 0 0)))

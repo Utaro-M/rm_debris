@@ -21,6 +21,20 @@
   (setq flag-simulator nil) ;;simulatorではｔ
   (setq movetime 16000))
 
+
+
+(setq *coords* (instance my-coords :init
+                       (copy-object (send *robot* :rarm :end-coords :copy-worldcoords))
+                       (copy-object (send *robot* :larm :end-coords :copy-worldcoords))
+                       (copy-object (send *robot* :rleg :end-coords :copy-worldcoords))
+                       (copy-object (send *robot* :lleg :end-coords :copy-worldcoords))
+                       #f(0 0 700)
+                       ))
+
+(setq *poses* (instance poses :init
+                       (send *robot* :angle-vector)
+                       (send *ri* :state :angle-vector)))
+
 (defun prepare-simulator()
   (setq flag-simulator t) ;;simulatorではｔ
   (setq movetime 4000)
@@ -35,7 +49,7 @@
   )
 
 (defun send-pose
-    (time &key (pre-pose (send *robot* :angle-vector)) (pre-lleg  (send *robot* :lleg :end-coords :copy-worldcoords) ) (force-move nil) (wait? t) (look-at-object? nil))
+    (time &key (pre-pose (send *robot* :angle-vector)) (pre-lleg  (send *robot* :lleg :end-coords :copy-worldcoords) ) (force-move nil) (wait? t) (resume? nil) (look-at-object? nil))
   (if look-at-object?
       (send *robot* :head :look-at (v+ (midpoint 0.5 (send (send *robot* :rarm :end-coords :copy-worldcoords) :worldpos) (send (send *robot* :larm :end-coords :copy-worldcoords) :worldpos)) #f(0 0 100))))
   (if (> (send *robot* :head-neck-p :joint-angle) 20)
@@ -51,11 +65,13 @@
               (send *ri* :wait-interpolation)))
         )
     (progn
-      (send *robot* :angle-vector pre-pose)
-      (send *robot* :move-coords (send pre-lleg :translate #f(0 0 140)) (send *robot* :link "LLEG_LINK5"))
-      (objects)
-      (print "pre pose")
-      )
+      (if resume?
+	  (progn
+	    (send *robot* :angle-vector pre-pose)
+	    (send *robot* :move-coords (send pre-lleg :translate #f(0 0 140)) (send *robot* :link "LLEG_LINK5"))
+	    (objects)
+	    (print "pre pose"))
+      ))
     ))
 
 
@@ -226,6 +242,7 @@
   (send *robot* :move-coords (send (send next-lcoords :copy-worldcoords) :translate #f(0 0 100)) (send *robot* :link "LLEG_LINK5"))
   (send *robot* :move-coords (send (send next-rcoords :copy-worldcoords) :translate #f(0 0 100)) (send *robot* :link "RLEG_LINK5"))
   (objects)
+  (send *ri* :angle-vector (send *ri* :potentio-vector))
   )
 
 
@@ -788,17 +805,50 @@
   (objects (list  sub ))
   sub)
 
-(defun board-holding-pose()
+(defun board-holding-pose(&key (send? nil) (fix-contact? nil) (look-at-object? nil))
   ;; (send *robot* :reset-manip-pose)
   ;; (start-coords)
   (my-init-pose :move-foot? nil :send? nil)
-  (send *robot* :angle-vector  #f(-2.98947 -11.1725 -59.0636 8.42639 24.4303 12.4009 7.00572 10.9221 -59.3257 7.19791 25.9469 -11.8133 0.570165 3.0 1.84699 0.603257 15.0 37.0 35.8508 -131.711 -28.0764 -23.8558 -27.5811 24.8872 -0.448495 -37.0 35.6619 131.041 28.564 -24.874 27.783 -24.4164 0.215248))
-  (send *robot* :head-neck-p :joint-angle -10)
-  (send *robot* :move-coords (make-coords :pos #f(0 200 0)) (send *robot* :lleg :end-coords))
-  (objects)
+  (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
+  (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
+  ;; (send *robot* :angle-vector  #f(-2.98947 -11.1725 -59.0636 8.42639 24.4303 12.4009 7.00572 10.9221 -59.3257 7.19791 25.9469 -11.8133 0.570165 3.0 1.84699 0.603257 15.0 37.0 35.8508 -131.711 -28.0764 -23.8558 -27.5811 24.8872 -0.448495 -37.0 35.6619 131.041 28.564 -24.874 27.783 -24.4164 0.215248))
+  ;; (send *robot* :angle-vector
+  ;; 	#f(-1.32255 -6.24016 -29.6795 33.8312 -11.7631 7.52237 0.898833 15.4077 -26.725 24.6561 -5.76486 -14.2255 1.15928 3.0 -0.655261 2.4144 16.5573 37.0 45.5976 -109.064 -30.8867 -64.1641 -26.6447 9.51422 22.1128 -37.0 41.1018 104.469 28.6239 -56.9815 20.0663 -14.0334 11.5481))
+  ;; (send *robot* :angle-vector  #f(-1.32255 -6.24016 -29.6795 33.8312 -11.7631 7.52237 0.898833 15.4077 -26.725 24.6561 -5.76486 -14.2255 1.15928 3.0 -0.655261 2.4144 0.0 37.0 45.5976 -109.064 -30.8867 -64.1641 -26.6447 9.51422 22.1128 -37.0 41.1018 104.469 28.6239 -56.9815 20.0663 -14.0334 11.5481))
+  ;;from reaching-pose (heave #f(-400 -1000 0) #f(-400 1000 0) :reset? t :fix-contact? 2 :wait? t  :rleg-pos-shift #f(200 0 0) :lleg-pos-shift #f(200 0 0) :look-at-object? t)
+  ;; (send *robot* :angle-vector   #f(0.497866 -11.5794 -10.9614 38.9877 -18.0864 11.1527 -0.660753 10.6076 -10.7331 38.745 -18.0875 -10.9056 0.0 3.0 0.065955 -0.009049 20.0 37.0 34.7493 -74.2251 -25.5205 -90.7107 6.29055 1.54029 30.4263 -37.0 36.0901 76.0089 25.7384 -90.2711 -3.90134 -2.16365 30.4717))
+  (send *robot* :angle-vector #f(0.198761 -11.1901 -15.2719 36.987 -13.1589 10.9564 -0.398351 10.8076 -15.1034 36.9009 -13.2446 -10.8891 0.0 3.0 -0.026228 -0.005043 18.4018 37.0 38.4206 -88.7584 -30.2222 -80.624 -3.43998 -3.26935 26.4778 -37.0 39.2722 90.1039 30.227 -79.7785 4.40195 2.48036 26.5397) )
+  (send *robot* :head-neck-p :joint-angle 20)
+  (send *robot* :move-coords (make-coords :pos #f(0 300 0)) (send *robot* :lleg :end-coords))
+  ;; (objects (list *robot* ))
+  (objects (list *robot* ))
   (send *ri* :angle-vector (send *robot* :angle-vector) movetime)
-)
+;;   (if send?
+;;       (send *ri* :angle-vector (send *robot* :angle-vector) movetime))
+  
+;;   (setq zmp-vector (send *ri*  :zmp-vector))
+;;   (setq rleg-coords-new (send *robot* :rleg :end-coords :copy-worldcoords))
+;;   (setq lleg-coords-new (send *robot* :lleg :end-coords :copy-worldcoords))
+;;   (setq lleg-ratio (abs (norm (v- (send lleg-coords-new :worldpos) zmp-vector))))
+;;   (setq rleg-ratio (abs (norm (v- (send rleg-coords-new :worldpos) zmp-vector))))
+;;   (if send?
+;;       (progn 
+;;         (if (not fix-contact?)
+;;             (progn
+;;               (send *ri* :set-gait-generator-param :zmp-weight-map (float-vector rleg-ratio lleg-ratio 1 1))
+;;               (move-on-foot rleg-coords lleg-coords rleg-coords-new lleg-coords-new :wait? t)))
+;; ;  (my-ik rarm-coords larm-coords :rleg rleg-coords :lleg lleg-coords :cog #f(0 0 1000))
 
+;;         ;;もどす
+;;         (send-pose movetime :force-move flag-simulator :pre-pose pre-pose :pre-lleg pre-lleg :look-at-object? look-at-object?  )))
+  )
+
+(defun reaching-pose ()
+    (my-init-pose :move-foot? nil :send? nil)
+    (send *robot* :angle-vector #f(-10.6248 -6.65663 -106.861 50.9002 3.98799 12.4148 10.6723 6.7806 -106.801 51.0553 3.75381 -12.5862 -0.183996 27.0 0.021731 0.021981 18.0 37.0 -5.52897 -49.7907 -25.152 -80.696 57.979 -29.8714 13.8606 -37.0 -5.22003 50.1071 25.3023 -80.8198 -57.8915 29.7632 13.9217))
+      (send *robot* :move-coords (make-coords :pos #f(0 200 0)) (send *robot* :lleg :end-coords))
+  ;; (objects (list *robot* ))
+  (objects (list *robot* )))
 (defun heave-with-sensor
     (larm-move rarm-move times &key  (fix-contact? t) (send? t) (cog #f(0 0 700))
                (deg-r-x 0) (deg-r-y 0) (deg-r-z 0) (deg-l-x 0) (deg-l-y 0) (deg-l-z 0)
