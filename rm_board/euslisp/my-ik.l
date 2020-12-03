@@ -366,16 +366,11 @@
                   (if set-kin-scale?
                       (list 1.0
                             1.0
-                            ;; (list 1 1 1 0 1 0)
-                            ;; (list 1 1 1 0 1 0)
-			    ;; (list 1 1 1 0 0 1)
-                            ;; (list 1 1 1 0 0 1)
-			    ;; (list 1 1 1 1 0 0)
-                            ;; (list 1 1 1 1 0 0)
-			    ;;axis y周りは自由
-			    (list 1 1 1 1 0 1)
-                            (list 1 1 1 1 0 1)			    
-			    
+                            1.0
+                            1.0
+                            ;;axis y周りは自由 heaveの時
+                            ;; (list 1 1 1 1 0 1)
+                            ;; (list 1 1 1 1 0 1)
                             ))
                   :collision-pair-list
 
@@ -946,7 +941,7 @@
      (rleg-pos-shift #f(0 0 0))
      (lleg-pos-shift #f(0 0 0))
      (external-force-list (list (float-vector -40 0 -10 0 0)))
-     (external-coords-list (list (send *robot-env* :robot  :link "LARM_LINK7")))
+     (external-coords-list (list (send *robot*  :link "LARM_LINK7")))
      (face-arm (make-cube 800 600 20))
      &allow-other-keys
      )
