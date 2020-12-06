@@ -1,4 +1,5 @@
 <launch>
+  <rosparam param="/use_sim_time">true</rosparam>
   <arg name="input_cloud"
        default="/multisense_local/organized_image_points2_color" />
   <arg name="manager" default="plane_extraction_manager" />
@@ -72,8 +73,8 @@
 
   </group>
   
-    <!-- <node name="rviz" -->
-    <!--       pkg="rviz" type="rviz" -->
-    <!--       args="-d /home/utaro/research/rm_debris/rm_board/display/subtract_point_indices_test_modified.rviz"/> -->
+    <node name="rviz"
+          pkg="rviz" type="rviz"
+          args="-d /home/utaro/research/rm_debris/rm_board/display/check_in_hand.rviz"/>
 
   </launch>

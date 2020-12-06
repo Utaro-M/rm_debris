@@ -600,7 +600,8 @@
   )
 
 ;;rerach targets 確認用
-(defun test-reach-prepare()
+;; (defun test-reach-prepare()
+(defun reach-auto-prepare()
   (my-init-pose :move-foot? nil)
   (start-coords)
   ;; (send_box_size :size-vector #f(3 1.5 2.0) :box-position #f(1 0 0))
@@ -615,20 +616,22 @@
 ;; (setq pre-lleg (make-coords :pos #f(0 -100 0)))
 
 ;;首の調整込み
-(defun test-reach
+
+;; (defun test-reach
+(defun reach-auto()    
     (&key  (fix-contact? nil) (send? t) 
 	   (wait? t) (reset? t) (apply-external-force? t) (avoid-collision? t)
 	   (rleg-pos-shift #f(0 -100 0))
 	   (lleg-pos-shift #f(0 100 0))
 	   (look-at-object? t))
   ;; (set-pre-pose)
-  (setq coords-list (auto-set-reaching-targets :larm-shift #f(-150 -50 0) :rarm-shift #f(-150 50 0)))
+  (setq coords-list (auto-set-reaching-targets :larm-shift #f(-200 -50 0) :rarm-shift #f(-200 50 0)))
   (send *robot* :angle-vector (send *ri* :state :angle-vector))
   (setq neck-angle (send *robot* :head-neck-p :joint-angle))
 
   (while (and (not coords-list) (< neck-angle 20))
     (setq neck-angle (+ neck-angle 5))
-    (setq coords-list (auto-set-reaching-targets :larm-shift #f(-150 -50 0) :rarm-shift #f(-150 50 0)))
+    (setq coords-list (auto-set-reaching-targets :larm-shift #f(-200 -50 0) :rarm-shift #f(-200 50 0)))
     (format t "look down angle = ~A~%" neck-angle)
     (send *robot* :head-neck-p :joint-angle neck-angle )
     (send *ri* :angle-vector (send *robot* :angle-vector) 1000)
@@ -668,6 +671,7 @@
               (move-on-foot rleg-coords lleg-coords rleg-coords-new lleg-coords-new :wait? t)))
         (send-pose movetime :force-move flag-simulator :look-at-object? look-at-object?)))
   )
+
 (defun dem-change-arm-from-holding-pose()
   (my-init-pose :move-foot? nil)
   (send *robot* :angle-vector (send *robot* :state :angle-vector))

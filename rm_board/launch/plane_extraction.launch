@@ -42,7 +42,7 @@
       <rosparam>
         frame_id: odom
         boxes:
-        - position: [1, 0, 0]
+        - position: [1, 0, 1]
           dimension: [3, 1.5, 2]
       </rosparam>
     </node>
