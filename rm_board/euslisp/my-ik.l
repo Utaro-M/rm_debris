@@ -92,10 +92,10 @@
     (create-support-polygon *robot* (send *robot* :link "LLEG_LINK5"))
     )
   ;; disable min-max table
-  (dolist (jnt (send *robot* :joint-list))
-    (send jnt :set-val 'joint-min-max-table nil)
-    (send jnt :set-val 'joint-min-max-target nil)
-    )
+  ;; (dolist (jnt (send *robot* :joint-list))
+  ;;   (send jnt :set-val 'joint-min-max-table nil)
+  ;;   (send jnt :set-val 'joint-min-max-target nil)
+  ;;   )
   ;;set narrow limit of min/max angle instead of min-max table
   ;; (send (send *robot* :joint "RLEG_JOINT0") :min-angle -35)
   ;; (send (send *robot* :joint "LLEG_JOINT0") :max-angle 35)
@@ -130,7 +130,10 @@
   (send (send *robot* :joint "LARM_JOINT1") :min-angle -140)
   (send (send *robot* :joint "LARM_JOINT1") :max-angle 140)
 
-
+  (send (send *robot* :joint "LARM_JOINT3") :min-angle -170)
+  (send (send *robot* :joint "LARM_JOINT3") :max-angle 170)
+  (send (send *robot* :joint "RARM_JOINT3") :min-angle -170)
+  (send (send *robot* :joint "RARM_JOINT3") :max-angle 170)
   ;; (send (send *robot* :joint "RARM_JOINT6") :min-angle -50)
   ;; (send (send *robot* :joint "RARM_JOINT6") :max-angle 50)
   ;; (send (send *robot* :joint "LARM_JOINT5") :min-angle -50)
