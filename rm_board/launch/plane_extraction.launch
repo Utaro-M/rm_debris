@@ -1,8 +1,10 @@
 <launch>
   <arg name="input_cloud"
-       default="/multisense_local/organized_image_points2_color" />
+       default="/rs_l515/depth_registered/points" />
+  <!-- default="/multisense_local/organized_image_points2_color" /> -->
   <arg name="camera_info"
        default="/multisense_local/left/camera_info" />
+  
   <arg name="transformed_cloud"
        default="transform_org_cloud/output" />
   <arg name="filtered_cloud"
@@ -11,7 +13,7 @@
        default="mask_extract_indices/output" />
   <arg name="manager" default="plane_extraction_manager" />
 
-  <rosparam param="/use_sim_time">true</rosparam>
+  <!-- <rosparam param="/use_sim_time">true</rosparam> -->
 
   <!-- 自作  -->
   <node pkg="rm_debris_vision" name="get_plane" type="get_plane.py" output="screen" >
@@ -33,16 +35,16 @@
           args="load jsk_pcl_utils/TfTransformCloud $(arg manager)">
       <remap from="~input" to="$(arg input_cloud)" />
       <rosparam>
-        target_frame_id: odom
+        target_frame_id: ground
       </rosparam>
     </node>
 
     <node name="bounding_box_array_publisher"
           pkg="jsk_recognition_utils" type="bounding_box_array_publisher.py">
       <rosparam>
-        frame_id: odom
+        frame_id: ground
         boxes:
-        - position: [1, 0, 0]
+        - position: [1, 0, 1]
           dimension: [3, 1.5, 2]
       </rosparam>
     </node>
