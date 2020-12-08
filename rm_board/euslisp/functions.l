@@ -5,7 +5,7 @@
 ;; (load "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
 (require "./class.l")
 (load "./my-ik.l")
-(require "../../euslisp/save-log.l")
+;; (require "../../euslisp/save-log.l")
 ;;平面認識使わないときはcomment out
 ;; (load "./client/make_plane_for_opt.l")
 ;; (require "~/research/rm_debris/src/predict_from_multi_pose.l")
@@ -21,7 +21,6 @@
 (unless (boundp 'flag-simulator)
   (setq flag-simulator nil) ;;simulatorではｔ
   (setq movetime 16000))
-
 
 
 (setq *coords* (instance my-coords :init
@@ -700,7 +699,8 @@
 
 ;;plane　オブジェクト(prismなど）をコピーして渡す
 ;;掴みに行く目標座標
-(defun get-target-pose(contact-wall arm)
+(defun get-target-pose
+    (contact-wall arm &key (shift 320))
   (let* ((idx-x 0)
         (idx-y 0)
         (longest-len 0)
@@ -708,60 +708,60 @@
         (vertices-list-reverse (reverse vertices-list))
         (plane-normal (send (elt (send contact-wall :faces) 0) :normal)))
     (format t "plane normal = ~A~%" plane-normal)
-  (dotimes (i (length vertices-list))
-    (dotimes (j (- (length vertices-list) (+ 1 i)))
-      (setq len-tmp (norm (v- (elt vertices-list i) (elt vertices-list-reverse j))))
-      (if (< longest-len len-tmp)
-          (progn
-            (setq idx-x i)
-            (setq idx-y j) ;;reverseされているがそのままいく
-            (setq longest-len len-tmp)))))
-  (setq longest-edge (make-line (elt vertices-list idx-x) (elt vertices-list-reverse idx-y)))
-  (format t "longest-len = ~A~%" longest-len)
-  (format t "vertice = ~A~%" (elt vertices-list idx-x))
-  (format t "vertice = ~A~%" (elt vertices-list-reverse idx-y))  
-  (setq normal-line (make-line #f(0 0 0) plane-normal))
-  
-  ;;手先の目標
-  (setq sum #f(0 0 0))
-  (dotimes (i (length vertices-list))
-    (setq sum (v+ sum (elt vertices-list i))))
-  (setq pos (scale (/ 1.0 (length vertices-list)) sum))
-  (format t "mid-pos = ~A~%" pos)
-  (setq y-vec  plane-normal)
-  (setq z-vec (v- (elt vertices-list idx-x) (elt vertices-list-reverse idx-y)))
-  (setq x-vec (v* y-vec z-vec))
-  ;;x-vecは正面方向
-  (if (< (elt x-vec 0) 0)
-      (setq x-vec (scale -1 x-vec)))
+    (dotimes (i (length vertices-list))
+      (dotimes (j (- (length vertices-list) (+ 1 i)))
+        (setq len-tmp (norm (v- (elt vertices-list i) (elt vertices-list-reverse j))))
+        (if (< longest-len len-tmp)
+            (progn
+              (setq idx-x i)
+              (setq idx-y j) ;;reverseされているがそのままいく
+              (setq longest-len len-tmp)))))
+    (setq longest-edge (make-line (elt vertices-list idx-x) (elt vertices-list-reverse idx-y)))
+    (format t "longest-len = ~A~%" longest-len)
+    ;; (format t "vertice = ~A~%" (elt vertices-list idx-x))
+    ;; (format t "vertice = ~A~%" (elt vertices-list-reverse idx-y))  
+    (setq normal-line (make-line #f(0 0 0) plane-normal))
+    
+    ;;手先の目標
+    (setq sum #f(0 0 0))
+    (dotimes (i (length vertices-list))
+      (setq sum (v+ sum (elt vertices-list i))))
+    (setq pos (scale (/ 1.0 (length vertices-list)) sum))
+    (format t "mid-pos = ~A~%" pos)
+    (setq y-vec  plane-normal)
+    (setq z-vec (v- (elt vertices-list idx-x) (elt vertices-list-reverse idx-y)))
+    (setq x-vec (v* y-vec z-vec))
+    ;;x-vecは正面方向
+    (if (< (elt x-vec 0) 0)
+        (setq x-vec (scale -1 x-vec)))
 
-  (if (equal arm "larm")
+    (if (equal arm "larm")
+        (progn
+          (setq pos (v+ pos (float-vector 0 shift 0)))
+          (if (< (elt y-vec 2) 0)
+              (setq y-vec (scale -1 y-vec)))
+          (if (> (elt z-vec 1) 0)
+              (setq z-vec (scale -1 z-vec))))
       (progn
-        (setq pos (v+ pos #f(0 +320 0)))
-        (if (< (elt y-vec 2) 0)
-          (setq y-vec (scale -1 y-vec)))
-        (if (> (elt z-vec 1) 0)
-            (setq z-vec (scale -1 z-vec))))
-    (progn
-      (setq pos (v+ pos #f(0 -320 0)))
-      (if (> (elt y-vec 2) 0)
-        (setq y-vec (scale -1 y-vec)))
-      (if (< (elt z-vec 1) 0)
-          (setq z-vec (scale -1 z-vec)))))
+        (setq pos (v+ pos (float-vector 0 (- 0 shift) 0)))
+        (if (> (elt y-vec 2) 0)
+            (setq y-vec (scale -1 y-vec)))
+        (if (< (elt z-vec 1) 0)
+            (setq z-vec (scale -1 z-vec)))))
 
-  (setq x-vec (normalize-vector x-vec))
-  (setq y-vec (normalize-vector y-vec))
-  (setq z-vec (normalize-vector z-vec))
-  ;; (format t "plane-normal = ~A~%" plane-normal)
-  (format t "x-vec = ~A~%" x-vec)
-  (format t "y-vec = ~A~%" y-vec)
-  (format t "z-vec = ~A~%" z-vec)
-  (setq rot (transpose
-             (matrix x-vec y-vec z-vec)))
-  (format t "pos = ~A~%" pos)
-  (format t "rot = ~A~%" rot)
-  (list pos rot)
-  ))
+    (setq x-vec (normalize-vector x-vec))
+    (setq y-vec (normalize-vector y-vec))
+    (setq z-vec (normalize-vector z-vec))
+    ;; (format t "plane-normal = ~A~%" plane-normal)
+    ;; (format t "x-vec = ~A~%" x-vec)
+    ;; (format t "y-vec = ~A~%" y-vec)
+    ;; (format t "z-vec = ~A~%" z-vec)
+    (setq rot (transpose
+               (matrix x-vec y-vec z-vec)))
+    (format t "pos = ~A~%" pos)
+    (format t "rot = ~A~%" rot)
+    (list pos rot)
+    ))
 
 ;;掴みに行く目標座標　微調整
 (defun auto-set-reaching-targets(&key (larm-shift #f(-200 -50 0)) (rarm-shift #f(-200 50 0)))
@@ -787,7 +787,6 @@
   (setq rarm-coords (send rarm-coords :translate rarm-shift))
   (format t "ik larm-coords = ~A~%" larm-coords)
   (format t "ik rarm-coords = ~A~%" rarm-coords)
-
   (objects (list cu coords1 larm-coords rarm-coords))
   (list larm-coords rarm-coords)
   )
@@ -890,11 +889,12 @@
 )
 
 (defun heave-with-sensor
-    (larm-move-offset rarm-move-offset times &key  (fix-contact? t) (send? t) (cog #f(0 0 700))
-               (wait? t) (reset? t) (apply-external-force? t) (avoid-collision? t)
-               (rleg-pos-shift #f(0 0 0))
-               (lleg-pos-shift #f(0 0 0))
-               (look-at-object? t))
+    (larm-move-offset rarm-move-offset times
+                      &key  (fix-contact? t) (send? t) (wait? t) (anti-slip-rate 0.5) (check? nil)
+                      (reset? t) (apply-external-force? t) (avoid-collision? t)
+                      (rleg-pos-shift #f(0 0 0))
+                      (lleg-pos-shift #f(0 0 0))
+                      (look-at-object? t))
   
   (setq l-unit (* (/ 1.0 times) larm-move-offset))
   (setq r-unit (* (/ 1.0 times) rarm-move-offset))
@@ -902,13 +902,29 @@
   ;; (setq normal-vec (send (elt (send fc :get-face :prism :top) 0) :normal))
   ;; (setq external-coords-list (list (send *robot-env* :robot :get :rarm-contact-coords)
   ;;                                  (send *robot-env* :robot :get :larm-contact-coords)))
+  (setq larm-pos-diff #f(0 0 0))
+  (setq rarm-pos-diff #f(0 0 0))  
   (dotimes (i times)
     (setq fc (make_plane))
+    (setq ret-larm (get-target-pose fc "larm"))
+    (setq ret-rarm (get-target-pose fc "rarm"))
+    (format t "ret-larm = ~A~%" ret-larm)
+    (format t "ret-rarm = ~A~%" ret-rarm)
+    (if (< 0 i)
+        (progn
+          (setq larm-pos-diff (v- (elt ret-larm 0) (elt ret-larm-save 0)))
+          (setq rarm-pos-diff (v- (elt ret-rarm 0) (elt ret-rarm-save 0)))
+          (format t "ret-larm-save = ~A~%" ret-larm-save)
+          (format t "ret-larm-save = ~A~%" ret-larm-save)
+          (format t "larm-pos-diff = ~A~%" larm-pos-diff)
+          (format t "rarm-pos-diff = ~A~%" rarm-pos-diff)))
+          
     (setq normal-vec (send (elt (send fc :get-face :prism :top) 0) :normal))
     (if (< (elt normal-vec 2) 0)
         (setq normal-vec (scale -1.0 normal-vec)))
-    (setq larm-coords (send (send *robot* :larm :end-coords :copy-worldcoords) :translate (scale l-unit normal-vec) :world))
-    (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate (scale r-unit normal-vec) :world ))
+    (format t "normal-vec =~A~%" normal-vec)
+    (setq larm-coords (send (send *robot* :larm :end-coords :copy-worldcoords) :translate (v+ (scale anti-slip-rate larm-pos-diff) (scale l-unit normal-vec)) :world))
+    (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate (v+ (scale anti-slip-rate rarm-pos-diff) (scale r-unit normal-vec)) :world ))
     (format t "larm-coords = ~A~%" larm-coords)
     (format t "rarm-coords = ~A~%" rarm-coords)    
     (setq larm-force (low-pass-online "force" "absolute" :larm :times 10 :sleep 100 :flag nil))
@@ -916,11 +932,15 @@
     (setq external-force-list (list (make-array 6 :element-type float-vector :initial-contents larm-force :initial-element 0)
                                     (make-array 6 :element-type float-vector :initial-contents rarm-force :initial-element 0)))
     (setq ret (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :external-force-list external-force-list ))
-    (send-pose movetime :force-move flag-simulator :look-at-object? look-at-object? :wait? nil)
+    (send-pose movetime :force-move flag-simulator :look-at-object? look-at-object? :wait? t)
+
+    (if check?
+        (progn
     (setq drop-flag (check-force-pcl :working? t :thre-list (list 10 10)))
     (cond
          ((or (= drop-flag 1) (= drop-flag 2))
           (progn
+            (setq fc (make_plane))
             (if (= drop-flag 1)
                 (progn
                   (setq ret-larm (get-target-pose fc "larm"))
@@ -939,6 +959,9 @@
           (progn
             (format t "stop~%")
             )))
+    ))
+    (setq ret-larm-save ret-larm)
+    (setq ret-rarm-save ret-rarm)
     )
   )
 (defun send-pose-and-move-on-foot

@@ -426,6 +426,10 @@
                         (validate-element-jacobian :config-task (send sqp :config-task))
                         ;; (validate-jacobian :config-task (send sqp :config-task))
                         ))
+                  :no-print? t
+                  :failure-callback-func
+                  #'(lambda(val)
+                      (return nil))
                   ))
   (send *sqp-opt* :optimize :loop-num 100)
   (send *sqp-opt* :status)
