@@ -5,7 +5,7 @@
        <!-- default="/multisense_local/organized_image_points2_color" />	 -->
   <arg name="filtered_cloud"
        default="/self_filter/filtered_cloud" />
-  <arg name="SELF_FILTER_PARAM" default="/home/utaro/research/rm_debris/rm_board/models/self_filter_param.yaml"/>
+  <arg name="SELF_FILTER_PARAM" default="/catkin_ws/jaxon_tutorials/src/rm_debris/rm_board/models/self_filter_param.yaml"/>
   <arg name="manager" default="plane_extraction_manager" />
   <!-- <rosparam param="/use_sim_time">true</rosparam> -->
   <node pkg="count_points" name="count_points" type="count_points.py" output="screen" />

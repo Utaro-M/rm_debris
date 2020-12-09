@@ -24,8 +24,9 @@
   <!-- <node pkg="rm_debris_vision" name="get_larm_remove_indices_server" type="get_larm_remove_indices_server.l" output="screen" /> -->
   <!-- <node pkg="rm_debris_vision" name="get_rarm_remove_indices_server" type="get_rarm_remove_indices_server.l" output="screen" /> -->
   <node pkg="rm_debris_vision" name="change_clip_box" type="change_clip_box_server.l" output="screen" />
+  <node pkg="rm_debris_vision" name="hz_down" type="hz_down_realsense.py" output="screen" />  
 
-  <group ns="plane_extraction">
+    <group ns="plane_extraction">
     <node name="$(arg manager)"
           pkg="nodelet" type="nodelet"
           args="manager" output="screen" />
@@ -35,16 +36,16 @@
           args="load jsk_pcl_utils/TfTransformCloud $(arg manager)">
       <remap from="~input" to="$(arg input_cloud)" />
       <rosparam>
-        target_frame_id: ground
+        target_frame_id: odom_ground
       </rosparam>
     </node>
 
     <node name="bounding_box_array_publisher"
           pkg="jsk_recognition_utils" type="bounding_box_array_publisher.py">
       <rosparam>
-        frame_id: ground
+        frame_id: odom_ground
         boxes:
-        - position: [1, 0, 1]
+        - position: [1, 0, 0.95]
           dimension: [3, 1.5, 2]
       </rosparam>
     </node>
