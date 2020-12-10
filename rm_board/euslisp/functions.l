@@ -54,6 +54,9 @@
 
 (defun prepare-real-machine()
   (send *ri* :start-auto-balancer :limbs (list :lleg :rleg :larm :rarm))
+  (send *ri* :set-reference-force-updater-param :arms :motion-dir #f(0 0 -1) :p-gain 0.01 :update-time-ratio 1.0)
+  (send *ri* :start-reference-force-updater :arms)
+  (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5))
   (setq flag-simulator nil)
   (unless (= (send (send *ri* :get-st-param) :emergency_check_mode) 0)
     (warn "disable emergency-check~%")
@@ -64,6 +67,7 @@
   (send *ri* :set-log-maxlength (* 500 60))
   (setq movetime 16000)
   )
+
 (defun send-pose
     (time &key (pre-pose (send *robot* :angle-vector)) (pre-lleg  (send *robot* :lleg :end-coords :copy-worldcoords) ) (force-move nil) (wait? t) (resume? nil) (look-at-object? nil))
   (if look-at-object?
@@ -863,6 +867,7 @@
         (send-pose movetime :force-move flag-simulator :look-at-object? look-at-object?  )))
   )
 
+;;IKを解かない方
 (defun reaching-pose (&key (send? nil) (fix-contact? nil) (look-at-object? nil))
   (send *ri* :start-impedance :arms)
   (send *ri* :set-reference-force-updater-param :arms :motion-dir #f(0 0 -1) :p-gain 0.01 :update-time-ratio 1.0)
@@ -888,6 +893,20 @@
   ;;             (move-on-foot rleg-coords lleg-coords rleg-coords-new lleg-coords-new :wait? t)))
   ;;       (send-pose movetime :force-move flag-simulator :look-at-object? look-at-object?  )))
 )
+
+;;reach 1203
+;;IKを解く方
+(defun reach-new()
+  ;; (board-holding-pose)
+  (send *ri* :start-impedance :arms)
+  (send *ri* :set-reference-force-updater-param :arms :motion-dir #f(0 0 -1) :p-gain 0.01 :update-time-ratio 1.0)
+  (send *ri* :start-reference-force-updater :arms)
+  (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5))
+  
+  (setq rarm-coords (make-coords :pos (float-vector 360 -310 300) :rpy (float-vector (deg2rad 0) (deg2rad  30) (deg2rad -90))))
+  (setq larm-coords (make-coords :pos (float-vector 360  310 300)  :rpy (float-vector (deg2rad 0) (deg2rad  30) (deg2rad  90))))
+  (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t :rleg-pos-shift #f(0 -100 -10) :lleg-pos-shift #f(0 100 -10) :look-at-object? t)
+  )
 
 (defun heave-with-sensor
     (larm-move-offset rarm-move-offset times
@@ -933,8 +952,8 @@
     (setq external-force-list (list (make-array 6 :element-type float-vector :initial-contents larm-force :initial-element 0)
                                     (make-array 6 :element-type float-vector :initial-contents rarm-force :initial-element 0)))
     (setq ret (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :external-force-list external-force-list ))
-    (send-pose movetime :force-move flag-simulator :look-at-object? look-at-object? :wait? t)
-
+    ;; (send-pose movetime :force-move flag-simulator :look-at-object? look-at-object? :wait? t)
+    (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact? :look-at-object? look-at-object? :wait? t)
     (if check?
         (progn
     (setq drop-flag (check-force-pcl :working? t :thre-list (list 10 10)))
@@ -1040,7 +1059,7 @@
   (setq rleg-pos-shift (v+ rleg-pos-shift (float-vector 0 (* 1.0 (elt center-pos 1)) 0)))
   (format t "center-pos shift = ~A~%" (* 0.5 (elt center-pos 1)))
   (format t "lleg-pos-shift = ~A~%" lleg-pos-shift)
-  (format t "rleg-pos-shift = ~A~%" rleg-pos-shift)  
+  (format t "rleg-pos-shift = ~A~%" rleg-pos-shift)
   (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift)
 
   (setq zmp-vector (send *ri*  :zmp-vector))
