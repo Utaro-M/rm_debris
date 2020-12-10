@@ -155,10 +155,10 @@
 ;;reachとかに使ってるやつ
 (defun ik-opt
     (rarm-coords larm-coords 
-    &key
-     (optimize-torque? t)
-     (avoid-collision? t)
-     (apply-external-force? nil)
+                 &key (arm "both")
+                 (optimize-torque? t)
+                 (avoid-collision? t)
+                 (apply-external-force? nil)
      (fix-contact? nil)
      (set-kin-scale? t)
      (only-kinematics? nil)
@@ -183,7 +183,7 @@
   ;; (setq *ground-lleg* (make-cube 800 400 20))
   (setq *ground-rleg* (make-cube 600 400 20))
   (setq *ground-lleg* (make-cube 600 400 20))  
-    (send *ground-rleg* :newcoords
+  (send *ground-rleg* :newcoords
         (make-coords :pos (send (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate rleg-pos-shift) :worldpos)  :rpy (list 0 0 0))
         )
   (send *ground-lleg* :newcoords
@@ -369,16 +369,26 @@
                        ))
                   :kin-scale-list
                   (if set-kin-scale?
-                      (list 1.0
-                            1.0
-                            1.0
-                            1.0
+                      (cond
+                       ((equal arm "both")
+                              (list 1.0
+                                    1.0
+                                    1.0
+                                    1.0))
+                       ((equal arm "rarm")
+                              (list 1.0
+                                    1.0
+                                    (list 1 1 1 1 0 1)
+                                    0.0))
+                       ((equal arm "larm")
+                              (list 1.0
+                                    1.0
+                                    0.0
+                                    (list 1 1 1 1 0 1)))))                  
                             ;;axis y周りは自由 heaveの時
                             ;; (list 1 1 1 1 0 1)
                             ;; (list 1 1 1 1 0 1)
-                            ))
                   :collision-pair-list
-
                   (if avoid-collision?
                       (mapcar #'(lambda (l) (list l *obst*)) (flatten (send *robot-env* :robot :legs :links)))
                   )
@@ -1263,6 +1273,10 @@
                         (validate-element-jacobian :config-task (send sqp :config-task))
                         ;; (validate-jacobian :config-task (send sqp :config-task))
                         ))
+                  :no-print? t
+                  :failure-callback-func
+                  #'(lambda(val)
+                      (return nil))
                   ))
   (send *sqp-opt* :optimize :loop-num 100)
   )
