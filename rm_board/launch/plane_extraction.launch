@@ -1,6 +1,8 @@
 <launch>
   <arg name="input_cloud"
-       default="/rs_l515/depth_registered/points" />
+       default="/switched_cloud" />       
+       <!-- default="/rs_l515/depth_registered/points" />	 -->
+       
   <!-- default="/multisense_local/organized_image_points2_color" /> -->
   <arg name="camera_info"
        default="/multisense_local/left/camera_info" />
@@ -24,7 +26,8 @@
   <!-- <node pkg="rm_debris_vision" name="get_larm_remove_indices_server" type="get_larm_remove_indices_server.l" output="screen" /> -->
   <!-- <node pkg="rm_debris_vision" name="get_rarm_remove_indices_server" type="get_rarm_remove_indices_server.l" output="screen" /> -->
   <node pkg="rm_debris_vision" name="change_clip_box" type="change_clip_box_server.l" output="screen" />
-  <node pkg="rm_debris_vision" name="hz_down" type="hz_down_realsense.py" output="screen" />  
+  <node pkg="rm_debris_vision" name="hz_down" type="hz_down_realsense.py" output="screen" />
+  <node pkg="rm_debris_vision" name="switch_input_cloud" type="switch_input_cloud.py" output="screen" />    
 
     <group ns="plane_extraction">
     <node name="$(arg manager)"

@@ -5,10 +5,9 @@
 	pkg="rosbag" type="record"
 	args="-o $(arg bagfile)
 	      -b 0
-	      /multisense_local/image_points2_color
-	      /multisense_local/organized_image_points2_color
+	      /rs_l515/depth_registered/points
+	      /rs_l515/color/image_rect_color
 	      /multisense_local/left/camera_info
-	      /multisense_local/left/image_rect_color
 	      /rhsensor
 	      /lhsensor	      
 	      /tf

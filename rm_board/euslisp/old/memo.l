@@ -568,3 +568,28 @@
 ;;   flag
 
 ;;   )
+
+
+;;interactive marker calib 1208
+;; <launch>
+
+;; <node name="marker_6dof"
+;; pkg="jsk_interactive_marker" type="marker_6dof" >
+;; <rosparam>
+;; frame_id: HEAD_LINK1
+;; object_type: none
+;; tf_frame: rs_l515_link
+;; publish_tf: true
+;; initial_x: 0.140
+;; initial_y: 0.0
+;; initial_z: -0.01
+;; initial_orientation: [0, 0.398, 0.000, 0.917]
+;; </rosparam>
+;; </node>
+
+;; </launch>
+;; rosrun tf tf_echo /HEAD_LINK1 /rs_l515_link
+-13508
+
+#f(0.0 0.0 -20.0 40.0 -20.0 0.0 0.0 0.0 -20.0 40.0 -20.0 0.0 0.0 0.0 0.0 0.0 30.0 0.0 55.0 -20.0 -15.0 -100.0 -25.0 0.0 -45.0 0.0 55.0 20.0 15.0 -100.0 25.0 0.0 -45.0)
+#<cascaded-coords #X81f6b38 :lleg-end-coords  8.631e-13 100.0 1.705e-13 / 6.939e-18 -2.776e-16 -7.704e-34>
