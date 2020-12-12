@@ -590,7 +590,7 @@
         (send *robot* :move-coords (send lleg-coords :translate #f(0 0 100)) (send *robot* :link "LLEG_LINK5")))
     (progn
       (send *robot* :reset-manip-pose)
-      (send *robot* :head-neck-p :joint-angle 0)
+      (send *robot* :head-neck-p :joint-angle 10)
       (start-coords)))
   (if send? 
       (send-pose movetime :force-move flag-simulator))
@@ -955,7 +955,7 @@
           (setq larm-pos-diff (v- (elt ret-larm 0) (elt ret-larm-save 0)))
           (setq rarm-pos-diff (v- (elt ret-rarm 0) (elt ret-rarm-save 0)))
           (format t "ret-larm-save = ~A~%" ret-larm-save)
-          (format t "ret-larm-save = ~A~%" ret-larm-save)
+          (format t "ret-rarm-save = ~A~%" ret-rarm-save)
           (format t "larm-pos-diff = ~A~%" larm-pos-diff)
           (format t "rarm-pos-diff = ~A~%" rarm-pos-diff)))
           
@@ -1062,6 +1062,7 @@
   (format t "lleg-coords = ~A~%" lleg-coords)
   (format t "rleg-coords = ~A~%" rleg-coords)
   (format t "pos =~A ~%" pos)
+
   (if (equal arm "larm")
       (setq shift-standing-pos -50)
     (setq shift-standing-pos 50))
@@ -1080,6 +1081,21 @@
       (setq pos-shift 300)
       (setq arm "both")))
   (setq coords-list (auto-set-reaching-targets :pos-shift pos-shift :larm-shift #f(-200 -50 0) :rarm-shift #f(-200 50 0) :rot-z rot-z))
+
+  ;; ;; (setq center-pos (scale 0.5 (v+ (send lleg-coords :worldpos) (send rleg-coords :worldpos))))
+  ;; ;; (format t "(- (elt pos 1) (elt center-pos 1)) =~A~%" (- (elt pos 1) (elt center-pos 1)))
+  ;; ;; (setq rleg-coords-new (send (send rleg-coords :copy-worldcoords) :translate (float-vector 0 (- (elt pos 1) (elt center-pos 1)) 0)))
+  ;; ;; (setq lleg-coords-new (send (send lleg-coords :copy-worldcoords) :translate (float-vector 0 (- (elt pos 1) (elt center-pos 1)) 0)))
+  ;; ;; (move-on-foot rleg-coords lleg-coords rleg-coords-new lleg-coords-new :wait? t)
+  ;; ;; (if (< longest-len 650)
+  ;; ;;     (progn 
+  ;; ;;       (setq pos-shift 0)
+  ;; ;;       (setq arm "larm"))
+  ;; ;;   (progn 
+  ;; ;;     (setq pos-shift 300)
+  ;; ;;     (setq arm "both")))
+  ;; (setq coords-list (auto-set-reaching-targets :pos-shift pos-shift :larm-shift #f(-200 -50 0) :rarm-shift #f(-200 50 0)))
+
   (send *robot* :angle-vector (send *ri* :state :angle-vector))
   (setq neck-angle (send *robot* :head-neck-p :joint-angle))
 

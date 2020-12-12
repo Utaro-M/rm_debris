@@ -107,7 +107,8 @@
   (send (send *robot* :joint "CHEST_JOINT0") :max-angle 0.5)
   
   (send (send *robot* :joint "CHEST_JOINT1") :min-angle 0)
-  (send (send *robot* :joint "CHEST_JOINT1") :max-angle 30)
+  ;; (send (send *robot* :joint "CHEST_JOINT1") :max-angle 30)
+  (send (send *robot* :joint "CHEST_JOINT1") :max-angle 20)
   
   (send (send *robot* :joint "RLEG_JOINT0") :max-angle 20)
   (send (send *robot* :joint "LLEG_JOINT0") :min-angle -20)
