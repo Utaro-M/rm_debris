@@ -207,147 +207,147 @@
     <!--   </rosparam> -->
     <!-- </node> -->
 
-    <node name="transform_larm"
-          pkg="nodelet" type="nodelet"
-          args="load jsk_pcl_utils/TfTransformCloud $(arg manager)">
-      <!-- <remap from="~input" to="$(arg masked_cloud)" /> -->
-      <remap from="~input" to="$(arg input_cloud)" />
-      <rosparam>
-        target_frame_id: larm_end_coords
-      </rosparam>
-    </node>
+    <!-- <node name="transform_larm" -->
+    <!--       pkg="nodelet" type="nodelet" -->
+    <!--       args="load jsk_pcl_utils/TfTransformCloud $(arg manager)"> -->
+    <!--   <!-\- <remap from="~input" to="$(arg masked_cloud)" /> -\-> -->
+    <!--   <remap from="~input" to="$(arg input_cloud)" /> -->
+    <!--   <rosparam> -->
+    <!--     target_frame_id: larm_end_coords -->
+    <!--   </rosparam> -->
+    <!-- </node> -->
     
-    <node pkg="nodelet" type="nodelet" name="passthrough_larm_x"
-          args="load pcl/PassThrough $(arg manager)" >
-      <remap from="~input" to="transform_larm/output"/>
-      <remap from = "~/output" to="larm_x"/>
-      <rosparam>
-        filter_field_name: x
-        filter_limit_min: 0
-        filter_limit_max: 0.2
-        filter_limit_negative: False
-      </rosparam>
-    </node>
+    <!-- <node pkg="nodelet" type="nodelet" name="passthrough_larm_x" -->
+    <!--       args="load pcl/PassThrough $(arg manager)" > -->
+    <!--   <remap from="~input" to="transform_larm/output"/> -->
+    <!--   <remap from = "~/output" to="larm_x"/> -->
+    <!--   <rosparam> -->
+    <!--     filter_field_name: x -->
+    <!--     filter_limit_min: 0 -->
+    <!--     filter_limit_max: 0.2 -->
+    <!--     filter_limit_negative: False -->
+    <!--   </rosparam> -->
+    <!-- </node> -->
     
-    <!-- filter_limit_max: 0.15 -->
-    <node pkg="nodelet" type="nodelet" name="passthrough_larm_y"
-          args="load pcl/PassThrough $(arg manager)" >
-      <remap from="~input" to="larm_x"/>
-      <remap from = "~/output" to="larm_y"/>
-      <rosparam>
-        filter_field_name: y
-        filter_limit_min: -0.1
-        filter_limit_max:  0.2
-        filter_limit_negative: False
-      </rosparam>
-      </node>
-        <!-- filter_limit_min: -0.08 -->
-        <!-- filter_limit_max:  0.08 -->
+    <!-- <!-\- filter_limit_max: 0.15 -\-> -->
+    <!-- <node pkg="nodelet" type="nodelet" name="passthrough_larm_y" -->
+    <!--       args="load pcl/PassThrough $(arg manager)" > -->
+    <!--   <remap from="~input" to="larm_x"/> -->
+    <!--   <remap from = "~/output" to="larm_y"/> -->
+    <!--   <rosparam> -->
+    <!--     filter_field_name: y -->
+    <!--     filter_limit_min: -0.1 -->
+    <!--     filter_limit_max:  0.2 -->
+    <!--     filter_limit_negative: False -->
+    <!--   </rosparam> -->
+    <!--   </node> -->
+    <!--     <!-\- filter_limit_min: -0.08 -\-> -->
+    <!--     <!-\- filter_limit_max:  0.08 -\-> -->
         
 
-    <node pkg="nodelet" type="nodelet" name="passthrough_larm_z"
-          args="load pcl/PassThrough $(arg manager)" output="screen">
-      <remap from="~input" to="larm_y"/>
-      <remap from = "~/output" to="larm_z"/>
-      <rosparam>
-        filter_field_name: z
-        filter_limit_min: -0.05
-        filter_limit_max:  0.05
-        filter_limit_negative: False
-      </rosparam>
-    </node>
+    <!-- <node pkg="nodelet" type="nodelet" name="passthrough_larm_z" -->
+    <!--       args="load pcl/PassThrough $(arg manager)" output="screen"> -->
+    <!--   <remap from="~input" to="larm_y"/> -->
+    <!--   <remap from = "~/output" to="larm_z"/> -->
+    <!--   <rosparam> -->
+    <!--     filter_field_name: z -->
+    <!--     filter_limit_min: -0.05 -->
+    <!--     filter_limit_max:  0.05 -->
+    <!--     filter_limit_negative: False -->
+    <!--   </rosparam> -->
+    <!-- </node> -->
     
-    <node name="transform_rarm"
-          pkg="nodelet" type="nodelet"
-          args="load jsk_pcl_utils/TfTransformCloud $(arg manager)">
-      <remap from="~input" to="$(arg input_cloud)" />
-      <rosparam>
-        target_frame_id: rarm_end_coords
-      </rosparam>
-    </node>
+    <!-- <node name="transform_rarm" -->
+    <!--       pkg="nodelet" type="nodelet" -->
+    <!--       args="load jsk_pcl_utils/TfTransformCloud $(arg manager)"> -->
+    <!--   <remap from="~input" to="$(arg input_cloud)" /> -->
+    <!--   <rosparam> -->
+    <!--     target_frame_id: rarm_end_coords -->
+    <!--   </rosparam> -->
+    <!-- </node> -->
 
-    <node pkg="nodelet" type="nodelet" name="passthrough_rarm_x"
-          args="load pcl/PassThrough $(arg manager)" >
-      <remap from="~input" to="transform_rarm/output"/>
-      <remap from = "~/output" to="rarm_x"/>
-      <rosparam>
-        filter_field_name: x
-        filter_limit_min: 0
-        filter_limit_max: 0.2
-        filter_limit_negative: False
-      </rosparam>
-    </node>
-    <!-- filter_limit_max: 0.15 -->
-    <node pkg="nodelet" type="nodelet" name="passthrough_rarm_y"
-          args="load pcl/PassThrough $(arg manager)" >
-      <!-- <remap from="~input" to="passthrough_rarm_y/output"/> -->
-      <remap from="~input" to="rarm_x"/>
-      <remap from = "~/output" to="rarm_y"/>
-      <rosparam>
-        filter_field_name: y
-        filter_limit_min: -0.2
-        filter_limit_max:  0.1
-        filter_limit_negative: False
-      </rosparam>
-      </node>
-        <!-- filter_limit_min: -0.08 -->
-        <!-- filter_limit_max:  0.08 -->
-    <node pkg="nodelet" type="nodelet" name="passthrough_rarm_z"
-          args="load pcl/PassThrough $(arg manager)" output="screen">
-      <remap from="~input" to="rarm_y"/>
-      <remap from = "~/output" to="rarm_z"/>
-      <rosparam>
-        filter_field_name: z
-        filter_limit_min: -0.05
-        filter_limit_max:  0.05
-        filter_limit_negative: False
-      </rosparam>
-    </node>
+    <!-- <node pkg="nodelet" type="nodelet" name="passthrough_rarm_x" -->
+    <!--       args="load pcl/PassThrough $(arg manager)" > -->
+    <!--   <remap from="~input" to="transform_rarm/output"/> -->
+    <!--   <remap from = "~/output" to="rarm_x"/> -->
+    <!--   <rosparam> -->
+    <!--     filter_field_name: x -->
+    <!--     filter_limit_min: 0 -->
+    <!--     filter_limit_max: 0.2 -->
+    <!--     filter_limit_negative: False -->
+    <!--   </rosparam> -->
+    <!-- </node> -->
+    <!-- <!-\- filter_limit_max: 0.15 -\-> -->
+    <!-- <node pkg="nodelet" type="nodelet" name="passthrough_rarm_y" -->
+    <!--       args="load pcl/PassThrough $(arg manager)" > -->
+    <!--   <!-\- <remap from="~input" to="passthrough_rarm_y/output"/> -\-> -->
+    <!--   <remap from="~input" to="rarm_x"/> -->
+    <!--   <remap from = "~/output" to="rarm_y"/> -->
+    <!--   <rosparam> -->
+    <!--     filter_field_name: y -->
+    <!--     filter_limit_min: -0.2 -->
+    <!--     filter_limit_max:  0.1 -->
+    <!--     filter_limit_negative: False -->
+    <!--   </rosparam> -->
+    <!--   </node> -->
+    <!--     <!-\- filter_limit_min: -0.08 -\-> -->
+    <!--     <!-\- filter_limit_max:  0.08 -\-> -->
+    <!-- <node pkg="nodelet" type="nodelet" name="passthrough_rarm_z" -->
+    <!--       args="load pcl/PassThrough $(arg manager)" output="screen"> -->
+    <!--   <remap from="~input" to="rarm_y"/> -->
+    <!--   <remap from = "~/output" to="rarm_z"/> -->
+    <!--   <rosparam> -->
+    <!--     filter_field_name: z -->
+    <!--     filter_limit_min: -0.05 -->
+    <!--     filter_limit_max:  0.05 -->
+    <!--     filter_limit_negative: False -->
+    <!--   </rosparam> -->
+    <!-- </node> -->
 
-    <node name="cloud_to_indices_larm"
-          pkg="nodelet" type="nodelet"
-          args="load jsk_pcl_utils/PointCloudToPointIndices $(arg manager)">
-      <remap from="~input" to="larm_z" />
-      <remap from="~output" to="larm_indices" />
-    </node>
+    <!-- <node name="cloud_to_indices_larm" -->
+    <!--       pkg="nodelet" type="nodelet" -->
+    <!--       args="load jsk_pcl_utils/PointCloudToPointIndices $(arg manager)"> -->
+    <!--   <remap from="~input" to="larm_z" /> -->
+    <!--   <remap from="~output" to="larm_indices" /> -->
+    <!-- </node> -->
 
-    <node name="cloud_to_indices_rarm"
-          pkg="nodelet" type="nodelet"
-          args="load jsk_pcl_utils/PointCloudToPointIndices $(arg manager)">
-      <remap from="~input" to="rarm_z" />
-      <remap from="~output" to="rarm_indices" />
-    </node>
+    <!-- <node name="cloud_to_indices_rarm" -->
+    <!--       pkg="nodelet" type="nodelet" -->
+    <!--       args="load jsk_pcl_utils/PointCloudToPointIndices $(arg manager)"> -->
+    <!--   <remap from="~input" to="rarm_z" /> -->
+    <!--   <remap from="~output" to="rarm_indices" /> -->
+    <!-- </node> -->
 
-    <node name="subtract_point_indices_larm"
-          pkg="nodelet" type="nodelet"
-          args="load jsk_pcl_utils/SubtractPointIndices $(arg manager)">
-      <remap from="~input/src1" to="larm_indices" />
-      <remap from="~input/src2" to="/larm_remove_indices" />
-      <rosparam>
-        approximate_sync: true
-      </rosparam>
-    </node>
+    <!-- <node name="subtract_point_indices_larm" -->
+    <!--       pkg="nodelet" type="nodelet" -->
+    <!--       args="load jsk_pcl_utils/SubtractPointIndices $(arg manager)"> -->
+    <!--   <remap from="~input/src1" to="larm_indices" /> -->
+    <!--   <remap from="~input/src2" to="/larm_remove_indices" /> -->
+    <!--   <rosparam> -->
+    <!--     approximate_sync: true -->
+    <!--   </rosparam> -->
+    <!-- </node> -->
 
-    <node name="subtract_point_indices_rarm"
-          pkg="nodelet" type="nodelet"
-          args="load jsk_pcl_utils/SubtractPointIndices $(arg manager)">
-      <remap from="~input/src1" to="rarm_indices" />
-      <remap from="~input/src2" to="/rarm_remove_indices" />
-      <rosparam>
-        approximate_sync: true
-      </rosparam>
-    </node>
+    <!-- <node name="subtract_point_indices_rarm" -->
+    <!--       pkg="nodelet" type="nodelet" -->
+    <!--       args="load jsk_pcl_utils/SubtractPointIndices $(arg manager)"> -->
+    <!--   <remap from="~input/src1" to="rarm_indices" /> -->
+    <!--   <remap from="~input/src2" to="/rarm_remove_indices" /> -->
+    <!--   <rosparam> -->
+    <!--     approximate_sync: true -->
+    <!--   </rosparam> -->
+    <!-- </node> -->
 
-    <node name="extract_indices_larm_box"
-          pkg="nodelet" type="nodelet"
-          args="load jsk_pcl/ExtractIndices $(arg manager)">
-      <remap from="~input" to="larm_z" />
-      <!-- <remap from="~indices" to="subtract_point_indices_larm/output" /> -->
-      <remap from="~indices" to="/larm_remove_indices" />
-      <rosparam>
-        keep_organized: true
-      </rosparam>
-    </node>
+    <!-- <node name="extract_indices_larm_box" -->
+    <!--       pkg="nodelet" type="nodelet" -->
+    <!--       args="load jsk_pcl/ExtractIndices $(arg manager)"> -->
+    <!--   <remap from="~input" to="larm_z" /> -->
+    <!--   <!-\- <remap from="~indices" to="subtract_point_indices_larm/output" /> -\-> -->
+    <!--   <remap from="~indices" to="/larm_remove_indices" /> -->
+    <!--   <rosparam> -->
+    <!--     keep_organized: true -->
+    <!--   </rosparam> -->
+    <!-- </node> -->
 
 
   </group>  <!-- end of plane_extraction namespace-->
@@ -394,9 +394,9 @@
   <!--   </rosparam> -->
   <!-- </node> -->
 <!-- <node pkg="rgbd_self_filter" name="get_plane" type="get_plane.py" output="screen"/> -->
-  <node name="rviz"
-        pkg="rviz" type="rviz"
-        args="-d /home/utaro/research/rm_debris/rm_board/display/plane_extraction.rviz"/>
+  <!-- <node name="rviz" -->
+  <!--       pkg="rviz" type="rviz" -->
+  <!--       args="-d /home/utaro/research/rm_debris/rm_board/display/plane_extraction.rviz"/> -->
   
 </launch>
 
