@@ -7,7 +7,6 @@
 	      -b 0
 	      /rs_l515/depth_registered/points
 	      /rs_l515/color/image_rect_color
-	      /multisense_local/left/camera_info
 	      /rhsensor
 	      /lhsensor	      
 	      /tf
@@ -15,6 +14,6 @@
 	output="screen">
   </node>
 </launch>
-
+	      <!-- /multisense_local/left/camera_info -->
 	      <!-- /static_virtual_camera/camera_info -->
 	      <!-- /multisense_local/left/image_rect_color -->
