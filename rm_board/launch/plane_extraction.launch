@@ -11,7 +11,7 @@
        default="mask_extract_indices/output" />
   <arg name="manager" default="plane_extraction_manager" />
 
-  <rosparam param="/use_sim_time">true</rosparam>
+  <!-- <rosparam param="/use_sim_time">true</rosparam> -->
 
   <!-- 自作  -->
   <node pkg="rm_debris_vision" name="get_plane" type="get_plane.py" output="screen" >
