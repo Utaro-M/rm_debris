@@ -443,7 +443,7 @@
                       (return nil))
                   ))
   (send *sqp-opt* :optimize :loop-num 100)
-  (send *sqp-opt* :status)
+  ;; (send *sqp-opt* :status)
   )
 (warn "(jaxon_red-sqp-optimization-instant)~%")
 
