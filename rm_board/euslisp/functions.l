@@ -227,7 +227,7 @@
         (send-pose time :force-move flag-simulator )))
   )
 (defun move-on-foot
-    (init-rcoords init-lcoords next-rcoords  next-lcoords &key (which? :lleg) (only-move? nil) (wait? t) (force-move nil))
+    (init-rcoords init-lcoords next-rcoords  next-lcoords &key (which? :lleg) (only-move? nil) (wait? t) (fix-hand? nil) (force-move nil))
   ;; (if (setq ans (y-or-n-p "move foot?"))
   (objects)
   (if (< 0 (- (elt (send next-lcoords :worldpos) 1) (elt (send init-lcoords :worldpos) 1)))
@@ -238,6 +238,8 @@
   (format t "next-lcoords = ~A~%" next-lcoords)
   (format t "next-rcoords = ~A~%" next-rcoords)
   (if (or force-move (setq ans (y-or-n-p "Do you move foot?")))
+      (if fix-hand?
+          (send *ri* :set-auto-balancer-param :is-hand-world-fix-mode t))
       (if (equal which? :lleg)
           (if wait?
               (send *ri* :set-foot-steps
@@ -275,6 +277,8 @@
   (send *robot* :move-coords (send (send next-rcoords :copy-worldcoords) :translate #f(0 0 100)) (send *robot* :link "RLEG_LINK5"))
   (objects)
   (send *ri* :angle-vector (send *ri* :potentio-vector))
+  (if fix-hand?
+          (send *ri* :set-auto-balancer-param :is-hand-world-fix-mode nil))
   )
 
 
@@ -975,7 +979,9 @@
     (setq larm-coords (send (send *robot* :larm :end-coords :copy-worldcoords) :translate (v+ (scale anti-slip-rate larm-pos-diff) (scale l-unit normal-vec)) :world))
     (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate (v+ (scale anti-slip-rate rarm-pos-diff) (scale r-unit normal-vec)) :world ))
     (format t "larm-coords = ~A~%" larm-coords)
-    (format t "rarm-coords = ~A~%" rarm-coords)    
+    (format t "rarm-coords = ~A~%" rarm-coords)
+    (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
+    (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))    
     (setq larm-force (low-pass-online "force" "absolute" :larm :times 10 :sleep 100 :flag nil))
     (setq rarm-force (low-pass-online "force" "absolute" :rarm :times 10 :sleep 100 :flag nil))
     (setq external-force-list (list (make-array 6 :element-type float-vector :initial-contents larm-force :initial-element 0)
@@ -985,7 +991,7 @@
     (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact? :look-at-object? look-at-object? :wait? t)
     (if check?
         (progn
-    (setq drop-flag (check-force-pcl :working? t :thre-list (list 10 10)))
+          (setq drop-flag (check-force-pcl :working? t :thre-list (list 10 10)))
     (cond
          ((or (= drop-flag 1) (= drop-flag 2))
           (progn
@@ -1015,12 +1021,13 @@
   )
 (defun send-pose-and-move-on-foot
     (&key  (fix-contact? t) (send? t) (only-move-foot? nil)
-               (wait? t) (reset? t) (apply-external-force? t) (avoid-collision? t)
-               (rleg-pos-shift #f(0 0 0))
-               (lleg-pos-shift #f(0 0 0))
-               (look-at-object? t)
-	       (rleg-coords-new (send *robot* :rleg :end-coords :copy-worldcoords))
-	       (lleg-coords-new (send *robot* :lleg :end-coords :copy-worldcoords)))
+           (wait? t) (reset? t) (apply-external-force? t) (avoid-collision? t)
+           (rleg-pos-shift #f(0 0 0))
+           (lleg-pos-shift #f(0 0 0))
+           (look-at-object? t)
+           (rleg-coords-new (send *robot* :rleg :end-coords :copy-worldcoords))
+	       (lleg-coords-new (send *robot* :lleg :end-coords :copy-worldcoords))
+           (fix-hand? nil))
   (setq zmp-vector (send *ri*  :zmp-vector))
   
   (setq lleg-ratio (abs (norm (v- (send lleg-coords-new :worldpos) zmp-vector))))
@@ -1030,7 +1037,8 @@
         (if (not fix-contact?)
             (progn
               (send *ri* :set-gait-generator-param :zmp-weight-map (float-vector rleg-ratio lleg-ratio 1 1))
-              (move-on-foot rleg-coords lleg-coords rleg-coords-new lleg-coords-new :wait? t)))
+              (move-on-foot rleg-coords lleg-coords rleg-coords-new lleg-coords-new :wait? t))
+          (send *ri* :set-auto-balancer-param :is-hand-world-fix-mode nil))
         (if (not only-move-foot?)
             (send-pose movetime :force-move flag-simulator :look-at-object? look-at-object?)))))
 
