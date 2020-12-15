@@ -593,3 +593,8 @@
 
 #f(0.0 0.0 -20.0 40.0 -20.0 0.0 0.0 0.0 -20.0 40.0 -20.0 0.0 0.0 0.0 0.0 0.0 30.0 0.0 55.0 -20.0 -15.0 -100.0 -25.0 0.0 -45.0 0.0 55.0 20.0 15.0 -100.0 25.0 0.0 -45.0)
 #<cascaded-coords #X81f6b38 :lleg-end-coords  8.631e-13 100.0 1.705e-13 / 6.939e-18 -2.776e-16 -7.704e-34>
+
+;;1215
+rtprint -t 0.1 jaxonred:15005/rfu.rtc:ref_lhsensorOut
+rtprintはctr-dで中止すること（hrpsysがとまってしまう
+rtcat jaxonred:15005/rfu.rtc:ref_lhsensorOut -l
