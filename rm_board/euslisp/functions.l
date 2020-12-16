@@ -238,39 +238,40 @@
   (format t "next-lcoords = ~A~%" next-lcoords)
   (format t "next-rcoords = ~A~%" next-rcoords)
   (if (or force-move (setq ans (y-or-n-p "Do you move foot?")))
-      (if fix-hand?
-          (send *ri* :set-auto-balancer-param :is-hand-world-fix-mode t))
-      (if (equal which? :lleg)
-          (if wait?
-              (send *ri* :set-foot-steps
-                    (list
-                     (make-coords :coords init-rcoords :name :rleg)
-                     (make-coords :coords  next-lcoords :name :lleg)
-                     (make-coords :coords  next-rcoords :name :rleg)
-                     ))
-            (send *ri* :set-foot-steps-no-wait            
-                  (list
-                   (make-coords :coords init-rcoords :name :rleg)
-                   (make-coords :coords  next-lcoords :name :lleg)
-                   (make-coords :coords  next-rcoords :name :rleg)
-                   
-                   )))
-        (if wait?
-            (send *ri* :set-foot-steps
-                  (list
-                   (make-coords :coords init-lcoords :name :lleg)
-                   (make-coords :coords  next-rcoords :name :rleg)
-                   (make-coords :coords  next-lcoords :name :lleg)
-                   ))
-          (send *ri* :set-foot-steps-no-wait
-                (list
-                 (make-coords :coords init-lcoords :name :lleg)
-                 (make-coords :coords  next-rcoords :name :rleg)
-                 (make-coords :coords  next-lcoords :name :lleg)
-                 
-                 ))
-          ))
-    )
+      (progn
+	(if fix-hand?
+	    (send *ri* :set-auto-balancer-param :is-hand-world-fix-mode t))
+	(if (equal which? :lleg)
+	    (if wait?
+		(send *ri* :set-foot-steps
+		      (list
+		       (make-coords :coords init-rcoords :name :rleg)
+		       (make-coords :coords  next-lcoords :name :lleg)
+		       (make-coords :coords  next-rcoords :name :rleg)
+		       ))
+	      (send *ri* :set-foot-steps-no-wait            
+		    (list
+		     (make-coords :coords init-rcoords :name :rleg)
+		     (make-coords :coords  next-lcoords :name :lleg)
+		     (make-coords :coords  next-rcoords :name :rleg)
+		     
+		     )))
+	  (if wait?
+	      (send *ri* :set-foot-steps
+		    (list
+		     (make-coords :coords init-lcoords :name :lleg)
+		     (make-coords :coords  next-rcoords :name :rleg)
+		     (make-coords :coords  next-lcoords :name :lleg)
+		     ))
+	    (send *ri* :set-foot-steps-no-wait
+		  (list
+		   (make-coords :coords init-lcoords :name :lleg)
+		   (make-coords :coords  next-rcoords :name :rleg)
+		   (make-coords :coords  next-lcoords :name :lleg)
+		   
+		   ))
+	    ))
+    ))
   (if only-move?
       (send *robot* :angle-vector (send *ri* :state :angle-vector)))
   (send *robot* :move-coords (send (send next-lcoords :copy-worldcoords) :translate #f(0 0 100)) (send *robot* :link "LLEG_LINK5"))
@@ -278,7 +279,7 @@
   (objects)
   (send *ri* :angle-vector (send *ri* :potentio-vector))
   (if fix-hand?
-          (send *ri* :set-auto-balancer-param :is-hand-world-fix-mode nil))
+      (send *ri* :set-auto-balancer-param :is-hand-world-fix-mode nil))
   )
 
 
@@ -1177,7 +1178,7 @@
   ;; (send *robot* :angle-vector (send *ri* :state :angle-vector))
   (setq neck-angle (send *robot* :head-neck-p :joint-angle))
 
-  (while (and (not coords-list) (< neck-angle 20))
+  (while (and (not coords-list) (< neck-angle 40))
     (setq neck-angle (+ neck-angle 5))
     (setq coords-list (auto-set-reaching-targets :larm-shift (elt reaching-offset 0) :rarm-shift (elt reaching-offset 1) :rot-z rot-z))
     (format t "look down angle = ~A~%" neck-angle)
@@ -1206,10 +1207,9 @@
 
   (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :arm arm)
   (send *robot-env* :dissoc-root-virtual)
-  
-  (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact?)
 
-  (send *robot* :head-neck-p :joint-angle -20)
+  (send *robot* :head-neck-p :joint-angle -40)
+  (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact?)
   
   (setq coords-grasp-list (auto-set-reaching-targets :larm-shift #f(-100 -50 0) :rarm-shift #f(-100 50 0) :rot-z rot-z))
   (if (listp coords-grasp-list)
