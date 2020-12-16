@@ -768,7 +768,8 @@
     ))
 
 ;;掴みに行く目標座標　微調整
-;;pos-shift=0 にして返る返り値のうちどちらの手を使うかを選べば良い    
+;;pos-shift=0 にして返る返り値のうちどちらの手を使うかを選べば良い
+(ros::roseus "hand_targets")
 (defun auto-set-reaching-targets
     (&key (pos-shift 320) (larm-shift #f(-200 -50 0)) (rarm-shift #f(-200 50 0)) (rot-z 20))
 
@@ -824,6 +825,14 @@
   (format t "ik larm-coords = ~A~%" larm-coords)
   (format t "ik rarm-coords = ~A~%" rarm-coords)
   (objects (list cu coords1 larm-coords rarm-coords))
+  (setq larm-pos-pub (instance geometry_msgs::Point :init))
+  (setq rarm-pos-pub (instance geometry_msgs::Point :init))
+  (setq l-point (send larm-coords :worldpos))
+  (setq r-point (send rarm-coords :worldpos))  
+  (send larm-pos-pub :x (elt l-point 0)) (send larm-pos-pub :y (elt l-point 1)) (send larm-pos-pub :z (elt l-point 2))
+  (send rarm-pos-pub :x (elt r-point 0)) (send rarm-pos-pub :y (elt r-point 1)) (send rarm-pos-pub :z (elt r-point 2))
+  (one-shot-publish "/larm_target" larm-pos-pub :wait 10)
+  (one-shot-publish "/rarm_target" rarm-pos-pub :wait 10)
   (list larm-coords rarm-coords)
   )
 
