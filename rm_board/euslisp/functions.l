@@ -11,7 +11,6 @@
 ;;(load "./client/switch_input_cloud_client.l")
 ;; (require "~/research/rm_debris/src/predict_from_multi_pose.l")
 
-(print "load functions.l")
 
 (unless (and (boundp '*robot*) (boundp '*ri*))
   (jaxon_red-init)
@@ -239,39 +238,41 @@
   (format t "next-rcoords = ~A~%" next-rcoords)
   (if (or force-move (setq ans (y-or-n-p "Do you move foot?")))
       (progn
-	(if fix-hand?
-	    (send *ri* :set-auto-balancer-param :is-hand-world-fix-mode t))
-	(if (equal which? :lleg)
-	    (if wait?
-		(send *ri* :set-foot-steps
-		      (list
-		       (make-coords :coords init-rcoords :name :rleg)
-		       (make-coords :coords  next-lcoords :name :lleg)
-		       (make-coords :coords  next-rcoords :name :rleg)
-		       ))
-	      (send *ri* :set-foot-steps-no-wait            
-		    (list
-		     (make-coords :coords init-rcoords :name :rleg)
-		     (make-coords :coords  next-lcoords :name :lleg)
-		     (make-coords :coords  next-rcoords :name :rleg)
-		     
-		     )))
-	  (if wait?
-	      (send *ri* :set-foot-steps
-		    (list
-		     (make-coords :coords init-lcoords :name :lleg)
-		     (make-coords :coords  next-rcoords :name :rleg)
-		     (make-coords :coords  next-lcoords :name :lleg)
-		     ))
-	    (send *ri* :set-foot-steps-no-wait
-		  (list
-		   (make-coords :coords init-lcoords :name :lleg)
-		   (make-coords :coords  next-rcoords :name :rleg)
-		   (make-coords :coords  next-lcoords :name :lleg)
-		   
-		   ))
-	    ))
-    ))
+        (if fix-hand?
+            (progn
+              (send *ri* :set-auto-balancer-param :is-hand-fix-mode t)
+              (unix:sleep 1)))
+        (if (equal which? :lleg)
+            (if wait?
+                (send *ri* :set-foot-steps
+                      (list
+                       (make-coords :coords init-rcoords :name :rleg)
+                       (make-coords :coords  next-lcoords :name :lleg)
+                       (make-coords :coords  next-rcoords :name :rleg)
+                       ))
+              (send *ri* :set-foot-steps-no-wait            
+                    (list
+                     (make-coords :coords init-rcoords :name :rleg)
+                     (make-coords :coords  next-lcoords :name :lleg)
+                     (make-coords :coords  next-rcoords :name :rleg)
+                     
+                     )))
+          (if wait?
+              (send *ri* :set-foot-steps
+                    (list
+                     (make-coords :coords init-lcoords :name :lleg)
+                     (make-coords :coords  next-rcoords :name :rleg)
+                     (make-coords :coords  next-lcoords :name :lleg)
+                     ))
+            (send *ri* :set-foot-steps-no-wait
+                  (list
+                   (make-coords :coords init-lcoords :name :lleg)
+                   (make-coords :coords  next-rcoords :name :rleg)
+                   (make-coords :coords  next-lcoords :name :lleg)
+                   
+                   ))
+            ))
+        ))
   (if only-move?
       (send *robot* :angle-vector (send *ri* :state :angle-vector)))
   (send *robot* :move-coords (send (send next-lcoords :copy-worldcoords) :translate #f(0 0 100)) (send *robot* :link "LLEG_LINK5"))
@@ -279,7 +280,9 @@
   (objects)
   (send *ri* :angle-vector (send *ri* :potentio-vector))
   (if fix-hand?
-      (send *ri* :set-auto-balancer-param :is-hand-world-fix-mode nil))
+      (progn
+        (send *ri* :set-auto-balancer-param :is-hand-fix-mode nil)
+        (unix:sleep 1)))
   )
 
 
@@ -770,7 +773,7 @@
 
 ;;掴みに行く目標座標　微調整
 ;;pos-shift=0 にして返る返り値のうちどちらの手を使うかを選べば良い
-(ros::roseus "hand_targets")
+;; (ros::roseus "hand_targets")
 (defun auto-set-reaching-targets
     (&key (pos-shift 320) (larm-shift #f(-200 -50 0)) (rarm-shift #f(-200 50 0)) (rot-z 20))
 
@@ -957,7 +960,8 @@
                       (reset? t) (apply-external-force? t) (avoid-collision? t)
                       (rleg-pos-shift #f(0 0 0))
                       (lleg-pos-shift #f(0 0 0))
-                      (look-at-object? t))
+                      (look-at-object? t)
+                      (fix-hand? nil))
   
   (setq l-unit (* (/ 1.0 times) larm-move-offset))
   (setq r-unit (* (/ 1.0 times) rarm-move-offset))
@@ -998,7 +1002,7 @@
                                     (make-array 6 :element-type float-vector :initial-contents rarm-force :initial-element 0)))
     (setq ret (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :external-force-list external-force-list ))
     ;; (send-pose movetime :force-move flag-simulator :look-at-object? look-at-object? :wait? t)
-    (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact? :look-at-object? look-at-object? :wait? t)
+    (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact? :look-at-object? look-at-object? :wait? t :fix-hand? fix-hand?)
     (if check?
         (progn
           (setq drop-flag (check-force-pcl :working? t :thre-list (list 10 10)))
@@ -1016,7 +1020,7 @@
                 (setq rarm-coords (make-coords :pos (elt ret-rarm 0) :rpy (elt (rpy-angle (elt ret-rarm 1)) 0)))
                 (setq rarm-coords (send rarm-coords :rotate (deg2rad 20) :z))))
             (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? 2 :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? t :rleg-pos-shift #f(0 0 0) :lleg-pos-shift #f(0 0 0))
-            (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact?)))
+            (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact? :fix-hand? fix-hand?)))
          ((= drop-flag 0)
           (progn
             ))
@@ -1029,6 +1033,7 @@
     (setq ret-rarm-save ret-rarm)
     )
   )
+
 (defun send-pose-and-move-on-foot
     (&key  (fix-contact? t) (send? t) (only-move-foot? nil)
            (wait? t) (reset? t) (apply-external-force? t) (avoid-collision? t)
@@ -1036,7 +1041,7 @@
            (lleg-pos-shift #f(0 0 0))
            (look-at-object? t)
            (rleg-coords-new (send *robot* :rleg :end-coords :copy-worldcoords))
-	   (lleg-coords-new (send *robot* :lleg :end-coords :copy-worldcoords))
+           (lleg-coords-new (send *robot* :lleg :end-coords :copy-worldcoords))
            (fix-hand? nil))
   (setq zmp-vector (send *ri*  :zmp-vector))
   
@@ -1048,9 +1053,10 @@
             (progn
               (send *ri* :set-gait-generator-param :zmp-weight-map (float-vector rleg-ratio lleg-ratio 1 1))
               (move-on-foot rleg-coords lleg-coords rleg-coords-new lleg-coords-new :wait? t :fix-hand? fix-hand?)
-          (send *ri* :set-auto-balancer-param :is-hand-world-fix-mode nil))
+              ))
         (if (not only-move-foot?)
-            (send-pose movetime :force-move flag-simulator :look-at-object? look-at-object?)))))
+            (send-pose movetime :force-move flag-simulator :look-at-object? look-at-object?))))
+  )
 
 ;;rerach targets 確認用
 ;; (defun test-reach-prepare()
@@ -1321,7 +1327,8 @@
   ;;       (send-pose movetime :force-move flag-simulator :look-at-object? look-at-object?)))
   )
 ;; send *ri* :set-gait-generator-param :default-step-time 1.2
-(defun peer ()
-  ;; (send *robot* :angle-vector #f(-8.63811 -17.6405 -97.7167 52.2116 4.78422 17.5815 8.11715 5.14641 -98.3516 55.5981 4.00441 -10.5335 0.0 0.0 0.0 0.0 30.0 0.0 55.0 -20.0 -15.0 -100.0 -25.0 0.0 -45.0 0.0 55.0 20.0 15.0 -100.0 25.0 0.0 -45.0))
-  )
+;; (defun peer ()
+;;   ;; (send *robot* :angle-vector #f(-8.63811 -17.6405 -97.7167 52.2116 4.78422 17.5815 8.11715 5.14641 -98.3516 55.5981 4.00441 -10.5335 0.0 0.0 0.0 0.0 30.0 0.0 55.0 -20.0 -15.0 -100.0 -25.0 0.0 -45.0 0.0 55.0 20.0 15.0 -100.0 25.0 0.0 -45.0))
+;;   )
   
+(print "load functions.l")
