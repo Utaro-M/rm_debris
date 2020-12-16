@@ -729,10 +729,12 @@
   (let* ((idx-x 0)
         (idx-y 0)
         (longest-len 0)
-	(pos-centroid (send contact-wall :centroid))
-        (vertices-list (get-min-val (send contact-wall :vertices) 20))
+        ;; (pos-centroid (send contact-wall :centroid))
+        (pos-centroid (elt contact-wall 1))
+        (vertices-list (get-min-val (send (car contact-wall) :vertices) 20))
         (vertices-list-reverse (reverse vertices-list))
-        (plane-normal (send (elt (send contact-wall :faces) 0) :normal)))
+        ;; (plane-normal (send (elt (send contact-wall :faces) 0) :normal))
+        (plane-normal (elt contact-wall 2)))
     (format t "plane normal = ~A~%" plane-normal)
     (dotimes (i (length vertices-list))
       (dotimes (j (- (length vertices-list) (+ 1 i)))
@@ -773,7 +775,9 @@
 
 ;;掴みに行く目標座標　微調整
 ;;pos-shift=0 にして返る返り値のうちどちらの手を使うかを選べば良い
-;; (ros::roseus "hand_targets")
+(ros::roseus "hand_targets")
+(ros::advertise "/larm_target" geometry_msgs::PointStamped 1)
+(ros::advertise "/rarm_target" geometry_msgs::PointStamped 1)
 (defun auto-set-reaching-targets
     (&key (pos-shift 320) (larm-shift #f(-200 -50 0)) (rarm-shift #f(-200 50 0)) (rot-z 20))
 
@@ -828,15 +832,24 @@
   (setq rarm-coords (send rarm-coords :translate rarm-shift))
   (format t "ik larm-coords = ~A~%" larm-coords)
   (format t "ik rarm-coords = ~A~%" rarm-coords)
-  (objects (list cu coords1 larm-coords rarm-coords))
-  (setq larm-pos-pub (instance geometry_msgs::Point :init))
-  (setq rarm-pos-pub (instance geometry_msgs::Point :init))
+  (objects (list (car cu) coords1 larm-coords rarm-coords))
+  (setq larm-pos-pub (instance geometry_msgs::PointStamped :init))
+  (setq rarm-pos-pub (instance geometry_msgs::PointStamped :init))
   (setq l-point (send larm-coords :worldpos))
-  (setq r-point (send rarm-coords :worldpos))  
-  (send larm-pos-pub :x (elt l-point 0)) (send larm-pos-pub :y (elt l-point 1)) (send larm-pos-pub :z (elt l-point 2))
-  (send rarm-pos-pub :x (elt r-point 0)) (send rarm-pos-pub :y (elt r-point 1)) (send rarm-pos-pub :z (elt r-point 2))
-  (one-shot-publish "/larm_target" larm-pos-pub :wait 10)
-  (one-shot-publish "/rarm_target" rarm-pos-pub :wait 10)
+  (setq r-point (send rarm-coords :worldpos))
+
+  ;;rviz visualize reaching point 
+  (progn
+    (send larm-pos-pub :header :stamp (ros::time-now))
+    (send larm-pos-pub :header :frame_id "odom")
+    (send larm-pos-pub :point :x (* 0.001 (elt l-point 0))) (send larm-pos-pub :point :y (* 0.001 (elt l-point 1))) (send larm-pos-pub :point :z (* 0.0001 (elt l-point 2)))
+    (send rarm-pos-pub :header :stamp (ros::time-now))
+    (send rarm-pos-pub :header :frame_id "odom")
+    (send rarm-pos-pub :point :x (* 0.001 (elt r-point 0))) (send rarm-pos-pub :point :y (* 0.001 (elt r-point 1))) (send rarm-pos-pub :point :z (* 0.0001 (elt r-point 2)))
+    (format t "l-point = ~A~%" l-point)
+    (ros::publish "/larm_target" larm-pos-pub)
+    (ros::publish "/rarm_target" rarm-pos-pub)
+    )
   (list larm-coords rarm-coords)
   )
 
@@ -954,6 +967,8 @@
   (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t :rleg-pos-shift #f(0 -100 -10) :lleg-pos-shift #f(0 100 -10) :look-at-object? t)
   )
 
+(ros::advertise "/normal_start" geometry_msgs::PointStamped 1)
+(ros::advertise "/normal_end" geometry_msgs::PointStamped 1)
 (defun heave-with-sensor
     (larm-move-offset rarm-move-offset times
                       &key  (fix-contact? t) (send? t) (wait? t) (anti-slip-rate 0.5) (check? nil)
@@ -986,7 +1001,8 @@
           (format t "larm-pos-diff = ~A~%" larm-pos-diff)
           (format t "rarm-pos-diff = ~A~%" rarm-pos-diff)))
           
-    (setq normal-vec (send (elt (send fc :get-face :prism :top) 0) :normal))
+    ;; (setq normal-vec (send (elt (send fc :get-face :prism :top) 0) :normal))
+    (setq normal-vec (elt fc 2))
     (if (< (elt normal-vec 2) 0)
         (setq normal-vec (scale -1.0 normal-vec)))
     (format t "normal-vec =~A~%" normal-vec)
@@ -1001,6 +1017,24 @@
     (setq external-force-list (list (make-array 6 :element-type float-vector :initial-contents larm-force :initial-element 0)
                                     (make-array 6 :element-type float-vector :initial-contents rarm-force :initial-element 0)))
     (setq ret (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :external-force-list external-force-list ))
+    (setq com (elt fc 1))
+    (format t "com =~A~%" com)
+
+    ;;rviz visualize normal vector
+    (progn
+      (setq normal-start (instance geometry_msgs::PointStamped :init))
+      (setq normal-end (instance geometry_msgs::PointStamped :init))
+      (send normal-start :header :stamp (ros::time-now))
+      (send normal-start :header :frame_id "odom")
+      (send normal-start :point :x (* 0.001 (elt (v+ com #f(0 0 0)) 0))) (send normal-start :point :y (* 0.001 (elt (v+ com #f(0 0 0)) 1))) (send normal-start :point :z (* 0.0001 (elt (v+ com #f(0 0 0)) 2)))
+      (send normal-end :header :stamp (ros::time-now))
+      (send normal-end :header :frame_id "odom")
+      (send normal-end :point :x (* 0.001 (elt (v+ com (scale 200 normal-vec)) 0))) (send normal-end :point :y (* 0.001 (elt (v+ com (scale 200 normal-vec)) 1))) (send normal-end :point :z (* 0.001 (elt (v+ com (scale 200 normal-vec)) 2)))
+      (ros::publish "/normal_start" normal-start)
+      (ros::publish "/normal_end" normal-end)
+      )
+
+    ;; (progn (send (send *irtviewer* :viewer) :draw-arrow (v+ com #f(0 0 0)) (v+ com normal-vec) :color #f(0 0 1)) (send *irtviewer* :viewer :flush))
     ;; (send-pose movetime :force-move flag-simulator :look-at-object? look-at-object? :wait? t)
     (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact? :look-at-object? look-at-object? :wait? t :fix-hand? fix-hand?)
     (if check?

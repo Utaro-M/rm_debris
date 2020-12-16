@@ -8,8 +8,8 @@
   (let ((req (instance rm_debris_vision::PolygonRequest :init)))
     (setq res (ros::service-call "make_plane" req t))
     (if (not (send res :pts :polygon :points))
-    (progn ;; (print "can not find any plane")
-      (return-from make_plane nil)))
+        (progn ;; (print "can not find any plane")
+          (return-from make_plane nil)))
 ;; (while (not (send res :pts :polygon :points))
 ;;   (print "can not find any plane")
 ;;   (setq res (ros::service-call "make_plane" req t)))
@@ -19,16 +19,19 @@
     (setq com-box (make-cube 100 100 100))
     (send com-box :set-color #f(1 0 0))
 
+    (setq com (float-vector (send (send res :com) :x) (send (send res :com) :y) (send (send res :com) :z)))
+    (setq normal-vec (float-vector (send (send res :normal_vec) :x) (send (send res :normal_vec) :y) (send (send res :normal_vec) :z))) 
     (setq vertices (mapcar #'(lambda (vertice) (scale 1000 (float-vector (send vertice :x) (send vertice :y) (send vertice :z)))) (send res :pts :polygon :points)))
     (setq my-plane (make-prism vertices 10))
-
-    ;; (setq my-plane (body+ my-plane1 my-plane2))
-    (setq com (scale 1 (send my-plane :centroid)))
-    ;; (print com)
+    ;; (setq com (scale 1 (send my-plane :centroid)))
     (send com-box :translate com)
-    (objects (list my-plane com-box coords))
+    ;; (progn (send (send *irtviewer* :viewer) :draw-arrow (v+ com #f(0 0 0)) (v+ com normal-vec) :color #f(0 0 1)) (send *irtviewer* :viewer :flush))
+    ;; (setq normal-line (make-line #f(0 0 0) (scale 500 normal-vec)))
+    (setq normal-line (make-line (v+ com #f(0 0 0)) (v+ com (scale 300 normal-vec))))
+    
+    (objects (list my-plane com-box coords normal-line))
     (send com-box :translate (scale -1 com))
-    my-plane
+    (list my-plane com normal-vec)
     ))
 ;; (defun make_plane()
 
