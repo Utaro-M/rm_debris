@@ -1027,7 +1027,7 @@
            (lleg-pos-shift #f(0 0 0))
            (look-at-object? t)
            (rleg-coords-new (send *robot* :rleg :end-coords :copy-worldcoords))
-	       (lleg-coords-new (send *robot* :lleg :end-coords :copy-worldcoords))
+	   (lleg-coords-new (send *robot* :lleg :end-coords :copy-worldcoords))
            (fix-hand? nil))
   (setq zmp-vector (send *ri*  :zmp-vector))
   
@@ -1038,7 +1038,7 @@
         (if (not fix-contact?)
             (progn
               (send *ri* :set-gait-generator-param :zmp-weight-map (float-vector rleg-ratio lleg-ratio 1 1))
-              (move-on-foot rleg-coords lleg-coords rleg-coords-new lleg-coords-new :wait? t))
+              (move-on-foot rleg-coords lleg-coords rleg-coords-new lleg-coords-new :wait? t :fix-hand? fix-hand?)
           (send *ri* :set-auto-balancer-param :is-hand-world-fix-mode nil))
         (if (not only-move-foot?)
             (send-pose movetime :force-move flag-simulator :look-at-object? look-at-object?)))))
@@ -1068,6 +1068,7 @@
 	   (rleg-pos-shift #f(0 -100 0))
 	   (lleg-pos-shift #f(0 100 0))
 	   (look-at-object? t)
+	   (fix-hand? nil)
 	   (reaching-offset (list #f(200 50 0) #f(200 -50 0)))
 	   (arm "larm")
 	   (rot-z 20))
@@ -1170,7 +1171,7 @@
   (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :arm arm)
   (send *robot-env* :dissoc-root-virtual)
   
-  (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact? :only-move-foot? t)
+  (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact? :only-move-foot? t :fix-hand? fix-hand?)
 
   (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
   (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
@@ -1209,7 +1210,7 @@
   (send *robot-env* :dissoc-root-virtual)
 
   (send *robot* :head-neck-p :joint-angle -40)
-  (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact?)
+  (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact? :fix-hand? fix-hand?)
   
   (setq coords-grasp-list (auto-set-reaching-targets :larm-shift #f(-100 -50 0) :rarm-shift #f(-100 50 0) :rot-z rot-z))
   (if (listp coords-grasp-list)
