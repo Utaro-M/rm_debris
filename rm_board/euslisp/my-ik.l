@@ -946,6 +946,11 @@
   (send (send *robot* :joint "LARM_JOINT1") :min-angle -140)
   (send (send *robot* :joint "LARM_JOINT1") :max-angle 140)
 
+;;腕が180度回転するのを防ぐ
+  (send (send *robot* :joint "LARM_JOINT3") :min-angle -90)
+  (send (send *robot* :joint "LARM_JOINT3") :max-angle 90)
+  (send (send *robot* :joint "RARM_JOINT3") :min-angle -90)
+  (send (send *robot* :joint "RARM_JOINT3") :max-angle 90)  
   
   )
 

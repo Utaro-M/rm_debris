@@ -1020,7 +1020,7 @@
                                     (make-array 6 :element-type float-vector :initial-contents rarm-force :initial-element 0)))
 
     ;;立ち位置変更の切り替え
-    (if (< 1100 (elt (send larm-coords :corldpos) 2))
+    (if (< 1100 (elt (send larm-coords :worldpos) 2))
         (progn 
           (setq fix-contact? nil)
           (setq fix-hand? t)))
@@ -1070,7 +1070,9 @@
             ))
          ((= drop-flag 3)
           (progn
-            (format t "stop~%")
+            (format t "stop~%~%")
+            (send *ri* :stop-motion)
+            (move-on-foot (send *robot* :rleg :end-coords :copy-worldcoords) (send *robot* :lleg :end-coords :copy-worldcoords) (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate #f(-100 0 0) :world) (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(-100 0 0) :world))
             )))
     ))
     (setq ret-larm-save ret-larm)
