@@ -68,7 +68,7 @@
     (send *ri* :set-st-param :emergency-check-mode 0)
     (send *ri* :start-st))
   (send *ri* :set-log-maxlength (* 500 60))
-  (setq movetime 16000)
+  (setq movetime 15000)
   )
 
 (defun send-pose
@@ -731,7 +731,8 @@
         (longest-len 0)
         ;; (pos-centroid (send contact-wall :centroid))
         (pos-centroid (elt contact-wall 1))
-        (vertices-list (get-min-val (send (car contact-wall) :vertices) 20))
+        (vertices-list (get-min-val (send (car contact-wall) :vertices) 16))
+        (vertices-list-for-com (get-min-val (send (car contact-wall) :vertices) 4))
         (vertices-list-reverse (reverse vertices-list))
         ;; (plane-normal (send (elt (send contact-wall :faces) 0) :normal))
         (plane-normal (elt contact-wall 2)))
@@ -752,9 +753,10 @@
     
     ;;手先の目標
     (setq sum #f(0 0 0))
-    (dotimes (i (length vertices-list))
-      (setq sum (v+ sum (elt vertices-list i))))
-    (setq pos (scale (/ 1.0 (length vertices-list)) sum))
+    (dotimes (i (length vertices-list-for-com))
+      (setq sum (v+ sum (elt vertices-list-for-com i))))
+    (setq pos-tmp (scale (/ 1.0 (length vertices-list-for-com)) sum))
+    (setq pos (float-vector (elt pos-tmp 0) (elt pos-centroid 1) (elt pos-tmp 2)))
     (format t "mid-pos = ~A~%" pos)
     (setq y-vec  plane-normal)
     (setq z-vec (v- (elt vertices-list idx-x) (elt vertices-list-reverse idx-y)))
@@ -779,7 +781,7 @@
 (ros::advertise "/larm_target" geometry_msgs::PointStamped 1)
 (ros::advertise "/rarm_target" geometry_msgs::PointStamped 1)
 (defun auto-set-reaching-targets
-    (&key (pos-shift 320) (larm-shift #f(-200 -50 0)) (rarm-shift #f(-200 50 0)) (rot-z 20))
+    (&key (pos-shift 320) (larm-shift #f(-200 -100 0)) (rarm-shift #f(-200 100 0)) (rot-z 20))
 
   (setq cu (make_plane))
   (if (not cu)
@@ -827,19 +829,18 @@
   ;;少し回転
   (setq larm-coords (send larm-coords :rotate (deg2rad (- 0 rot-z)) :z))
   (setq rarm-coords (send rarm-coords :rotate (deg2rad rot-z) :z))
-
   (setq larm-coords (send larm-coords :translate larm-shift))
   (setq rarm-coords (send rarm-coords :translate rarm-shift))
   (format t "ik larm-coords = ~A~%" larm-coords)
   (format t "ik rarm-coords = ~A~%" rarm-coords)
   (objects (list (car cu) coords1 larm-coords rarm-coords))
-  (setq larm-pos-pub (instance geometry_msgs::PointStamped :init))
-  (setq rarm-pos-pub (instance geometry_msgs::PointStamped :init))
-  (setq l-point (send larm-coords :worldpos))
-  (setq r-point (send rarm-coords :worldpos))
 
   ;;rviz visualize reaching point 
   (progn
+    (setq larm-pos-pub (instance geometry_msgs::PointStamped :init))
+    (setq rarm-pos-pub (instance geometry_msgs::PointStamped :init))
+    (setq l-point (send larm-coords :worldpos))
+    (setq r-point (send rarm-coords :worldpos))
     (send larm-pos-pub :header :stamp (ros::time-now))
     (send larm-pos-pub :header :frame_id "odom")
     (send larm-pos-pub :point :x (* 0.001 (elt l-point 0))) (send larm-pos-pub :point :y (* 0.001 (elt l-point 1))) (send larm-pos-pub :point :z (* 0.0001 (elt l-point 2)))
@@ -969,6 +970,7 @@
 
 (ros::advertise "/normal_start" geometry_msgs::PointStamped 1)
 (ros::advertise "/normal_end" geometry_msgs::PointStamped 1)
+
 (defun heave-with-sensor
     (larm-move-offset rarm-move-offset times
                       &key  (fix-contact? t) (send? t) (wait? t) (anti-slip-rate 0.5) (check? nil)
@@ -1016,7 +1018,15 @@
     (setq rarm-force (low-pass-online "force" "absolute" :rarm :times 10 :sleep 100 :flag nil))
     (setq external-force-list (list (make-array 6 :element-type float-vector :initial-contents larm-force :initial-element 0)
                                     (make-array 6 :element-type float-vector :initial-contents rarm-force :initial-element 0)))
+
+    ;;立ち位置変更の切り替え
+    (if (< 1100 (elt (send larm-coords :corldpos) 2))
+        (progn 
+          (setq fix-contact? nil)
+          (setq fix-hand? t)))
+      
     (setq ret (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :external-force-list external-force-list ))
+    (format t "ret ik = ~A~%" ret)
     (setq com (elt fc 1))
     (format t "com =~A~%" com)
 
@@ -1118,7 +1128,7 @@
 	   (lleg-pos-shift #f(0 100 0))
 	   (look-at-object? t)
 	   (fix-hand? nil)
-	   (reaching-offset (list #f(200 50 0) #f(200 -50 0)))
+	   (reaching-offset (list #f(-200 50 0) #f(-200 -50 0)))
 	   (arm "larm")
 	   (rot-z 20))
   ;; (set-pre-pose)
@@ -1131,8 +1141,8 @@
   (format t "longest-len = ~A~%" longest-len)
   (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
   (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
-  (format t "lleg-coords = ~A~%" lleg-coords)
-  (format t "rleg-coords = ~A~%" rleg-coords)
+  ;; (format t "lleg-coords = ~A~%" lleg-coords)
+  ;; (format t "rleg-coords = ~A~%" rleg-coords)
   (format t "pos =~A ~%" pos)
   (format t "pos-centroid =~A ~%" pos-centroid)
 
@@ -1141,7 +1151,7 @@
     (setq shift-standing-pos 50))
   (setq center-pos (scale 0.5 (v+ (send lleg-coords :worldpos) (send rleg-coords :worldpos))))
 
-  (if (< longest-len 300)
+  (if (< longest-len 600)
       (progn 
         (setq pos-shift 0)
 	(if (equal arm "larm")
@@ -1217,7 +1227,13 @@
   ;; (format t "rleg-pos-shift = ~A~%" rleg-pos-shift)
 
   (setq fix-contact? nil)
-  (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :arm arm)
+  ;; (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :arm arm)
+  ;;手先力適当
+  (setq larm-force #f(0 0 -10))
+  (setq rarm-force #f(0 0 -10))
+  (setq external-force-list (list (make-array 6 :element-type float-vector :initial-contents larm-force :initial-element 0)
+                                  (make-array 6 :element-type float-vector :initial-contents rarm-force :initial-element 0)))
+  (setq ret (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :arm arm :external-force-list external-force-list ))
   (send *robot-env* :dissoc-root-virtual)
   
   (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact? :only-move-foot? t :fix-hand? fix-hand?)
@@ -1255,7 +1271,8 @@
   (setq lleg-pos-shift (v+ lleg-pos-shift (float-vector 0 0 0)))
   (setq rleg-pos-shift (v+ rleg-pos-shift (float-vector 0 0 0)))
 
-  (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :arm arm)
+  ;; (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :arm arm)
+  (setq ret (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :arm arm :external-force-list external-force-list ))
   (send *robot-env* :dissoc-root-virtual)
 
   (send *robot* :head-neck-p :joint-angle -40)

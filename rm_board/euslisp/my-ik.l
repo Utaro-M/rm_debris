@@ -130,11 +130,11 @@
   (send (send *robot* :joint "RARM_JOINT1") :max-angle 140)
   (send (send *robot* :joint "LARM_JOINT1") :min-angle -140)
   (send (send *robot* :joint "LARM_JOINT1") :max-angle 140)
-
-  (send (send *robot* :joint "LARM_JOINT3") :min-angle -170)
-  (send (send *robot* :joint "LARM_JOINT3") :max-angle 170)
-  (send (send *robot* :joint "RARM_JOINT3") :min-angle -170)
-  (send (send *robot* :joint "RARM_JOINT3") :max-angle 170)
+;;腕が180度回転するのを防ぐ
+  (send (send *robot* :joint "LARM_JOINT3") :min-angle -90)
+  (send (send *robot* :joint "LARM_JOINT3") :max-angle 90)
+  (send (send *robot* :joint "RARM_JOINT3") :min-angle -90)
+  (send (send *robot* :joint "RARM_JOINT3") :max-angle 90)
   ;; (send (send *robot* :joint "RARM_JOINT6") :min-angle -50)
   ;; (send (send *robot* :joint "RARM_JOINT6") :max-angle 50)
   ;; (send (send *robot* :joint "LARM_JOINT5") :min-angle -50)
@@ -182,8 +182,10 @@
   (setq lleg-pos-shift (v+ lleg-pos-shift #f(0 0 -10)))
   ;; (setq *ground-rleg* (make-cube 800 400 20))
   ;; (setq *ground-lleg* (make-cube 800 400 20))
-  (setq *ground-rleg* (make-cube 600 400 20))
-  (setq *ground-lleg* (make-cube 600 400 20))  
+  ;; (setq *ground-rleg* (make-cube 600 400 20))
+  ;; (setq *ground-lleg* (make-cube 600 400 20))
+  (setq *ground-rleg* (make-cube 500 400 20))
+  (setq *ground-lleg* (make-cube 500 400 20))  
   (send *ground-rleg* :newcoords
         (make-coords :pos (send (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate rleg-pos-shift) :worldpos)  :rpy (list 0 0 0))
         )
@@ -381,13 +383,13 @@
                        ((equal arm "rarm")
                               (list 1.0
                                     1.0
-                                    (list 1 1 1 1 0 1)
+                                    (list 1 1 1 1 0.5 1)
                                     0.0))
                        ((equal arm "larm")
                               (list 1.0
                                     1.0
                                     0.0
-                                    (list 1 1 1 1 0 1)))))                  
+                                    (list 1 1 1 1 0.5 1)))))                  
                             ;;axis y周りは自由 heaveの時
                             ;; (list 1 1 1 1 0 1)
                             ;; (list 1 1 1 1 0 1)
