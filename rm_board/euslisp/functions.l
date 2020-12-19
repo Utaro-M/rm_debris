@@ -1,7 +1,7 @@
 (require "models/arrow-object.l")
-(require "package://control_tools/log-tools.l")
-;; (require "package://control_tools/play-hrpsysfile.l")
-(require "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
+;; (require "package://control_tools/log-tools.l")
+(require "package://control_tools/play-hrpsysfile.l")
+;; (require "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
 ;; (load "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
 (require "./class.l")
 (load "./my-ik.l")
@@ -928,14 +928,19 @@
 
 ;;IKを解かない方
 (defun reaching-pose (&key (send? nil) (fix-contact? nil) (look-at-object? nil))
-  (send *ri* :start-impedance :arms)
-  (send *ri* :set-reference-force-updater-param :arms :motion-dir #f(0 0 -1) :p-gain 0.01 :update-time-ratio 1.0)
-  (send *ri* :start-reference-force-updater :arms)
-  (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5))
+  ;; (send *ri* :start-impedance :arms)
+  ;; (send *ri* :set-reference-force-updater-param :arms :motion-dir #f(0 0 -1) :p-gain 0.01 :update-time-ratio 1.0)
+  ;; (send *ri* :start-reference-force-updater :arms)
+  ;; (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5))
   (my-init-pose :move-foot? nil :send? send?)
   (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
   (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
-  (send *robot* :angle-vector #f(-10.6248 -6.65663 -106.861 50.9002 3.98799 12.4148 10.6723 6.7806 -106.801 51.0553 3.75381 -12.5862 -0.183996 27.0 0.021731 0.021981 18.0 37.0 -5.52897 -49.7907 -25.152 -80.696 57.979 -29.8714 13.8606 -37.0 -5.22003 50.1071 25.3023 -80.8198 -57.8915 29.7632 13.9217))
+  ;;踏み出しで落ちやすい
+  ;; (send *robot* :angle-vector #f(-10.6248 -6.65663 -106.861 50.9002 3.98799 12.4148 10.6723 6.7806 -106.801 51.0553 3.75381 -12.5862 -0.183996 27.0 0.021731 0.021981 18.0 37.0 -5.52897 -49.7907 -25.152 -80.696 57.979 -29.8714 13.8606 -37.0 -5.22003 50.1071 25.3023 -80.8198 -57.8915 29.7632 13.9217))
+  ;;低
+  ;; (send *robot* :angle-vector #f(-8.58676 -4.0563 -95.8534 56.6709 0.402954 9.52003 8.99794 14.9015 -94.6692 49.0149 5.26972 -16.1815 -6.0 30.0 0.300236 -8.04015 -40.0 36.7888 -14.5601 -49.5236 -14.4544 -78.1538 49.999 -18.7491 20.2343 -36.9302 21.5486 79.1799 31.4005 -83.5811 -33.5652 19.8654 24.6522))
+  ;;中
+  (send *robot* :angle-vector #f(-2.07669 -1.21954 -53.9677 57.0 -12.1277 6.02715 1.97674 22.802 -51.9767 51.175 -9.06998 -18.3169 -6.0 23.2969 3.39918 -1.38038 0.158868 37.0 -4.49404 -38.7688 -4.50152 -72.5887 42.9935 -8.56576 22.6918 -37.0 27.0826 67.6348 19.6725 -77.6165 -25.9171 8.7954 18.0071))
   (send *robot* :move-coords (make-coords :pos #f(0 300 0)) (send *robot* :lleg :end-coords))
   (send *robot* :head-neck-p :joint-angle -21)
   (objects (list *robot* ))
@@ -973,7 +978,7 @@
 
 (defun heave-with-sensor
     (larm-move-offset rarm-move-offset times
-                      &key  (fix-contact? t) (send? t) (wait? t) (anti-slip-rate 0.5) (check? nil)
+                      &key  (fix-contact? t) (send? t) (wait? t) (anti-slip-rate 0) (check? nil)
                       (reset? t) (apply-external-force? t) (avoid-collision? t)
                       (rleg-pos-shift #f(0 0 0))
                       (lleg-pos-shift #f(0 0 0))
@@ -992,8 +997,8 @@
     (setq fc (make_plane))
     (setq ret-larm (get-target-pose fc)) ;; "larm"))
     (setq ret-rarm (get-target-pose fc)) ;; "rarm"))
-    (format t "ret-larm = ~A~%" ret-larm)
-    (format t "ret-rarm = ~A~%" ret-rarm)
+    ;; (format t "ret-larm = ~A~%" ret-larm)
+    ;; (format t "ret-rarm = ~A~%" ret-rarm)
     (if (< 0 i)
         (progn
           (setq larm-pos-diff (v- (elt ret-larm 0) (elt ret-larm-save 0)))
@@ -1010,8 +1015,10 @@
     (format t "normal-vec =~A~%" normal-vec)
     (setq larm-coords (send (send *robot* :larm :end-coords :copy-worldcoords) :translate (v+ (scale anti-slip-rate larm-pos-diff) (scale l-unit normal-vec)) :world))
     (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate (v+ (scale anti-slip-rate rarm-pos-diff) (scale r-unit normal-vec)) :world ))
-    (format t "larm-coords = ~A~%" larm-coords)
-    (format t "rarm-coords = ~A~%" rarm-coords)
+    (format t "larm-coords     = ~A~%" (send *robot* :larm :end-coords :copy-worldcoords))
+    (format t "rarm-coords     = ~A~%" (send *robot* :rarm :end-coords :copy-worldcoords))
+    (format t "larm-coords next= ~A~%" larm-coords)
+    (format t "rarm-coords next= ~A~%" rarm-coords)
     (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
     (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))    
     (setq larm-force (low-pass-online "force" "absolute" :larm :times 10 :sleep 100 :flag nil))
@@ -1130,7 +1137,7 @@
 	   (lleg-pos-shift #f(0 100 0))
 	   (look-at-object? t)
 	   (fix-hand? nil)
-	   (reaching-offset (list #f(-200 50 0) #f(-200 -50 0)))
+	   (reaching-offset (list #f(-150 -120 0) #f(-150 120 0)))
 	   (arm "larm")
 	   (rot-z 20))
   ;; (set-pre-pose)
@@ -1153,7 +1160,7 @@
     (setq shift-standing-pos 50))
   (setq center-pos (scale 0.5 (v+ (send lleg-coords :worldpos) (send rleg-coords :worldpos))))
 
-  (if (< longest-len 600)
+  (if (< longest-len 400)
       (progn 
         (setq pos-shift 0)
 	(if (equal arm "larm")
@@ -1246,7 +1253,7 @@
   ;; (send *robot* :angle-vector (send *ri* :state :angle-vector))
   (setq neck-angle (send *robot* :head-neck-p :joint-angle))
 
-  (while (and (not coords-list) (< neck-angle 40))
+  (while (and (not coords-list) (< -40 neck-angle ))
     (setq neck-angle (+ neck-angle 5))
     (setq coords-list (auto-set-reaching-targets :larm-shift (elt reaching-offset 0) :rarm-shift (elt reaching-offset 1) :rot-z rot-z))
     (format t "look down angle = ~A~%" neck-angle)
@@ -1277,9 +1284,11 @@
   (setq ret (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :arm arm :external-force-list external-force-list ))
   (send *robot-env* :dissoc-root-virtual)
 
-  (send *robot* :head-neck-p :joint-angle -40)
   (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact? :fix-hand? fix-hand?)
-  
+
+  (send *robot* :head-neck-p :joint-angle -40)
+  (send *ri* :angle-vector (send *robot* :angle-vector) 4000)
+  (unix::sleep 1)
   (setq coords-grasp-list (auto-set-reaching-targets :larm-shift #f(-100 -50 0) :rarm-shift #f(-100 50 0) :rot-z rot-z))
   (if (listp coords-grasp-list)
       (progn
@@ -1289,7 +1298,7 @@
 	(setq r-diff (v- (send rarm-coords :worldpos) (send *robot* :rarm :end-coords :worldpos))))
     (progn
       (setq l-diff #f(150 30 0))
-      (setq l-diff #f(150 30 0))))
+      (setq r-diff #f(150 -30 0))))
   (move-hand :larm l-diff :send? send?)
   (move-hand :rarm r-diff :send? send?)
   ;; (setq zmp-vector (send *ri*  :zmp-vector))
