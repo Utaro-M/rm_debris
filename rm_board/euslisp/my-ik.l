@@ -155,11 +155,12 @@
 
 ;;reachとかに使ってるやつ
 (defun ik-opt
-    (rarm-coords larm-coords 
-                 &key (arm "both")
-                 (optimize-torque? t)
-                 (avoid-collision? t)
-                 (apply-external-force? nil)
+    (rarm-coords
+     larm-coords 
+     &key (arm "both")
+     (optimize-torque? t)
+     (avoid-collision? t)
+     (apply-external-force? nil)
      (fix-contact? nil)
      (set-kin-scale? t)
      (only-kinematics? nil)
@@ -174,8 +175,8 @@
 				   (send *robot* :larm :end-coords))))
      ;; (rleg-pos #f( 0 -200 -10))
      ;; (lleg-pos #f( 0  200 -10))
-     (rleg-pos-shift #f(0 0 0))
-     (lleg-pos-shift #f(0 0 0))
+     (rleg-pos-shift #f(-100 0 0))
+     (lleg-pos-shift #f( 100 0 0))
      &allow-other-keys
      )
   (setq rleg-pos-shift (v+ rleg-pos-shift #f(0 0 -10)))

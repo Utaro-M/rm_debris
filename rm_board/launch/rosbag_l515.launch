@@ -6,7 +6,8 @@
 	args="-o $(arg bagfile)
 	      -b 0
 	      /rs_l515/depth_registered/points
-	      /rs_l515/color/image_rect_color	      
+	      /rs_l515/color/image_rect_color
+	      /get_plane/focus_plane
 	      /tf
 	      /tf_static"
 	output="screen">
