@@ -1,0 +1,96 @@
+<launch>
+  <!-- <include file="$(find jsk_pcl_ros_utils)/sample/include/play_rosbag_shelf_bin.xml" /> -->
+  <!-- <arg name="INPUT_CLOUD" value="/right_hand_camera/depth_registered/points" /> -->
+  <!-- <arg name="INPUT_CLOUD" value="/multisense_local/organized_image_points2_color" /> -->
+  <arg name="INPUT_CLOUD" value="/rs_l515/depth_registered/points" />
+  <arg name="FILTERED_CLOUD" value="/voxelgrid/output" />
+ 
+  <node name="line_segment_manager"
+        pkg="nodelet" type="nodelet"
+        args="manager" output="screen" />
+
+   <node name="bounding_box_array_publisher"
+        pkg="jsk_recognition_utils" type="bounding_box_array_publisher.py">
+    <rosparam>
+      frame_id: odom_ground
+      boxes:
+         - position: [1, 0, 1.25]
+           dimension: [3, 1.5, 2]
+    </rosparam>
+   </node>
+   
+  <node name="attention_clipper"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_pcl/AttentionClipper line_segment_manager">
+    <remap from="~input/points" to="$(arg INPUT_CLOUD)" />
+    <!-- <remap from="~input/points" to="$(arg input_cloud)" /> -->
+    <remap from="~input/box_array" to="bounding_box_array_publisher/output" />
+    <!-- <remap from="~input/box" to="bounding_box_publisher/output" /> -->
+    <rosparam>
+      use_multiple_attention: true
+    </rosparam>
+  </node>
+
+  <node name="extract_indices"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_pcl/ExtractIndices line_segment_manager">
+    <remap from="~input" to="$(arg INPUT_CLOUD)" />
+    <!-- <remap from="~input" to="$(arg input_cloud)" /> -->
+    <remap from="~indices" to="attention_clipper/output/point_indices" />
+    <rosparam>
+      keep_organized: true
+    </rosparam>
+  </node>
+  
+  <node name="voxelgrid"
+        pkg="nodelet" type="nodelet"
+        args="load pcl/VoxelGrid line_segment_manager"
+        output="screen">
+    <remap from="~input" to="extract_indices/output" />
+    <rosparam>
+      filter_field_name: z
+      filter_limit_min: 0.0
+      filter_limit_max: 5.0
+      leaf_size: 0.01
+    </rosparam>
+  </node>
+
+  <node name="euclidean_clustering"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_pcl/EuclideanClustering line_segment_manager"
+        output="screen">
+    <remap from="~input" to="$(arg FILTERED_CLOUD)" />
+    <rosparam>
+      max_size: 100000
+      min_size: 110
+    </rosparam>
+  </node>
+
+  <node name="euclidean_clustering_decomposer"
+        pkg="nodelet" type="nodelet"
+        args="load jsk_pcl/ClusterPointIndicesDecomposerZAxis line_segment_manager"
+        output="screen">
+    <remap from="~input" to="$(arg FILTERED_CLOUD)" />
+    <remap from="~target" to="/euclidean_clustering/output" />
+    <rosparam>
+      max_size: 100000
+      min_size: 110
+      use_pca: true
+    </rosparam>
+  </node>
+
+  <node name="line_segment_detector"
+        pkg="nodelet" type="nodelet"
+        args="standalone jsk_pcl/LineSegmentDetector"
+        output="screen">
+    <remap from="~input" to="$(arg FILTERED_CLOUD)" />
+    <remap from="~input_indices" to="/euclidean_clustering/output" />
+    <rosparam>
+      outlier_threshold: 0.04
+      max_iteration: 10000
+      min_indices: 10
+      min_length: 0.3
+    </rosparam>
+  </node>
+
+</launch>
