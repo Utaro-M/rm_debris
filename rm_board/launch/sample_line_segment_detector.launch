@@ -9,25 +9,6 @@
         pkg="nodelet" type="nodelet"
         args="manager" output="screen" />
 
-  <node name="transform_org_cloud"
-          pkg="nodelet" type="nodelet"
-          args="load jsk_pcl_utils/TfTransformCloud line_segment_manager">
-      <remap from="~input" to="$(arg INPUT_CLOUD)" />
-      <rosparam>
-        target_frame_id: odom_ground
-      </rosparam>
-  </node>
-  
-  <!-- <node name="bounding_box_array_publisher" -->
-  <!--       pkg="jsk_recognition_utils" type="bounding_box_array_publisher.py"> -->
-  <!--   <rosparam> -->
-  <!--     frame_id: odom_ground -->
-  <!--     boxes: -->
-  <!--     - position: [1, 0, 1] -->
-  <!--       dimension: [3, 1.5, 2] -->
-  <!--   </rosparam> -->
-  <!-- </node> -->
-
    <node name="bounding_box_array_publisher"
         pkg="jsk_recognition_utils" type="bounding_box_array_publisher.py">
     <rosparam>
