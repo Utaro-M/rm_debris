@@ -162,7 +162,11 @@
      (avoid-collision? t)
      (apply-external-force? nil)
      (fix-contact? nil)
-     (set-kin-scale? t)
+     (set-unique-kin-scale? nil)
+     (kin-scale-list (list 1.0
+                            1.0
+                            (list 1 1 1 1 1 0.2)
+                            0.0))
      (only-kinematics? nil)
      (pre-process-func)
      (reset? t)
@@ -170,9 +174,9 @@
                                  (float-vector 0 0 -80 0 0 0)))
      (external-coords-list (if (boundp '*robot-env*)
 			       (list (send *robot-env* :robot :get :rarm-contact-coords)
-				     (send *robot-env* :robot :get :larm-contact-coords))
-			     (list (send *robot* :rarm :end-coords)
-				   (send *robot* :larm :end-coords))))
+                         (send *robot-env* :robot :get :larm-contact-coords))
+                   (list (send *robot* :rarm :end-coords)
+                         (send *robot* :larm :end-coords))))
      ;; (rleg-pos #f( 0 -200 -10))
      ;; (lleg-pos #f( 0  200 -10))
      (rleg-pos-shift #f(-100 0 0))
@@ -372,25 +376,26 @@
                                   )
                        ))
                   :kin-scale-list
-                  (if set-kin-scale?
+                  (if set-unique-kin-scale?
+                      kin-scale-list
                       (cond
                        ((equal arm "both")
-                              (list 1.0
-                                    1.0
-				    (list 1 1 1 1 1 0.5)
-				    (list 1 1 1 1 1 0.5)
-                                    1.0
-                                    1.0))
+                        (list 1.0
+                              1.0
+                              (list 1 1 1 1 1 0.5)
+                              (list 1 1 1 1 1 0.5)
+                              1.0
+                              1.0))
                        ((equal arm "rarm")
-                              (list 1.0
-                                    1.0
-                                    (list 1 1 1 1 0.5 1)
-                                    0.0))
+                        (list 1.0
+                              1.0
+                              (list 1 1 1 1 0.5 1)
+                              0.0))
                        ((equal arm "larm")
-                              (list 1.0
-                                    1.0
-                                    0.0
-                                    (list 1 1 1 1 0.5 1)))))                  
+                        (list 1.0
+                              1.0
+                              0.0
+                              (list 1 1 1 1 0.5 1)))))
                             ;;axis y周りは自由 heaveの時
                             ;; (list 1 1 1 1 0 1)
                             ;; (list 1 1 1 1 0 1)
