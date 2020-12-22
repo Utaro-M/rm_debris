@@ -5,6 +5,7 @@
 ;; (load "package://hrpsys_ros_bridge_tutorials/euslisp/jaxon_red-interface.l")
 (require "./class.l")
 (load "./my-ik.l")
+(load "./stick-pose.l")
 ;; (require "../../euslisp/save-log.l")
 ;;平面認識使わないときはcomment out
 ;; (load "./client/make_plane_for_opt.l")
@@ -1222,8 +1223,7 @@
 	   (reaching-offset (list #f(-140 -60 0) #f(-140 60 0)))
 	   (arm "larm")
 	   (rot-z 20))
-  ;; (set-pre-pose)
-  ;; (setq obj (copy-object cu))
+  
   (setq obj (make_plane))  
   (setq ret (get-target-pose obj))
   (setq pos (elt ret 3))
@@ -1264,22 +1264,6 @@
   (format t "rleg-coords = ~A~%" (send *robot* :rleg :end-coords :copy-worldcoords))
   (setq coords-list (auto-set-reaching-targets :pos-shift pos-shift :larm-shift (elt reaching-offset 0) :rarm-shift (elt reaching-offset 1) :rot-z rot-z))
 
-  ;;板の目の前に移動
-  
-  ;; ;; (setq center-pos (scale 0.5 (v+ (send lleg-coords :worldpos) (send rleg-coords :worldpos))))
-  ;; ;; (format t "(- (elt pos 1) (elt center-pos 1)) =~A~%" (- (elt pos 1) (elt center-pos 1)))
-  ;; ;; (setq rleg-coords-new (send (send rleg-coords :copy-worldcoords) :translate (float-vector 0 (- (elt pos 1) (elt center-pos 1)) 0)))
-  ;; ;; (setq lleg-coords-new (send (send lleg-coords :copy-worldcoords) :translate (float-vector 0 (- (elt pos 1) (elt center-pos 1)) 0)))
-  ;; ;; (move-on-foot rleg-coords lleg-coords rleg-coords-new lleg-coords-new :wait? t)
-  ;; ;; (if (< longest-len 650)
-  ;; ;;     (progn 
-  ;; ;;       (setq pos-shift 0)
-  ;; ;;       (setq arm "larm"))
-  ;; ;;   (progn 
-  ;; ;;     (setq pos-shift 300)
-  ;; ;;     (setq arm "both")))
-  ;; (setq coords-list (auto-set-reaching-targets :pos-shift pos-shift :larm-shift #f(-200 -50 0) :rarm-shift #f(-200 50 0)))
-
   ;; (send *robot* :angle-vector (send *ri* :state :angle-vector))
   (setq neck-angle (send *robot* :head-neck-p :joint-angle))
 
@@ -1305,20 +1289,10 @@
   (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
   (format t "lleg-coords = ~A~%" lleg-coords)
   (format t "rleg-coords = ~A~%" rleg-coords)
-  ;; (setq rleg-coords-new (send rleg-coords :translate (float-vector 0 (* 1.0 (elt center-pos 1)) 0)))
-  ;; (setq lleg-coords-new (send lleg-coords :translate (float-vector 0 (* 1.0 (elt center-pos 1)) 0)))
-  ;; (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact?)
-  
-  ;; (format t "center-pos shift = ~A~%" (* 1.0 (elt center-pos 1)))
-  ;; (setq lleg-pos-shift (v+ lleg-pos-shift (float-vector 0 (* 1.0 (elt center-pos 1)) 0)))
-  ;; (setq rleg-pos-shift (v+ rleg-pos-shift (float-vector 0 (* 1.0 (elt center-pos 1)) 0)))
   (setq lleg-pos-shift (v+ lleg-pos-shift (float-vector 0 0 0)))
   (setq rleg-pos-shift (v+ rleg-pos-shift (float-vector 0 0 0)))
-  ;; (format t "lleg-pos-shift = ~A~%" lleg-pos-shift)
-  ;; (format t "rleg-pos-shift = ~A~%" rleg-pos-shift)
 
   (setq fix-contact? nil)
-  ;; (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :arm arm)
   ;;手先力適当
   (setq larm-force #f(0 0 -10))
   (setq rarm-force #f(0 0 -10))
@@ -1362,7 +1336,6 @@
   (setq lleg-pos-shift (v+ lleg-pos-shift (float-vector 0 0 0)))
   (setq rleg-pos-shift (v+ rleg-pos-shift (float-vector 0 0 0)))
 
-  ;; (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :arm arm)
   (setq ret (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :arm arm :external-force-list external-force-list ))
   (send *robot-env* :dissoc-root-virtual)
 
@@ -1399,9 +1372,6 @@
   ;;       (send-pose movetime :force-move flag-simulator :look-at-object? look-at-object?)))
 
   ;; (switch_input_cloud "multisense")
-  
-  ;; (move-hand :larm #f(150 30 0) :send? send?) 
-  ;; (move-hand :rarm #f(150 -30 0) :send? send?)
   )
 
 ;;1203
@@ -1485,4 +1455,5 @@
   (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact?)
   ;; (send *ri* :angle-vector (send *robot* :angle-vector) 5000)
   )
+
 (print "load functions.l")
