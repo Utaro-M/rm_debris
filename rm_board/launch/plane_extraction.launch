@@ -166,7 +166,7 @@
         frame_id: odom_ground
         boxes:
         - position: [1, 0, 1.25]
-        dimension: [3, 1.5, 2]
+          dimension: [2, 1.5, 2]
       </rosparam>
     </node>
 
