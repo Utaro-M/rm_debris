@@ -1,15 +1,15 @@
 <launch>
   <arg name="bagfile"
-       default="/home/leus/matsuura/ros_bag/l515.bag"/>
+       default="/home/leus/matsuura/ros_bag/l515_stick.bag"/>
   <node name="rosbag_record"
 	pkg="rosbag" type="record"
 	args="-o $(arg bagfile)
 	      -b 0
 	      /rs_l515/depth_registered/points
 	      /rs_l515/color/image_rect_color
-	      /get_plane/focus_plane
 	      /tf
 	      /tf_static"
 	output="screen">
   </node>
 </launch>
+<!-- /get_plane/focus_plane -->

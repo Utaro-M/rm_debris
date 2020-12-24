@@ -69,7 +69,7 @@
     (send *ri* :stop-st)
     (send *ri* :set-st-param :emergency-check-mode 0)
     (send *ri* :start-st))
-  (send *ri* :set-log-maxlength (* 500 60))
+  (send *ri* :set-log-maxlength (* 500 90))
   (setq movetime 15000)
   (format t "prepare-real-machine~%")
   )
@@ -226,7 +226,7 @@
   (if sync?
       (send *robot* :angle-vector (send *ri* :state :angle-vector)))
   (send *robot* arm :move-end-pos relative-pos :local)
-  (objects)
+  (objects (list *robot*))
   (if send?
       (progn
         (send-pose time :force-move flag-simulator )))
@@ -1084,7 +1084,7 @@
     ;;立ち位置変更の切り替え
     (if (< 0 i)
 	(if (and (< 900 (elt (send (send *robot* :torso-root-link) :worldpos) 2))
-		 (or (< 1400 (elt (send larm-coords :worldpos) 2)) (< 600 (elt (send larm-coords :worldpos) 0))))
+		 (or (< 1400 (elt (send larm-coords :worldpos) 2)) (< 700 (elt (send larm-coords :worldpos) 0))))
 	    ;; (if (< 600 (elt (send larm-coords :worldpos) 0))	
 	    (progn 
 	      (setq fix-contact? nil)
@@ -1220,7 +1220,7 @@
 	   (lleg-pos-shift #f(0 30 0))
 	   (look-at-object? t)
 	   (fix-hand? nil)
-	   (reaching-offset (list #f(-140 -60 0) #f(-140 60 0)))
+	   (reaching-offset (list #f(-140 -50 0) #f(-140 50 0)))
 	   (arm "larm")
 	   (rot-z 20))
 
@@ -1234,7 +1234,7 @@
         (format t "longest-len = ~A~%" longest-len)
         (format t "pos =~A ~%" pos)
         (setq set-unique-kin-scale? nil)
-        (if (< longest-len 400)
+        (if (< longest-len 100)
             (progn 
               (setq pos-shift 0)
               (if (equal arm "larm")
@@ -1380,8 +1380,8 @@
   ;;     (setq r-diff #f(150 -30 0))))
   (if (equal target "board")
       (progn
-        (setq l-diff #f(100 30 0))
-        (setq r-diff #f(100 -30 0))  
+        (setq l-diff #f(100 50 0))
+        (setq r-diff #f(100 -50 0))  
         (move-hand :larm l-diff :send? send?)
         (move-hand :rarm r-diff :send? send?)))
   ;; (setq zmp-vector (send *ri*  :zmp-vector))
