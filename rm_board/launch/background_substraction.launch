@@ -23,9 +23,9 @@
        default="/static_virtual_camera/camera_info" />
   
   <!-- 固定してん -->
-  <rosparam param="/use_sim_time">true</rosparam>
+  <rosparam param="/use_sim_time">false</rosparam>
   <node pkg="rm_debris_vision" name="static_virtual_camera" type="static_virtual_camera.py" output="screen" />
-  <node pkg="tf" type="static_transform_publisher" name="virtual_camera_broadcaster" args="0.2 0 1.0 0.612372 -0.612372 0.353553 -0.353553 odom static_virtual_camera 100" unless="false" />  <!-- -0.5 0.5 -0.5 0.5 -->
+  <node pkg="tf" type="static_transform_publisher" name="virtual_camera_broadcaster" args="0.2 0 1.0 0.612372 -0.612372 0.353553 -0.353553 odom_ground static_virtual_camera 100" unless="false" />  <!-- -0.5 0.5 -0.5 0.5 -->
   <!-- <node pkg="tf" type="static_transform_publisher" name="virtual_camera_broadcaster" args="0.2 0 1.0 0.612372 -0.612372 0.353553 -0.353553 left_camera_optical_frame static_virtual_camera 100" unless="false" />  <!-\- -0.5 0.5 -0.5 0.5 -\->   -->
   
   <group ns="background_subtraction">
@@ -33,21 +33,12 @@
           pkg="nodelet" type="nodelet" name="camera_nodelet_manager"
           args="manager" output="screen"/>
 
-    <node name="transform_org_cloud"
-          pkg="nodelet" type="nodelet"
-          args="load jsk_pcl_utils/TfTransformCloud $(arg manager)">
-      <remap from="~input" to="$(arg input_cloud)" />
-      <rosparam>
-        target_frame_id: odom_ground
-      </rosparam>
-    </node>
-
     <!-- get image from static virtual camera -->
     <node name="depth_image_creator"
           pkg="nodelet" type="nodelet"
           args="load jsk_pcl/DepthImageCreator $(arg manager)">
-      <remap from="~input" to="$(arg transformed_cloud)" />
-      <!-- <remap from="~input" to="$(arg input_cloud)" /> -->
+      <!-- <remap from="~input" to="$(arg transformed_cloud)" /> -->
+      <remap from="~input" to="$(arg input_cloud)" />
       <remap from="~info" to="$(arg static_camera_info)" />
       <rosparam>
         <!-- tf_duration: 0.1 -->
@@ -80,7 +71,7 @@
       <remap from="~input" to="bg_subtraction/output" />
       <rosparam>
         method: 0
-        size: 1
+        size: 2
       </rosparam>
     </node>
     <!-- 膨張 -->
@@ -128,8 +119,17 @@
         max_queue_size: 10
       </rosparam>
     </node>
-    
-   <!--  <node name="multi_plane_extraction" -->
+
+    <node name="transform_org_cloud"
+          pkg="nodelet" type="nodelet"
+          args="load jsk_pcl_utils/TfTransformCloud $(arg manager)">
+      <remap from="~input" to="extract_indices/output" />
+      <rosparam>
+        target_frame_id: odom_ground
+      </rosparam>
+    </node>
+
+    <!--  <node name="multi_plane_extraction" -->
    <!--        pkg="nodelet" type="nodelet" -->
    <!--        args="load jsk_pcl/MultiPlaneExtraction  $(arg manager)"> -->
    <!--    <!-\- <remap from="~input" to="/kinect_head/depth_registered/points"/>-\-> -->
@@ -176,9 +176,9 @@
    <!--  </node> -->
   </group>
 
-  <node name="rviz"
-        pkg="rviz" type="rviz"
-        args="-d /home/utaro/research/rm_debris/rm_board/display/background_subtraction.rviz"/>
+  <!-- <node name="rviz" -->
+  <!--       pkg="rviz" type="rviz" -->
+  <!--       args="-d /home/utaro/research/rm_debris/rm_board/display/background_subtraction.rviz"/> -->
   
 </launch>
 
