@@ -20,7 +20,7 @@
   <node pkg="rm_debris_vision" name="make_plane_realtime" type="make_plane_for_ik.l" output="screen" />
   <node pkg="rm_debris_vision" name="make_plane_for_ik_loop" type="make_plane_for_ik_server.l" output="screen" />
   <node pkg="rm_debris_vision" name="change_clip_box" type="change_clip_box_server.l" output="screen" />
-  <node pkg="rm_debris_vision" name="hz_down" type="hz_down_realsense.py" output="screen" />
+  <!-- <node pkg="rm_debris_vision" name="hz_down" type="hz_down_realsense.py" output="screen" /> -->
   <node pkg="rm_debris_vision" name="switch_input_cloud" type="switch_input_cloud.py" output="screen" />    
 
   <group ns="plane_extraction">
@@ -34,10 +34,10 @@
         frame_id: odom_ground
         boxes:
         - position: [1, 0, 0.95]
-          dimension: [3, 1.5, 2]
+          dimension: [3, 2.0, 2]
       </rosparam>
     </node>
-
+          <!-- dimension: [3, 1.5, 2] -->
     <node name="attention_clipper"
           pkg="nodelet" type="nodelet"
           args="load jsk_pcl/AttentionClipper $(arg manager)">
