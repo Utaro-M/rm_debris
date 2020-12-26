@@ -454,10 +454,10 @@
        (flag 0))
     ;; (format t "drop_flag_list =~A~%" drop_flag_list)
     (if drop_flag_list
-	(progn
-	  (print "get drop_flag_list")
-	  (setq drop_flag_larm (elt (send drop_flag_list :data) 0))
-	  (setq drop_flag_rarm (elt (send drop_flag_list :data) 1)))
+        (progn
+          (print "get drop_flag_list")
+          (setq drop_flag_larm (elt (send drop_flag_list :data) 0))
+          (setq drop_flag_rarm (elt (send drop_flag_list :data) 1)))
       (print "use old drop_flag_list"))
     ;; (format t "get larm points = ~A~%" (send drop_flag_larm :data))
     ;; (format t "get rarm points = ~A~%" (send drop_flag_rarm :data))    
@@ -468,14 +468,20 @@
     ;; (if (and (not (send drop_flag_larm :data)) (not (send drop_flag_rarm :data)))
     ;;     (setq flag 3))
     
-    ;; (format t "get larm points = ~A~%" drop_flag_larm )
-    ;; (format t "get rarm points = ~A~%" drop_flag_rarm )
+    (format t "get larm points = ~A~%" drop_flag_larm )
+    (format t "get rarm points = ~A~%" drop_flag_rarm )
     (if (= drop_flag_larm 0)
-        (setq flag 1))
+        (progn
+          (print "larm drop")
+          (setq flag 1)))
     (if (= drop_flag_rarm 0)
-        (setq flag 2))
+        (progn
+          (print "rarm drop")
+          (setq flag 2)))
     (if (and (= drop_flag_larm 0) (= drop_flag_rarm 0))
-        (setq flag 3))
+        (progn
+          (print "both arms drop")
+          (setq flag 3)))
     flag)
   )
 
@@ -1030,9 +1036,12 @@
   (dotimes (i times)
     (if (= i 0)
         (progn
-          (print "200 mm")
-          (setq l-unit (* 200 (/ larm-move-offset (abs larm-move-offset))))
-          (setq r-unit (* 200 (/ rarm-move-offset (abs rarm-move-offset))))
+          (if (< (abs larm-move-offset) 200)
+              (setq l-unit (* larm-move-offset (/ larm-move-offset (abs larm-move-offset))))
+            (setq l-unit (* 200 (/ larm-move-offset (abs larm-move-offset)))))
+          (if (< (abs rarm-move-offset) 200)
+              (setq r-unit (* rarm-move-offset (/ rarm-move-offset (abs rarm-move-offset))))
+            (setq r-unit (* 200 (/ rarm-move-offset (abs rarm-move-offset)))))
           )
       (progn
         (setq l-unit (* (/ 1.0 (- times 1)) (- larm-move-offset (* 200 (/ larm-move-offset (abs larm-move-offset))))))
@@ -1050,7 +1059,7 @@
         (setq normal-vec (scale -1.0 normal-vec)))
     (format t "normal-vec =~A~%" normal-vec)
     (setq l-normal-vec-scaled (scale l-unit normal-vec))
-    (setq r-normal-vec-scaled (scale r-unit normal-vec))    
+    (setq r-normal-vec-scaled (scale r-unit normal-vec))
     (if (< 0 i)
         (progn
           ;; (setq arm-pos-diff (v- (elt ret-arm 3) (elt ret-arm-save 3)))
@@ -1066,7 +1075,6 @@
           (format t "l-normal-vec-scaled-diff = ~A~%" l-normal-vec-scaled-diff)
           (format t "r-normal-vec-scaled-diff = ~A~%" r-normal-vec-scaled-diff)
           ))
-          
     ;; (setq normal-vec (send (elt (send fc :get-face :prism :top) 0) :normal))
 
     ;; (setq larm-coords (send (send *robot* :larm :end-coords :copy-worldcoords) :translate (v+ (scale anti-slip-rate l-normal-vec-scaled-diff) l-normal-vec-scaled) :world))
@@ -1221,7 +1229,7 @@
 
 ;; (defun test-reach
 (defun reach-auto
-    (&key  (fix-contact? nil) (send? t) (target "board") (pos-shift 300)
+    (&key  (fix-contact? nil) (send? t) (target "board") (pos-shift 300) (one-hand? nil)
 	   (wait? t) (reset? t) (apply-external-force? t) (avoid-collision? t)
 	   (rleg-pos-shift #f(0 -30 0))
 	   (lleg-pos-shift #f(0 30 0))
@@ -1241,7 +1249,7 @@
         (format t "longest-len = ~A~%" longest-len)
         (format t "pos =~A ~%" pos)
         (setq set-unique-kin-scale? nil)
-        (if (< longest-len 100)
+        (if (or one-hand? (< longest-len 100))
             (progn 
               (setq pos-shift 0)
               (if (equal arm "larm")
@@ -1421,8 +1429,8 @@
   (if (not (= 0 (check-pcl)))
       (progn
         (format t "adjust~%")
-        (move-hand :larm #f(100 30 0))
-        (move-hand :rarm #f(100 -30 0))))
+        (move-hand :larm #f(30 30 0))
+        (move-hand :rarm #f(30 -30 0))))
   
   (setq larm-coords-tmp (send *robot* :larm :end-coords :copy-worldcoords))
   (setq rarm-coords-tmp (send *robot* :rarm :end-coords :copy-worldcoords))
@@ -1457,11 +1465,14 @@
   (format t "rarm-target coords= ~A~%" rarm-target-coords)  
   (move-hand :larm (scale (- cnt 1) #f(-30 -30 0)))
   (move-hand :rarm (scale (- cnt 1) #f(-30 30 0)))
-  (setq lleg-pos-shift (v+ lleg-pos-shift (float-vector 0 (* 0.5 (elt dif 1)) 0)))
-  (setq rleg-pos-shift (v+ rleg-pos-shift (float-vector 0 (* 0.5 (elt dif 1)) 0)))  
-  (ik-opt rarm-target-coords larm-target-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift ;; :external-force-list external-force-lis   
-          )
-  (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact?)
+  (format t "larm slide= ~A~%" (v- (send larm-target-coords :worldpos) (send larm-coords-tmp :worldpos)))
+  (format t "rarm slide= ~A~%" (v- (send rarm-target-coords :worldpos) (send rarm-coords-tmp :worldpos)))
+  (move-hand :larm (v- (send larm-target-coords :worldpos) (send larm-coords-tmp :worldpos)))
+  (move-hand :rarm (v- (send rarm-target-coords :worldpos) (send rarm-coords-tmp :worldpos)))
+  ;; (setq lleg-pos-shift (v+ lleg-pos-shift (float-vector 0 (* 0.5 (elt dif 1)) 0)))
+  ;; (setq rleg-pos-shift (v+ rleg-pos-shift (float-vector 0 (* 0.5 (elt dif 1)) 0)))
+  ;; (ik-opt rarm-target-coords larm-target-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift )
+  ;; (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact?)
   ;; (setq zmp-vector (send *ri*  :zmp-vector))
   ;; (setq rleg-coords-new (send *robot* :rleg :end-coords :copy-worldcoords))
   ;; (setq lleg-coords-new (send *robot* :lleg :end-coords :copy-worldcoords))
