@@ -1,6 +1,6 @@
 <launch>
   <arg name="bagfile"
-       default="/home/leus/matsuura/ros_bag/l515_stick.bag"/>
+       default="/home/leus/matsuura/ros_bag/l515_search_top_board.bag"/>
   <node name="rosbag_record"
 	pkg="rosbag" type="record"
 	args="-o $(arg bagfile)

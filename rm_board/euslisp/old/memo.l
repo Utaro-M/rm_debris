@@ -598,3 +598,11 @@
 rtprint -t 0.1 jaxonred:15005/rfu.rtc:ref_lhsensorOut
 rtprintはctr-dで中止すること（hrpsysがとまってしまう
 rtcat jaxonred:15005/rfu.rtc:ref_lhsensorOut -l
+
+
+stp=hcf.abc_svc.getStabilizerParam()
+stp.joint_servo_control_parameters
+[OpenHRP.AutoBalancerService.JointServoControlParameter(support_pgain=[5.0, 10.0, 10.0, 5.0, 0.09999999999999998, 0.09999999999999998], support_dgain=[10.0, 20.0, 20.0, 10.0, 10.0, 10.0], landing_pgain=[5.0, 1.0, 1.0, 1.0, 0.09999999999999998, 0.09999999999999998], landing_dgain=[10.0, 10.0, 10.0, 10.0, 5.0, 5.0], swing_pgain=[5.0, 30.0, 20.0, 10.0, 5.0, 5.0], swing_dgain=[10.0, 30.0, 20.0, 20.0, 10.0, 10.0]),
+OpenHRP.AutoBalancerService.JointServoControlParameter(support_pgain=[5.0, 10.0, 10.0, 5.0, 0.09999999999999998, 0.09999999999999998], support_dgain=[10.0, 20.0, 20.0, 10.0, 10.0, 10.0], landing_pgain=[5.0, 1.0, 1.0, 1.0, 0.09999999999999998, 0.09999999999999998], landing_dgain=[10.0, 10.0, 10.0, 10.0, 5.0, 5.0], swing_pgain=[5.0, 30.0, 20.0, 10.0, 5.0, 5.0], swing_dgain=[10.0, 30.0, 20.0, 20.0, 10.0, 10.0]),
+OpenHRP.AutoBalancerService.JointServoControlParameter(support_pgain=[100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0], support_dgain=[100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0], landing_pgain=[100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0], landing_dgain=[100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0], swing_pgain=[100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0], swing_dgain=[100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0]),
+OpenHRP.AutoBalancerService.JointServoControlParameter(support_pgain=[100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0], support_dgain=[100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0], landing_pgain=[100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0], landing_dgain=[100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0], swing_pgain=[100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0], swing_dgain=[100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0])]
