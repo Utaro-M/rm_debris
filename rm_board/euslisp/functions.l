@@ -70,7 +70,7 @@
     (send *ri* :set-st-param :emergency-check-mode 0)
     (send *ri* :start-st))
   (send *ri* :set-log-maxlength (* 500 90))
-  (setq movetime 15000)
+  (setq movetime 14000)
   (format t "prepare-real-machine~%")
   )
 
@@ -1502,21 +1502,31 @@
 
 ;;持ち上げてみて面積を比べる
 (defun serch-top-board()
-  (move-hand :larm  #f(30 100 0) :wait? t)
+  (move-hand :larm  #f(30 200 0) :wait? t)
+  (unix::sleep 2)
   (setq l-fc (make_plane :set-com? nil))
   (setq l-area (send (car (send (elt l-fc 0) :get-face :prism :top)) :area))
   (setq l-com (elt l-fc 1))
-  (move-hand :larm  #f(-20 -100 0) :wait? t)
+  (move-hand :larm  #f(-20 -200 0) :wait? t)
 
-  (move-hand :rarm  #f(30 -100 0) :wait? t)
+  (move-hand :rarm  #f(30 -200 0) :wait? t)
+  (unix::sleep 2)
   (setq r-fc (make_plane :set-com? nil))
   (setq r-area (send (car (send (elt r-fc 0) :get-face :prism :top)) :area))
   (setq r-com (elt r-fc 1))
-  (move-hand :rarm  #f(-20 100 0) :wait? t)
+  (move-hand :rarm  #f(-20 200 0) :wait? t)
 
   (if (< l-area r-area)
       (set_plane_centroid l-com)
     (set_plane_centroid r-com)
     )
+  )
+
+(defun predict-k()
+  progn (setq row 6) (setq dir-list (list #f(1 0 0) #f(-1 0 0) #f(0 1 0) #f(0 -1 0) #f(0 0 1) #f(0 0 -1) )) (setq scl 80) (setq wrench-mat (make-matrix row 6)) (setq pose-mat (make-matrix row 6)) (dotimes (i row) (progn (setq r-f (low-pass-online "force" "absolute" :rarm :times 10 :sleep 100 :flag nil)) (setq r-m (low-pass-online "moment" "absolute" :rarm :times 10 :sleep 100 :flag nil)) (setq vec (float-vector (elt r-f 0) (elt r-f 1) (elt r-f 2) (elt r-m 0) (elt r-m 1) (elt r-m 2))) (format t "vec=~A~%" vec)  (setq r-coords (send *robot* :rarm :end-coords :copy-worldcoords)) (format t "dir =~A~% " (elt dir-list i)) (move-hand :rarm (scale scl (elt dir-list i)))  (send *robot* :angle-vector (send *ri* :state :angle-vector)) (setq r-coords-new (send *robot* :rarm :end-coords :copy-worldcoords)) (setq r-f-new (low-pass-online "force" "absolute" :rarm :times 10 :sleep 100 :flag nil)) (setq r-m-new (low-pass-online "moment" "absolute" :rarm :times 10 :sleep 100 :flag nil)) (setq vec-new (float-vector (elt r-f-new 0) (elt r-f-new 1) (elt r-f-new 2) (elt r-m-new 0) (elt r-m-new 1) (elt r-m-new 2))) (setq dif-vec (v- vec-new vec)) (format t "dif-vec=~A~%" dif-vec) (setq dif-coords (send r-coords :transformation r-coords-new :world)) (setq dif-pos (send dif-coords :worldpos)) (setq dif-rpy (car (rpy-angle  (send dif-coords :worldrot)))) (progn (setf (aref pose-mat i 0) (elt dif-pos 0)) (setf (aref pose-mat i 1) (elt dif-pos 1)) (setf (aref pose-mat i 2) (elt dif-pos 2)) (setf (aref pose-mat i 3) (elt dif-rpy 0)) (setf (aref pose-mat i 4) (elt dif-rpy 1)) (setf (aref pose-mat i 5) (elt dif-rpy 2))) (dotimes (j 6) (setf (aref wrench-mat i j) (elt dif-vec j))) (format t "reset ~%") (move-hand :rarm (scale (* -1.0 scl) (elt dir-list i))))) (list wrench-mat pose-mat)
+  (setq pose-mat-inv (transpose pose-mat))
+  (setq wrench-mat-inv (transpose wrench-mat))
+  (setq k-mat (m* wrench-mat-inv (pseudo-inverse pose-mat-inv)))
+  
   )
 (print "load functions.l")
