@@ -222,14 +222,14 @@
   )
 
 (defun move-hand
-    (arm relative-pos &key (time 8000) (send? t) (sync? nil))
+    (arm relative-pos &key (time 4000) (send? t) (sync? nil) (wait? t))
   (if sync?
       (send *robot* :angle-vector (send *ri* :state :angle-vector)))
   (send *robot* arm :move-end-pos relative-pos :local)
   (objects (list *robot*))
   (if send?
       (progn
-        (send-pose time :force-move flag-simulator )))
+        (send-pose time :force-move flag-simulator :wait? wait?)))
   )
 (defun move-on-foot
     (init-rcoords init-lcoords next-rcoords  next-lcoords &key (which? :lleg) (only-move? nil) (wait? t) (fix-hand? nil) (force-move nil))
@@ -454,10 +454,10 @@
        (flag 0))
     ;; (format t "drop_flag_list =~A~%" drop_flag_list)
     (if drop_flag_list
-	(progn
-	  (print "get drop_flag_list")
-	  (setq drop_flag_larm (elt (send drop_flag_list :data) 0))
-	  (setq drop_flag_rarm (elt (send drop_flag_list :data) 1)))
+        (progn
+          (print "get drop_flag_list")
+          (setq drop_flag_larm (elt (send drop_flag_list :data) 0))
+          (setq drop_flag_rarm (elt (send drop_flag_list :data) 1)))
       (print "use old drop_flag_list"))
     ;; (format t "get larm points = ~A~%" (send drop_flag_larm :data))
     ;; (format t "get rarm points = ~A~%" (send drop_flag_rarm :data))    
@@ -468,14 +468,20 @@
     ;; (if (and (not (send drop_flag_larm :data)) (not (send drop_flag_rarm :data)))
     ;;     (setq flag 3))
     
-    ;; (format t "get larm points = ~A~%" drop_flag_larm )
-    ;; (format t "get rarm points = ~A~%" drop_flag_rarm )
+    (format t "get larm points = ~A~%" drop_flag_larm )
+    (format t "get rarm points = ~A~%" drop_flag_rarm )
     (if (= drop_flag_larm 0)
-        (setq flag 1))
+        (progn
+          (print "larm drop")
+          (setq flag 1)))
     (if (= drop_flag_rarm 0)
-        (setq flag 2))
+        (progn
+          (print "rarm drop")
+          (setq flag 2)))
     (if (and (= drop_flag_larm 0) (= drop_flag_rarm 0))
-        (setq flag 3))
+        (progn
+          (print "both arms drop")
+          (setq flag 3)))
     flag)
   )
 
@@ -759,7 +765,7 @@
         (longest-len 0)
         ;; (pos-centroid (send contact-wall :centroid))
         (pos-centroid (elt contact-wall 1))
-        (vertices-list (get-min-val (send (car contact-wall) :vertices) 16))
+        (vertices-list (get-min-val (send (car contact-wall) :vertices) (/ (length (send (car contact-wall) :vertices)) 4))) ;;板の大きさに応じて変えないといけない？
         (vertices-list-for-com (get-min-val (send (car contact-wall) :vertices) 4))
         (vertices-list-reverse (reverse vertices-list))
         ;; (plane-normal (send (elt (send contact-wall :faces) 0) :normal))
@@ -1009,15 +1015,17 @@
 (ros::advertise "/normal_end" geometry_msgs::PointStamped 1)
 
 (defun heave-with-sensor
-    (larm-move-offset rarm-move-offset times
-                      &key  (fix-contact? t) (send? t) (wait? t) (anti-slip-rate 1.0) (check? nil)
-                      (reset? t) (apply-external-force? t) (avoid-collision? t)
-                      (rleg-pos-shift #f(0 0 0))
-                      (lleg-pos-shift #f(0 0 0))
-                      (look-at-object? t)
-                      (reaching-offset (list #f(-100 0 0) #f(-100 0 0)))
-                      (fix-hand? nil)
-                      (rot-z 20))
+    (larm-move-offset
+     rarm-move-offset
+     times
+     &key  (fix-contact? t) (send? t) (wait? t) (anti-slip-rate 1.0) (check? nil)
+     (reset? t) (apply-external-force? t) (avoid-collision? t)
+     (rleg-pos-shift #f(0 0 0))
+     (lleg-pos-shift #f(0 0 0))
+     (look-at-object? t)
+     (reaching-offset (list #f(-100 0 0) #f(-100 0 0)))
+     (fix-hand? nil)
+     (rot-z 20))
   ;; (setq fc (make_plane))
   ;; (setq normal-vec (send (elt (send fc :get-face :prism :top) 0) :normal))
   ;; (setq external-coords-list (list (send *robot-env* :robot :get :rarm-contact-coords)
@@ -1028,13 +1036,16 @@
   (dotimes (i times)
     (if (= i 0)
         (progn
-          (print "250 mm")
-          (setq l-unit (* 250 (/ larm-move-offset (abs larm-move-offset))))
-          (setq r-unit (* 250 (/ rarm-move-offset (abs rarm-move-offset))))
+          (if (< (abs larm-move-offset) 200)
+              (setq l-unit (* larm-move-offset (/ larm-move-offset (abs larm-move-offset))))
+            (setq l-unit (* 200 (/ larm-move-offset (abs larm-move-offset)))))
+          (if (< (abs rarm-move-offset) 200)
+              (setq r-unit (* rarm-move-offset (/ rarm-move-offset (abs rarm-move-offset))))
+            (setq r-unit (* 200 (/ rarm-move-offset (abs rarm-move-offset)))))
           )
       (progn
-        (setq l-unit (* (/ 1.0 (- times 1)) (- larm-move-offset (* 250 (/ larm-move-offset (abs larm-move-offset))))))
-        (setq r-unit (* (/ 1.0 (- times 1)) (- rarm-move-offset (* 250 (/ rarm-move-offset (abs larm-move-offset))))))))
+        (setq l-unit (* (/ 1.0 (- times 1)) (- larm-move-offset (* 200 (/ larm-move-offset (abs larm-move-offset))))))
+        (setq r-unit (* (/ 1.0 (- times 1)) (- rarm-move-offset (* 200 (/ rarm-move-offset (abs larm-move-offset))))))))
     (format t "l-unit = ~A~%" l-unit)
     (format t "r-unit = ~A~%" r-unit)
     (setq fc (make_plane))
@@ -1042,12 +1053,13 @@
     ;; (setq ret-rarm (get-target-pose fc)) ;; "rarm"))
     ;; (format t "ret-arm = ~A~%" ret-arm)
     ;; (format t "ret-rarm = ~A~%" ret-rarm)
+    (setq coords-list (auto-set-reaching-targets :pos-shift 0 :larm-shift #f(0 0 0) :rarm-shift #f(0 0 0) :rot-z 15))
     (setq normal-vec (elt fc 2))
     (if (< (elt normal-vec 2) 0)
         (setq normal-vec (scale -1.0 normal-vec)))
     (format t "normal-vec =~A~%" normal-vec)
     (setq l-normal-vec-scaled (scale l-unit normal-vec))
-    (setq r-normal-vec-scaled (scale r-unit normal-vec))    
+    (setq r-normal-vec-scaled (scale r-unit normal-vec))
     (if (< 0 i)
         (progn
           ;; (setq arm-pos-diff (v- (elt ret-arm 3) (elt ret-arm-save 3)))
@@ -1063,11 +1075,12 @@
           (format t "l-normal-vec-scaled-diff = ~A~%" l-normal-vec-scaled-diff)
           (format t "r-normal-vec-scaled-diff = ~A~%" r-normal-vec-scaled-diff)
           ))
-          
     ;; (setq normal-vec (send (elt (send fc :get-face :prism :top) 0) :normal))
 
-    (setq larm-coords (send (send *robot* :larm :end-coords :copy-worldcoords) :translate (v+ (scale anti-slip-rate l-normal-vec-scaled-diff) l-normal-vec-scaled) :world))
-    (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate (v+ (scale anti-slip-rate r-normal-vec-scaled-diff) r-normal-vec-scaled) :world ))
+    ;; (setq larm-coords (send (send *robot* :larm :end-coords :copy-worldcoords) :translate (v+ (scale anti-slip-rate l-normal-vec-scaled-diff) l-normal-vec-scaled) :world))
+    ;; (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate (v+ (scale anti-slip-rate r-normal-vec-scaled-diff) r-normal-vec-scaled) :world ) )
+    (setq larm-coords (make-coords :pos (v+ (send *robot* :larm :end-coords :worldpos) (v+ (scale anti-slip-rate l-normal-vec-scaled-diff) l-normal-vec-scaled)) :rot (send (elt coords-list 0) :rot)))
+    (setq rarm-coords (make-coords :pos (v+ (send *robot* :rarm :end-coords :worldpos) (v+ (scale anti-slip-rate r-normal-vec-scaled-diff) r-normal-vec-scaled)) :rot (send (elt coords-list 1) :rot)))
     ;; (setq larm-coords (send (send *robot* :larm :end-coords :copy-worldcoords) :translate (v+ (float-vector (* anti-slip-rate (elt arm-pos-diff 0)) 0 0) (scale l-unit normal-vec)) :world))
     ;; (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate (v+ (float-vector (* anti-slip-rate (elt arm-pos-diff 0)) 0 0) (scale r-unit normal-vec)) :world ))
     (format t "larm-coords     = ~A~%" (send *robot* :larm :end-coords :copy-worldcoords))
@@ -1088,7 +1101,9 @@
 	    ;; (if (< 600 (elt (send larm-coords :worldpos) 0))	
 	    (progn 
 	      (setq fix-contact? nil)
-	      (setq fix-hand? nil))))
+	      (setq fix-hand? nil)
+          (setq wait? nil)
+          )))
       
     (setq ret (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :external-force-list external-force-list ))
     ;; (send *robot* :head-neck-p :joint-angle -40)
@@ -1212,9 +1227,9 @@
 
 ;;首の調整込み
 
-;; (defun test-reach
+;;reach-auto :pos-shift 280 :reaching-offset (list #f(-140 50 0) #f(-140 50 0))  ;;rotate
 (defun reach-auto
-    (&key  (fix-contact? nil) (send? t) (target "board")
+    (&key  (fix-contact? nil) (send? t) (target "board") (pos-shift 300) (one-hand? nil)
 	   (wait? t) (reset? t) (apply-external-force? t) (avoid-collision? t)
 	   (rleg-pos-shift #f(0 -30 0))
 	   (lleg-pos-shift #f(0 30 0))
@@ -1226,7 +1241,7 @@
 
   (if (equal target "board")
       (progn
-        (setq obj (make_plane))  
+        (setq obj (make_plane))
         (setq ret (get-target-pose obj))
         (setq pos (elt ret 3))
         (setq pos-centroid (elt ret 5))
@@ -1234,7 +1249,7 @@
         (format t "longest-len = ~A~%" longest-len)
         (format t "pos =~A ~%" pos)
         (setq set-unique-kin-scale? nil)
-        (if (< longest-len 100)
+        (if (or one-hand? (< longest-len 100))
             (progn 
               (setq pos-shift 0)
               (if (equal arm "larm")
@@ -1243,7 +1258,7 @@
               ;; (setq arm "larm")
               )
           (progn 
-            (setq pos-shift 300)
+            ;; (setq pos-shift 300)
             (setq shift-standing-pos 0)
             (setq arm "both")))
         )
@@ -1414,8 +1429,8 @@
   (if (not (= 0 (check-pcl)))
       (progn
         (format t "adjust~%")
-        (move-hand :larm #f(100 30 0))
-        (move-hand :rarm #f(100 -30 0))))
+        (move-hand :larm #f(30 30 0))
+        (move-hand :rarm #f(30 -30 0))))
   
   (setq larm-coords-tmp (send *robot* :larm :end-coords :copy-worldcoords))
   (setq rarm-coords-tmp (send *robot* :rarm :end-coords :copy-worldcoords))
@@ -1450,11 +1465,14 @@
   (format t "rarm-target coords= ~A~%" rarm-target-coords)  
   (move-hand :larm (scale (- cnt 1) #f(-30 -30 0)))
   (move-hand :rarm (scale (- cnt 1) #f(-30 30 0)))
-  (setq lleg-pos-shift (v+ lleg-pos-shift (float-vector 0 (* 0.5 (elt dif 1)) 0)))
-  (setq rleg-pos-shift (v+ rleg-pos-shift (float-vector 0 (* 0.5 (elt dif 1)) 0)))  
-  (ik-opt rarm-target-coords larm-target-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift ;; :external-force-list external-force-lis   
-          )
-  (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact?)
+  (format t "larm slide= ~A~%" (v- (send larm-target-coords :worldpos) (send larm-coords-tmp :worldpos)))
+  (format t "rarm slide= ~A~%" (v- (send rarm-target-coords :worldpos) (send rarm-coords-tmp :worldpos)))
+  (move-hand :larm (v- (send larm-target-coords :worldpos) (send larm-coords-tmp :worldpos)))
+  (move-hand :rarm (v- (send rarm-target-coords :worldpos) (send rarm-coords-tmp :worldpos)))
+  ;; (setq lleg-pos-shift (v+ lleg-pos-shift (float-vector 0 (* 0.5 (elt dif 1)) 0)))
+  ;; (setq rleg-pos-shift (v+ rleg-pos-shift (float-vector 0 (* 0.5 (elt dif 1)) 0)))
+  ;; (ik-opt rarm-target-coords larm-target-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift )
+  ;; (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact?)
   ;; (setq zmp-vector (send *ri*  :zmp-vector))
   ;; (setq rleg-coords-new (send *robot* :rleg :end-coords :copy-worldcoords))
   ;; (setq lleg-coords-new (send *robot* :lleg :end-coords :copy-worldcoords))
@@ -1482,4 +1500,23 @@
   ;; (send *ri* :angle-vector (send *robot* :angle-vector) 5000)
   )
 
+;;持ち上げてみて面積を比べる
+(defun serch-top-board()
+  (move-hand :larm  #f(30 100 0) :wait? t)
+  (setq l-fc (make_plane :set-com? nil))
+  (setq l-area (send (car (send (elt l-fc 0) :get-face :prism :top)) :area))
+  (setq l-com (elt l-fc 1))
+  (move-hand :larm  #f(-20 -100 0) :wait? t)
+
+  (move-hand :rarm  #f(30 -100 0) :wait? t)
+  (setq r-fc (make_plane :set-com? nil))
+  (setq r-area (send (car (send (elt r-fc 0) :get-face :prism :top)) :area))
+  (setq r-com (elt r-fc 1))
+  (move-hand :rarm  #f(-20 100 0) :wait? t)
+
+  (if (< l-area r-area)
+      (set_plane_centroid l-com)
+    (set_plane_centroid r-com)
+    )
+  )
 (print "load functions.l")

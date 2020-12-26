@@ -9,6 +9,8 @@ Panels:
         - /PointCloud21
         - /PointCloud22
         - /PointCloud23
+        - /Polygon1
+        - /PolygonArray1
         - /Image1
         - /BoundingBox1
         - /PointStamped1
@@ -168,13 +170,21 @@ Visualization Manager:
       transport hints: raw
       use image: false
     - Alpha: 1
-      Class: jsk_rviz_plugin/PolygonArray
+      Class: rviz/Polygon
       Color: 25; 255; 0
       Enabled: true
-      Name: PolygonArray
-      Topic: /get_plane/output_polygon
+      Name: Polygon
+      Topic: /get_plane/focus_plane
       Unreliable: false
       Value: true
+    - Alpha: 1
+      Class: jsk_rviz_plugin/PolygonArray
+      Color: 25; 255; 0
+      Enabled: false
+      Name: PolygonArray
+      Topic: /plane_extraction/plane_polygons
+      Unreliable: false
+      Value: false
       coloring: Auto
       enable lighting: true
       normal length: 0.10000000149011612
@@ -534,10 +544,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.2503991723060608
+      Pitch: 0.38539919257164
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.890406131744385
+      Yaw: 4.565406799316406
     Saved: ~
 Window Geometry:
   Displays:

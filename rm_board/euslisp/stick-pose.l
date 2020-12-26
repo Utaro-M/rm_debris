@@ -28,7 +28,8 @@
         (send *stick-coords* :newcoords (make-coords :pos (elt stick-pos-list idx) :rot (quaternion2matrix (elt stick-ori-list idx))))
         (setq stick-coords-rotated (send (send (send *stick-coords* :copy-worldcoords) :rotate (deg2rad 90) :y :local) :rotate (deg2rad 260) :z :local))
         (format t "stick-coords-rotated = ~A~%" stick-coords-rotated)
-        (send *stick-coords-rotated* :newcoords (send (send stick-coords-rotated :translate #f(-40 20 200) :local) :translate #f(-50 0 0) :world))
+
+        (send *stick-coords-rotated* :newcoords (send (send stick-coords-rotated :translate #f(-40 20 200) :local) :translate #f(-60 0 0) :world))
         (format t "stick_coords = ~A~%" *stick-coords*)
         (setq origin-coords (make-coords))
         (objects (list *stick-coords* *stick-coords-rotated* origin-coords))
