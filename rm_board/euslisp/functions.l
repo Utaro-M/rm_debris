@@ -222,14 +222,14 @@
   )
 
 (defun move-hand
-    (arm relative-pos &key (time 4000) (send? t) (sync? nil))
+    (arm relative-pos &key (time 4000) (send? t) (sync? nil) (wait? t))
   (if sync?
       (send *robot* :angle-vector (send *ri* :state :angle-vector)))
   (send *robot* arm :move-end-pos relative-pos :local)
   (objects (list *robot*))
   (if send?
       (progn
-        (send-pose time :force-move flag-simulator )))
+        (send-pose time :force-move flag-simulator :wait? wait?)))
   )
 (defun move-on-foot
     (init-rcoords init-lcoords next-rcoords  next-lcoords &key (which? :lleg) (only-move? nil) (wait? t) (fix-hand? nil) (force-move nil))
@@ -1227,7 +1227,7 @@
 
 ;;首の調整込み
 
-;; (defun test-reach
+;;reach-auto :pos-shift 280 :reaching-offset (list #f(-140 50 0) #f(-140 50 0))  ;;rotate
 (defun reach-auto
     (&key  (fix-contact? nil) (send? t) (target "board") (pos-shift 300) (one-hand? nil)
 	   (wait? t) (reset? t) (apply-external-force? t) (avoid-collision? t)
@@ -1241,7 +1241,7 @@
 
   (if (equal target "board")
       (progn
-        (setq obj (make_plane))  
+        (setq obj (make_plane))
         (setq ret (get-target-pose obj))
         (setq pos (elt ret 3))
         (setq pos-centroid (elt ret 5))
@@ -1500,4 +1500,23 @@
   ;; (send *ri* :angle-vector (send *robot* :angle-vector) 5000)
   )
 
+;;持ち上げてみて面積を比べる
+(defun serch-top-board()
+  (move-hand :larm  #f(30 100 0) :wait? t)
+  (setq l-fc (make_plane :set-com? nil))
+  (setq l-area (send (car (send (elt l-fc 0) :get-face :prism :top)) :area))
+  (setq l-com (elt l-fc 1))
+  (move-hand :larm  #f(-20 -100 0) :wait? t)
+
+  (move-hand :rarm  #f(30 -100 0) :wait? t)
+  (setq r-fc (make_plane :set-com? nil))
+  (setq r-area (send (car (send (elt r-fc 0) :get-face :prism :top)) :area))
+  (setq r-com (elt r-fc 1))
+  (move-hand :rarm  #f(-20 100 0) :wait? t)
+
+  (if (< l-area r-area)
+      (set_plane_centroid l-com)
+    (set_plane_centroid r-com)
+    )
+  )
 (print "load functions.l")
