@@ -425,9 +425,9 @@
                   :external-coords-list  ;;外レンチ作用点リスト
                   (if (and (not only-kinematics?) apply-external-force?)
                       (progn
-                        external-coords-list
-                        ;; (list (send *robot-env* :robot :get :rarm-contact-coords)
-                        ;;       (send *robot-env* :robot :get :larm-contact-coords))
+                        ;; external-coords-list
+                        (list (send *robot-env* :robot :get :rarm-contact-coords)
+                              (send *robot-env* :robot :get :larm-contact-coords))
                         ;;pivot
                         ;; (list (send *robot-env* :robot :get :rarm-contact-coords))
                         ;;support

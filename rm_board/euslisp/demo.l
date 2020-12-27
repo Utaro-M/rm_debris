@@ -528,7 +528,7 @@
   ;; (move-hand (read-from-string (format nil ":~A" arm)) #f(0   -180 0) :sync? nil)
   (setq movetime-tmp 5000)
   (setq origin-face (make_plane))
-  (setq face-arm (get-half-plane origin-face))
+  (setq face-arm (get-half-plane (elt origin-face 0)))
   (setq pre-angle (send *robot* :angle-vector))
   (setq pre-lleg (send *robot* :lleg :end-coords :copy-worldcoords))
   (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
@@ -544,14 +544,14 @@
   (setq rleg-ratio (abs (norm (v- (send rleg-coords-new :worldpos) zmp-vector))))
   (if send?
       (progn
-	(send *ri* :start-log)
+        (send *ri* :start-log)
         (if (not fix-contact?)
             (progn
               (send *ri* :set-gait-generator-param :zmp-weight-map (float-vector rleg-ratio lleg-ratio 1 1))
               ;; (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5) :is-hand-world-fix-mode t)
               (send-pose movetime-tmp :force-move flag-simulator :pre-pose pre-angle :pre-lleg pre-lleg :look-at-object? look-at-object? :wait? nil)
               (move-on-foot rleg-coords lleg-coords rleg-coords-new lleg-coords-new :wait? t :force-move t)
-        ;; (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5) :is-hand-world-fix-mode nil)
+              ;; (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5) :is-hand-world-fix-mode nil)
               ))
         ;; (send-pose movetime :force-move flag-simulator :pre-pose pre-angle :pre-lleg pre-lleg :look-at-object? look-at-object?)
         ))
