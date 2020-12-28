@@ -449,7 +449,8 @@
                   :no-print? nil
                   :convergence-check-func
                   #'(lambda(sqp)
-                      (if (and (< (norm (send (send sqp :config-task) :kinematics-task-value :update? nil)) 0.0025) (< (norm (send (send sqp :config-task) :get :eom-trans-task-value)) 9.1) (< (norm (send (send sqp :config-task) :eom-rot-task-value :update? nil)) 0.001))
+                      (if (and (< (norm (send (send sqp :config-task) :kinematics-task-value :update? nil)) 0.03) ;; (< (norm (send (send sqp :config-task) :get :eom-trans-task-value)) 9.1)
+			       (< (norm (send (send sqp :config-task) :eom-rot-task-value :update? nil)) 0.2))
                           t
                         nil))
                   :failure-callback-func
