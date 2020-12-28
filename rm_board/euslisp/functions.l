@@ -23,17 +23,9 @@
   (setq flag-simulator nil) ;;simulatorではｔ
   (setq movetime 14000))
 
+(setq *coords* (instance my-coords :init ))
 
-(setq *coords* (instance my-coords :init
-                       (copy-object (send *robot* :rarm :end-coords :copy-worldcoords))
-                       (copy-object (send *robot* :larm :end-coords :copy-worldcoords))
-                       (copy-object (send *robot* :rleg :end-coords :copy-worldcoords))
-                       (copy-object (send *robot* :lleg :end-coords :copy-worldcoords))
-                       ))
-
-(setq *poses* (instance poses :init
-                       (send *robot* :angle-vector)
-                       (send *ri* :state :angle-vector)))
+(setq *ik-param* (instance my-ik-param :init))
 
 (defun prepare-simulator()
   (setq flag-simulator t) ;;simulatorではｔ
@@ -127,6 +119,7 @@
   (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
   (setq pre-pose (send *robot* :angle-vector))
   (setq pre-lleg (send *robot* :lleg :end-coords :copy-worldcoords))
+  (send *coords* :set-pre-angle-vector (send *robot* :angle-vector))
   (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :external-force-list external-force-list ;; :external-coords-list external-coords-list
           )
 
@@ -169,6 +162,7 @@
   (setq lleg-coords-old (send *robot* :lleg :end-coords :copy-worldcoords))
   (setq pre-pose (send *robot* :angle-vector))
   (setq pre-lleg (send *robot* :lleg :end-coords :copy-worldcoords))
+  (send *coords* :set-pre-angle-vector (send *robot* :angle-vector))
   (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :reset? reset? :apply-external-force? apply-external-force? :avoid-collision? avoid-collision? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift)
 
   (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact?)
@@ -318,6 +312,7 @@
   (setq lleg-coords-old (send *robot* :lleg :end-coords :copy-worldcoords))
   (setq pre-pose (send *robot* :angle-vector))
   (setq pre-lleg (send *robot* :lleg :end-coords :copy-worldcoords))
+  (send *coords* :set-pre-angle-vector (send *robot* :angle-vector))
   (ik-opt-with-larmcontact rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :reset? reset? :apply-external-force? apply-external-force? :avoid-collision? avoid-collision? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :face face)
   (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact?)
   ;; (setq zmp-vector (send *ri*  :zmp-vector))
@@ -357,6 +352,7 @@
   (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
   (setq pre-pose (send *robot* :angle-vector))
   (setq pre-lleg (send *robot* :lleg :end-coords :copy-worldcoords))
+  (send *coords* :set-pre-angle-vector (send *robot* :angle-vector))
   (ik-opt-with-larmcontact-only larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :reset? reset? :apply-external-force? apply-external-force? :avoid-collision? avoid-collision? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift)
   (if send?
       (progn
@@ -386,6 +382,15 @@
         (progn
           (format t "emergency mode~%")
           (send *ri* :stop-motion)
+          (send *coords* :set-pre-angle-vector (send *robot* :angle-vector))
+          (setq ret (ik-opt (send *coords* :get-rarm-target) (send *coords* :get-larm-target) :fix-contact? 2 :apply-external-force? (send *coords* :set-apply-external-force?) :wait? wait? :rleg-pos-shift (send *coords* :set-rleg-pos-shift) :lleg-pos-shift (send *coords* :set-lleg-pos-shift) :external-force-list (list (v+ (elt (send *coords* :set-external-force-list) 0) #f(0 0 -100 0 0 0)) (v+ (elt (send *coords* :set-external-force-list) 1) #f(0 0 -100 0 0 0)))))
+          (format t "change pose~%")
+          ;; (if (equal ret ":loop-finished")
+          ;;     (progn
+          ;;       (format t "ik failed~%")
+          ;;       (send *robot* :angle-vector (send *coords* :get-pre-angle-vector))
+          ;;       (send *robot* :move-coords (send *coords* :lleg-contact-coords) (send *robot* :lleg :end-coords)))
+            (send-pose-and-move-on-foot :time movetime :send? t :fix-contact? fix-contact? :look-at-object? t :wait? t :fix-hand? nil))
           ))
     (format t "~%~%")
     (setq rarm-f  (low-pass-online "force" "absolute" :rarm :times 10 :sleep 100 :flag nil))
@@ -633,6 +638,8 @@
   ;; (send *robot* :fix-leg-to-coords (make-coords))
   (objects (list *robot*))
   (print "init pose ")
+  (send *ri* :move-gripper :larm 0.0 :wait t)
+  (send *ri* :move-gripper :rarm 0.0 :wait t)
   ;; (send *robot* :fix-leg-to-coords (make-coords))
   (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
   (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
@@ -1099,13 +1106,20 @@
 	      (setq fix-hand? nil)
           (setq wait? nil)
           )))
-    (send *coords* :set-rarm-target rarm-coords)
-    (send *coords* :set-larm-target larm-coords)
-    (setq ret (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :external-force-list external-force-list ))
+    (send *coords* :set-rarm-target-coords rarm-coords)
+    (send *coords* :set-larm-target-coords larm-coords)
+    (send *coords* :set-pre-angle-vector (send *robot* :angle-vector))
+    (send *ik-param* :set-fix-contact? fix-hand?)
+    (send *ik-param* :set-apply-external-force? apply-external-force?)
+    (send *ik-param* :set-wait? wait?)
+    (send *ik-param* :set-rleg-pos-shift rleg-pos-shift)
+    (send *ik-param* :set-lleg-pos-shift lleg-pos-shift)
+    (send *ik-param* :set-external-force-list external-force-list)
+    (setq ret (ik-opt rarm-coords larm-coords  :fix-contact? fix-contact?  :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :external-force-list external-force-list ))
     ;; (send *robot* :head-neck-p :joint-angle -40)
     (format t "ret ik = ~A~%" ret)
     (setq com (elt fc 1))
-    (format t "com =~A~%" com)
+    ;; (format t "com =~A~%" com)
 
     ;;rviz visualize normal vector
     (progn
@@ -1202,7 +1216,7 @@
               (move-on-foot rleg-coords lleg-coords rleg-coords-new lleg-coords-new :wait? wait? :fix-hand? fix-hand?)
               ))
         (if (not only-move-foot?)
-            (send-pose time :force-move flag-simulator :look-at-object? look-at-object? :wait? wait?))))
+            (send-pose time :force-move flag-simulator :look-at-object? look-at-object? :wait? t))))
   )
 
 ;;rerach targets 確認用
@@ -1335,6 +1349,7 @@
   (setq external-force-list (list (make-array 6 :element-type float-vector :initial-contents larm-force :initial-element 0)
                                   (make-array 6 :element-type float-vector :initial-contents rarm-force :initial-element 0)))
   (format t "force-list=~A~%" external-force-list)
+  (send *coords* :set-pre-angle-vector (send *robot* :angle-vector))
   (setq ret (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :arm (if (equal target "board") arm "rarm") :external-force-list external-force-list :set-unique-kin-scale? set-unique-kin-scale? ))
   (send *robot-env* :dissoc-root-virtual)
   
@@ -1377,7 +1392,7 @@
   (format t "center-pos shift = ~A~%" (* 1.0 (elt center-pos 1)))
   (setq lleg-pos-shift (v+ lleg-pos-shift (float-vector 0 0 0)))
   (setq rleg-pos-shift (v+ rleg-pos-shift (float-vector 0 0 0)))
-
+  (send *coords* :set-pre-angle-vector (send *robot* :angle-vector))
   (setq ret (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :arm (if (equal target "board") arm "rarm") :external-force-list external-force-list :set-unique-kin-scale? set-unique-kin-scale? ))
   (send *robot-env* :dissoc-root-virtual)
 
@@ -1405,7 +1420,8 @@
         (move-hand :larm l-diff :send? send?)
         (move-hand :rarm r-diff :send? send?)))
   (send *ri* :move-gripper :larm 0.8 :wait t)
-  (send *ri* :move-gripper :rarm 0.8 :wait t) 
+  (send *ri* :move-gripper :rarm 0.8 :wait t)
+  
   ;; (setq zmp-vector (send *ri*  :zmp-vector))
   ;; (setq rleg-coords-new (send *robot* :rleg :end-coords :copy-worldcoords))
   ;; (setq lleg-coords-new (send *robot* :lleg :end-coords :copy-worldcoords))

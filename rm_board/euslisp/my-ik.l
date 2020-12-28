@@ -158,31 +158,30 @@
     (rarm-coords
      larm-coords 
      &key (arm "both")
-     (optimize-torque? t)
-     (avoid-collision? t)
-     (apply-external-force? nil)
-     (fix-contact? nil)
-     (set-unique-kin-scale? nil)
-     (kin-scale-list (list 1.0
-                            1.0
-                            (list 1 1 1 1 1 0.2)
-                            0.0))
-     (only-kinematics? nil)
+     (optimize-torque? (send *ik-param* :get-optimize-torque?))
+     (avoid-collision? (send *ik-param* :get-avoid-collision?))
+     (apply-external-force? (send *ik-param* :get-apply-external-force?))
+     (fix-contact? (send *ik-param* :get-fix-contact?))
+     (set-unique-kin-scale? (send *ik-param* :get-set-unique-kin-scale?))
+     (kin-scale-list ;; (list 1.0
+                     ;;        1.0
+                     ;;        (list 1 1 1 1 1 0.2)
+      ;;        0.0)
+      (send *ik-param* :get-kin-scale-list))
+     (only-kinematics? (send *ik-param* :get-only-kinematics?))
      (pre-process-func)
-     (reset? t)
-     (external-force-list  (list (float-vector 0 0 -80 0 0 0)
-                                 (float-vector 0 0 -80 0 0 0)))
-     (external-coords-list (if (boundp '*robot-env*)
-			       (list (send *robot-env* :robot :get :rarm-contact-coords)
-                         (send *robot-env* :robot :get :larm-contact-coords))
-                   (list (send *robot* :rarm :end-coords)
-                         (send *robot* :larm :end-coords))))
-     ;; (rleg-pos #f( 0 -200 -10))
-     ;; (lleg-pos #f( 0  200 -10))
-     (rleg-pos-shift #f(-100 0 0))
-     (lleg-pos-shift #f( 100 0 0))
+     (reset? (send *ik-param* :get-reset?))
+     (external-force-list  (send *ik-param* :get-external-force-list))
+     (external-coords-list (send *ik-param* :get-external-coords-list))
+     (rleg-pos-shift (send *ik-param* :get-rleg-pos-shift))
+     (lleg-pos-shift (send *ik-param* :get-lleg-pos-shift))
      &allow-other-keys
      )
+  (send *coords* :set-pre-angle-vector (send *robot* :angle-vector))
+  (send *coords* :set-rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
+  (send *coords* :set-lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
+  (send *coords* :set-rarm-coords (send *robot* :rarm :end-coords :copy-worldcoords))
+  (send *coords* :set-larm-coords (send *robot* :larm :end-coords :copy-worldcoords))
   (setq rleg-pos-shift (v+ rleg-pos-shift #f(0 0 -10)))
   (setq lleg-pos-shift (v+ lleg-pos-shift #f(0 0 -10)))
   ;; (setq *ground-rleg* (make-cube 800 400 20))
@@ -447,13 +446,25 @@
                         (validate-element-jacobian :config-task (send sqp :config-task))
                         ;; (validate-jacobian :config-task (send sqp :config-task))
                         ))
-                  :no-print? t
+                  :no-print? nil
+                  :convergence-check-func
+                  #'(lambda(sqp)
+                      (if (and (< (norm (send (send sqp :config-task) :kinematics-task-value :update? nil)) 0.0025) (< (norm (send (send sqp :config-task) :get :eom-trans-task-value)) 9.1) (< (norm (send (send sqp :config-task) :eom-rot-task-value :update? nil)) 0.001))
+                          t
+                        nil))
                   :failure-callback-func
                   #'(lambda(val)
-                      (return nil))
+                      (print "fail"))
+
                   ))
   (send *sqp-opt* :optimize :loop-num 100)
-  ;; (send *sqp-opt* :status)
+  (if (equal (send *sqp-opt* :status) :not-converged)
+      (progn
+        (format t "ik failed~%")
+        (send *robot* :angle-vector (send *coords* :get-pre-angle-vector))
+        (send *robot* :move-coords (send *coords* :get-lleg-coords) (send *robot* :lleg :end-coords))
+        ))
+  (send *sqp-opt* :status)
   )
 (warn "(jaxon_red-sqp-optimization-instant)~%")
 
