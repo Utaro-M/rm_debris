@@ -1359,6 +1359,10 @@
   (format t "force-list=~A~%" external-force-list)
   (send *coords* :set-pre-angle-vector (send *robot* :angle-vector))
   (setq ret (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :arm (if (equal target "board") arm "rarm") :external-force-list external-force-list :set-unique-kin-scale? set-unique-kin-scale? ))
+  
+  (if (equal ret nil)
+      (setq ret (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :arm (if (equal target "board") arm "rarm") :external-force-list external-force-list :set-unique-kin-scale? set-unique-kin-scale? )))
+  
   (send *robot-env* :dissoc-root-virtual)
   
   (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact? :only-move-foot? t :fix-hand? fix-hand?)
@@ -1410,7 +1414,7 @@
       (progn
         (send *robot* :head-neck-p :joint-angle -5)
         (send *ri* :angle-vector (send *robot* :angle-vector) 4000)
-        (unix::sleep 1)))
+        (unix::sleep 1)
   ;; (setq coords-grasp-list (auto-set-reaching-targets :larm-shift #f(-100 -50 0) :rarm-shift #f(-100 50 0) :rot-z rot-z))
   ;; (if (listp coords-grasp-list)
   ;;     (progn
@@ -1431,6 +1435,7 @@
 	      )  
         (move-hand :larm l-diff :send? send?)
         (move-hand :rarm r-diff :send? send?)))
+  ))
   
   ;; (send *ri* :move-gripper :larm 0.8 :wait t)
   ;; (send *ri* :move-gripper :rarm 0.8 :wait t)

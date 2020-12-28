@@ -450,8 +450,8 @@
                   :convergence-check-func
                   #'(lambda(sqp)
                       (if (and (< (norm (send (send sqp :config-task) :kinematics-task-value :update? nil)) 0.03) ;; (< (norm (send (send sqp :config-task) :get :eom-trans-task-value)) 9.1)
-			       (< (norm (send (send sqp :config-task) :eom-rot-task-value :update? nil)) 0.2))
-                          t
+                               (< (norm (send (send sqp :config-task) :eom-rot-task-value :update? nil)) 0.2))
+                          t ;converge
                         nil))
                   :failure-callback-func
                   #'(lambda(val)
@@ -464,8 +464,10 @@
         (format t "ik failed~%")
         (send *robot* :angle-vector (send *coords* :get-pre-angle-vector))
         (send *robot* :move-coords (send *coords* :get-lleg-coords) (send *robot* :lleg :end-coords))
-        ))
-  (send *sqp-opt* :status)
+        nil
+        )
+    t)
+  ;; (send *sqp-opt* :status)
   )
 (warn "(jaxon_red-sqp-optimization-instant)~%")
 
