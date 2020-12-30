@@ -606,3 +606,64 @@ stp.joint_servo_control_parameters
 OpenHRP.AutoBalancerService.JointServoControlParameter(support_pgain=[5.0, 10.0, 10.0, 5.0, 0.09999999999999998, 0.09999999999999998], support_dgain=[10.0, 20.0, 20.0, 10.0, 10.0, 10.0], landing_pgain=[5.0, 1.0, 1.0, 1.0, 0.09999999999999998, 0.09999999999999998], landing_dgain=[10.0, 10.0, 10.0, 10.0, 5.0, 5.0], swing_pgain=[5.0, 30.0, 20.0, 10.0, 5.0, 5.0], swing_dgain=[10.0, 30.0, 20.0, 20.0, 10.0, 10.0]),
 OpenHRP.AutoBalancerService.JointServoControlParameter(support_pgain=[100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0], support_dgain=[100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0], landing_pgain=[100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0], landing_dgain=[100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0], swing_pgain=[100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0], swing_dgain=[100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0]),
 OpenHRP.AutoBalancerService.JointServoControlParameter(support_pgain=[100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0], support_dgain=[100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0], landing_pgain=[100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0], landing_dgain=[100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0], swing_pgain=[100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0], swing_dgain=[100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0])]
+
+
+only-step-fail
+send-pose-and-move-on-foot :rleg-coords-new (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate #f(100 0 0)) :lleg-coords-new (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(100 0 0)) :fix-contact? nil
+init-lcoords = #<coordinates #X7f234a494420  5.684e-14 100.0 -5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+init-rcoords = #<coordinates #X7f234a4942b8  5.684e-14 -100.0 -5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+next-lcoords = #<coordinates #X7f231d5848e0  100.0 100.0 -5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+next-rcoords = #<coordinates #X7f231d584718  100.0 -100.0 -5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+Do you move foot?(Y or N): y
+Do you move real machine?(Y or N): n
+nil
+75.B11-irteusgl$ send-pose-and-move-on-foot :rleg-coords-new (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate #f(0 -100 0)) :lleg-coords-new (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(0 100 0)) :fix-contact? nil
+init-lcoords = #<coordinates #X7f2316900778  100.0 100.0 -5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+init-rcoords = #<coordinates #X7f2316978ee0  100.0 -100.0 -5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+next-lcoords = #<coordinates #X7f2316978d30  100.0 200.0 -5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+next-rcoords = #<coordinates #X7f23169755b0  100.0 -200.0 -5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+Do you move foot?(Y or N): y
+Do you move real machine?(Y or N): n
+nil
+76.B11-irteusgl$ send-pose-and-move-on-foot :rleg-coords-new (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate #f(100 0 0)) :lleg-coords-new (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(100 0 0)) :fix-contact? nil
+init-lcoords = #<coordinates #X7f23160980c0  100.0 5.684e-14 -5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+init-rcoords = #<coordinates #X7f231609c8a8  100.0 -200.0 -5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+next-lcoords = #<coordinates #X7f231609c6f8  200.0 5.684e-14 -5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+next-rcoords = #<coordinates #X7f231609c548  200.0 -200.0 -5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+
+
+
+
+progn (send *ri* :start-log) (send-pose-and-move-on-foot :rleg-coords-new (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate #f(100 0 0)) :lleg-coords-new (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(100 0 0)) :fix-contact? nil) (send-pose-and-move-on-foot :rleg-coords-new (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate #f(0 -100 0)) :lleg-coords-new (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(0 100 0)) :fix-contact? nil) (send-pose-and-move-on-foot :rleg-coords-new (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate #f(100 0 0)) :lleg-coords-new (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(100 0 0)) :fix-contact? nil)
+init-lcoords = #<coordinates #X7f2306588ec8  1.319e-60 100.0 5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+init-rcoords = #<coordinates #X7f2306588d48  1.319e-60 -100.0 5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+next-lcoords = #<coordinates #X7f2306351570  100.0 100.0 5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+next-rcoords = #<coordinates #X7f23063513c0  100.0 -100.0 5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+Do you move foot?(Y or N): y
+Do you move real machine?(Y or N): n
+init-lcoords = #<coordinates #X13a8af18  100.0 100.0 5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+init-rcoords = #<coordinates #X18bc0b48  100.0 -100.0 5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+next-lcoords = #<coordinates #X18bbfe88  100.0 200.0 5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+next-rcoords = #<coordinates #X18bbfcd8  100.0 -200.0 5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+Do you move foot?(Y or N): y
+Do you move real machine?(Y or N): n
+init-lcoords = #<coordinates #X7f233cfa0ba0  100.0 5.684e-14 5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+init-rcoords = #<coordinates #X7f233cfa0a20  100.0 -200.0 5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+next-lcoords = #<coordinates #X7f233cfa0870  200.0 5.684e-14 5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+next-rcoords = #<coordinates #X7f233cf9ffd0  200.0 -200.0 5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+Do you move foot?(Y or N): y
+Do you move real machine?(Y or N): n
+nil
+94.B13-irteusgl$ progn (send *ri* :start-log) (send-pose-and-move-on-foot :rleg-coords-new (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate #f(100 0 0)) :lleg-coords-new (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(100 0 0)) :fix-contact? nil) (send-pose-and-move-on-foot :rleg-coords-new (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate #f(0 -100 0)) :lleg-coords-new (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(0 100 0)) :fix-contact? nil) (send-pose-and-move-on-foot :rleg-coords-new (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate #f(100 0 0)) :lleg-coords-new (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(100 0 0)) :fix-contact? nil)
+init-lcoords = #<coordinates #X7f2312015470  200.0 5.684e-14 5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+init-rcoords = #<coordinates #X7f231330f578  200.0 -200.0 5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+next-lcoords = #<coordinates #X7f231330b720  300.0 5.684e-14 5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+next-rcoords = #<coordinates #X7f231330b558  300.0 -200.0 5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+Do you move foot?(Y or N): y
+Do you move real machine?(Y or N): n
+init-lcoords = #<coordinates #X18bec1b0  300.0 8.527e-14 5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+init-rcoords = #<coordinates #X18bec030  300.0 -200.0 5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+next-lcoords = #<coordinates #X18bebe80  300.0 100.0 5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+next-rcoords = #<coordinates #X18beb5b0  300.0 -300.0 5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
+Do you move foot?(Y or N): y
+Do you move real machine?(Y or N):   C-c C-c

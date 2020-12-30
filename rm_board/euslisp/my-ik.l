@@ -220,7 +220,7 @@
     ;;big board version
     (format t "avoid collision~%")
     (setq *obst* (make-cube 100 1000 200)) 
-    (send *obst* :translate (float-vector (- (/ (+ (elt (send rarm-coords :worldpos) 0) (elt (send larm-coords :worldpos) 0)) 2) 0) 0 100))
+    (send *obst* :translate (float-vector (+ (/ (+ (elt (send rarm-coords :worldpos) 0) (elt (send larm-coords :worldpos) 0)) 2) 50) 0 100))
     (send *obst* :set-color (float-vector 1 0 0) 0.5)
     )
   ;; setup robot
@@ -379,12 +379,14 @@
                       kin-scale-list
                       (cond
                        ((equal arm "both")
-                        (list 1.0
-                              1.0
-                              (list 1 1 1 1 1 0.5)
-                              (list 1 1 1 1 1 0.5)
-                              1.0
-                              1.0))
+                        (list ;; 1.0
+			 ;; 1.0
+			 (list 1 1 1 1 1 1)
+			 (list 1 1 1 1 1 1)
+			 (list 1 1 1 1 1 0.5)
+			 (list 1 1 1 1 1 0.5)
+			 1.0
+			 1.0))
                        ((equal arm "rarm")
                         (list 1.0
                               1.0
@@ -450,7 +452,7 @@
                   :convergence-check-func
                   #'(lambda(sqp)
                       (if (and (< (norm (send (send sqp :config-task) :kinematics-task-value :update? nil)) 0.03) ;; (< (norm (send (send sqp :config-task) :get :eom-trans-task-value)) 9.1)
-                               (< (norm (send (send sqp :config-task) :eom-rot-task-value :update? nil)) 0.2))
+                               (< (norm (send (send sqp :config-task) :eom-rot-task-value :update? nil)) 0.05))
                           t ;converge
                         nil))
                   :failure-callback-func
