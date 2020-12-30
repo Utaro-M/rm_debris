@@ -667,3 +667,22 @@ next-lcoords = #<coordinates #X18bebe80  300.0 100.0 5.684e-14 / 7.347e-40 9.420
 next-rcoords = #<coordinates #X18beb5b0  300.0 -300.0 5.684e-14 / 7.347e-40 9.420e-63 -2.564e-23>
 Do you move foot?(Y or N): y
 Do you move real machine?(Y or N):   C-c C-c
+
+
+
+1230
+
+init-lcoords = #<coordinates #X26d70ae8  1.628e-13 100.0 1.705e-13 / -4.163e-17 5.551e-17 -5.204e-18>
+init-rcoords = #<coordinates #X26d70968  1.628e-13 -100.0 1.705e-13 / -4.163e-17 5.551e-17 -5.204e-18>
+next-lcoords = #<coordinates #X27cf8708  156.984 89.725 -0.007 / 0.025 -1.202e-06 6.114e-06>
+next-rcoords = #<coordinates #X27c36310  156.986 -176.993 -0.012 / -0.014 -1.235e-07 5.902e-06>
+
+init-lcoords = #<coordinates #X12a9e940  156.919 89.725 -0.0 / 0.025 1.185e-06 6.257e-06>
+init-rcoords = #<coordinates #X12a9e550  156.927 -176.97 -0.012 / -0.014 4.107e-06 2.536e-06>
+next-lcoords = #<coordinates #X7f02be5d5e20  284.179 157.358 -0.003 / 0.015 -1.071e-06 -1.888e-06>
+next-rcoords = #<coordinates #X7f02be5d5ca0  290.357 -184.275 -0.015 / 0.011 -3.037e-07 -5.031e-07
+failstep while heave-with-sensor
+init-lcoords = #<coordinates #X27c86fe0  284.179 157.358 -0.003 / 0.015 -1.071e-06 -1.888e-06>
+init-rcoords = #<coordinates #X27c85c00  290.357 -184.275 -0.015 / 0.011 -3.037e-07 -5.031e-07>
+next-lcoords = #<coordinates #X7f02bd55bca0  448.622 131.89 0.035 / -0.09 -4.764e-06 2.160e-05>
+next-rcoords = #<coordinates #X7f02bd55bb20  395.97 -250.115 -0.002 / -0.075 -5.421e-06 2.873e

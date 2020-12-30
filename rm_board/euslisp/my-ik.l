@@ -409,11 +409,19 @@
                             ;; (list 1 1 1 1 0 1)
                   :collision-pair-list
                   (if avoid-collision?
-                      (mapcar #'(lambda (l) (list l *obst*)) (flatten (send *robot-env* :robot :legs :links)))
+		      (list 
+		       (flatten (mapcar #'(lambda (l) (list l *obst*)) (flatten (send *robot-env* :robot :legs :links))))
+		       (list (send *robot* :link "LLEG_LINK1") (send *robot* :link "LARM_LINK7"))
+		       ;; (list (send *robot* :link "LLEG_LINK1") (send *robot* :link "LARM_LINK6"))
+		       (list (send *robot* :link "RLEG_LINK1") (send *robot* :link "RARM_LINK7"))
+		       ;; (list (send *robot* :link "RLEG_LINK1") (send *robot* :link "RARM_LINK6"))
+		       ;; (list (send *robot* :link "LLEG_LINK1") (send *robot* :link "LARM_LINK7"))
+		       ;; (list (send *robot* :link "RLEG_LINK1") (send *robot* :link "RARM_LINK7"))
+		       )
                   )
                   
                   ;; (list  (send *robot-env* :robot :rleg :links)  (send *robot-env* :robot :lleg :links))
-                  :collision-distance-margin 0.2
+                  :collision-distance-margin 0.03
                   :external-wrench-list
                   (if (and (not only-kinematics?) apply-external-force?)
                       (progn

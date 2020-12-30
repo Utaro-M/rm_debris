@@ -33,7 +33,7 @@
   (send *ri* :start-auto-balancer :limbs (list :lleg :rleg :larm :rarm))
   ;; (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500)
   (send *ri* :set-log-maxlength (* 500 90))
-  (send *ri* :set-reference-force-updater-param :arms :motion-dir #f(0 0 -1) :p-gain 0.01 :update-time-ratio 0.4 :frame "world")
+  (send *ri* :set-reference-force-updater-param :arms :motion-dir #f(0 0 -1) :p-gain 0.01 :update-time-ratio 0.3 :frame "world")
   (send *ri* :start-reference-force-updater :arms)
   (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5))
   (unless (= (send (send *ri* :get-st-param) :emergency_check_mode) 0)
@@ -780,7 +780,7 @@
         (longest-len 0)
         ;; (pos-centroid (send contact-wall :centroid))
         (pos-centroid (elt contact-wall 1))
-        (vertices-list (get-min-val (send (car contact-wall) :vertices) (/ (length (send (car contact-wall) :vertices)) 3))) ;;板の大きさに応じて変えないといけない？
+        (vertices-list (get-min-val (send (car contact-wall) :vertices) (/ (length (send (car contact-wall) :vertices)) 4))) ;;板の大きさに応じて変えないといけない？
         (vertices-list-for-com (get-min-val (send (car contact-wall) :vertices) 4))
         (vertices-list-reverse (reverse vertices-list))
         ;; (plane-normal (send (elt (send contact-wall :faces) 0) :normal))
@@ -1254,7 +1254,7 @@
 
 ;;reach-auto :pos-shift 280 :reaching-offset (list #f(-140 50 0) #f(-140 50 0))  ;;rotate
 (defun reach-auto
-    (&key  (fix-contact? nil) (send? t) (target "board") (pos-shift 280) (one-hand? nil) (adjust? t)
+    (&key  (fix-contact? nil) (send? t) (target "board") (pos-shift 290) (one-hand? nil) (adjust? t) (ik3? t)
 
            ;;  (larm-force #f(0 0 -60))
            ;;  (rarm-force #f(0 0 -60))
@@ -1443,7 +1443,8 @@
       (send *ri* :angle-vector (send *robot* :angle-vector) 4000)
       (unix::sleep 1)))
 
-  
+  (if ik3?
+      (progn
   ;;IK 3  少し手前からターゲットへ手をのばす
   (if (equal target "board")
       (progn
@@ -1454,12 +1455,12 @@
         (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact? :fix-hand? fix-hand? :look-at-object? look-at-object?))
     (progn  ;;stick
       (move-hand :larm l-diff :send? send?)
-      (move-hand :rarm r-diff :send? send?)))
-  )
+      (move-hand :rarm r-diff :send? send?)))))
+  
 
   
-  ;; (send *ri* :move-gripper :larm 0.8 :wait t)
-  ;; (send *ri* :move-gripper :rarm 0.8 :wait t)
+  (send *ri* :move-gripper :larm 0.6 :wait t)
+  (send *ri* :move-gripper :rarm 0.6 :wait t)
   
   ;; (setq zmp-vector (send *ri*  :zmp-vector))
   ;; (setq rleg-coords-new (send *robot* :rleg :end-coords :copy-worldcoords))
