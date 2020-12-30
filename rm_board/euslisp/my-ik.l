@@ -110,10 +110,10 @@
   ;; (send (send *robot* :joint "CHEST_JOINT1") :max-angle 30)
   (send (send *robot* :joint "CHEST_JOINT1") :max-angle 20)
   
-  (send (send *robot* :joint "RLEG_JOINT0") :max-angle 20)
-  (send (send *robot* :joint "LLEG_JOINT0") :min-angle -20)
-  (send (send *robot* :joint "RLEG_JOINT3") :max-angle 60)
-  (send (send *robot* :joint "LLEG_JOINT3") :max-angle 60)
+  ;; (send (send *robot* :joint "RLEG_JOINT0") :max-angle 20)
+  ;; (send (send *robot* :joint "LLEG_JOINT0") :min-angle -20)
+  ;; (send (send *robot* :joint "RLEG_JOINT3") :max-angle 60)
+  ;; (send (send *robot* :joint "LLEG_JOINT3") :max-angle 60)
   
   (send (send *robot* :joint "RARM_JOINT0") :min-angle 0)
   (send (send *robot* :joint "RARM_JOINT0") :max-angle 40)
@@ -170,6 +170,13 @@
       (send *ik-param* :get-kin-scale-list))
      (only-kinematics? (send *ik-param* :get-only-kinematics?))
      (pre-process-func)
+     (kin-task-value-thre 0.03)
+     (eom-rot-task-value-thre 0.2)
+     (convergence-check-func #'(lambda(sqp)
+                      (if (and (< (norm (send (send sqp :config-task) :kinematics-task-value :update? nil)) kin-task-value-thre)
+                               (< (norm (send (send sqp :config-task) :eom-rot-task-value :update? nil)) eom-rot-task-value-thre))
+                          t ;converge
+                        nil)))
      (reset? (send *ik-param* :get-reset?))
      (external-force-list  (send *ik-param* :get-external-force-list))
      (external-coords-list (send *ik-param* :get-external-coords-list))
@@ -450,15 +457,16 @@
                         ))
                   :no-print? nil
                   :convergence-check-func
-                  #'(lambda(sqp)
-                      (if (and (< (norm (send (send sqp :config-task) :kinematics-task-value :update? nil)) 0.03) ;; (< (norm (send (send sqp :config-task) :get :eom-trans-task-value)) 9.1)
-                               (< (norm (send (send sqp :config-task) :eom-rot-task-value :update? nil)) 0.05))
-                          t ;converge
-                        nil))
+
+                  ;; #'(lambda(sqp)
+                  ;;     (if (and (< (norm (send (send sqp :config-task) :kinematics-task-value :update? nil)) 0.03)
+                  ;;              (< (norm (send (send sqp :config-task) :eom-rot-task-value :update? nil)) 0.2))
+                  ;;         t ;converge
+                  ;;       nil))
+                  convergence-check-func
                   :failure-callback-func
                   #'(lambda(val)
                       (print "fail"))
-
                   ))
   (send *sqp-opt* :optimize :loop-num 100)
   (if (equal (send *sqp-opt* :status) :not-converged)
