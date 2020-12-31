@@ -6,6 +6,7 @@
 (load "./class.l")
 (load "./my-ik.l")
 (load "./stick-pose.l")
+(load "./functions-without-ri.l")
 ;; (require "../../euslisp/save-log.l")
 ;;平面認識使わないときはcomment out
 ;; (load "./client/make_plane_for_opt.l")
@@ -672,36 +673,6 @@
     )
   )
 
-(defun average
-    (lis &key  (axis 10))
-  (let* ((len (list-length lis))
-         ;; (sum (list 0 0 0)))
-         (sum_x 0)
-         (sum_y 0)
-         (sum_z 0))
-         
-    (dotimes (i len)
-      (setq sum_x (+ sum_x (elt (elt lis i) 0)))
-      (setq sum_y (+ sum_y (elt (elt lis i) 1)))
-      (setq sum_z (+ sum_z (elt (elt lis i) 2)))      
-      )
-        
-    (setq ave (float-vector (/ sum_x (float len)) (/ sum_y (float len)) (/ sum_z (float len))))
-
-    ;; (print (format nil "ave = ~A" ave))
-    ;; (print len)
-    (cond
-     ((equal axis 0)
-      (float (elt ave 0)))
-     ((equal axis 1)
-      (elt ave 1))
-     ((equal axis 2)
-      (float (elt ave 2)))
-     (t (progn ;;(print "output vector")
-               ave))
-     )
-    )
-  )
 
 (defun low-pass-online
     (target coords arm &key (times 40) (r 0.3) (sleep 10000) (flag nil))
@@ -744,32 +715,6 @@
   (load "change_arm_with_ik.l")
   (prepare-simulator))
 
-(defun quick-sort-vector-list(seq)
-  (if (< (length seq) 2)
-      (return-from quick-sort-vector-list seq))
-  (let ((pivot (elt (elt seq 0) 0))
-        (pivot-vec (elt seq 0) )
-        (left nil)
-        (right nil))
-
-  (dotimes (i (- (length seq) 1))
-    (if (< (elt (elt seq (+ i 1)) 0) pivot)
-        (setq left (list-insert (elt seq (+ i 1)) (length seq) left))
-      (setq right (list-insert (elt seq (+ i 1)) (length seq) right))
-      ))
-  ;; (format t "left = ~A~%" left)
-  ;; (format t "right = ~A~%" right)
-  (setq left (quick-sort-vector-list left))
-  (setq right (quick-sort-vector-list right))
-  (setq fwd (append left (list pivot-vec)))
-  (setq ret (append fwd right ))
-  ret
-  ))
-
-;;listのうちx要素が小さいものをnumこ取り出す
-(defun get-min-val(lis num)
-  (setq ret-lis (quick-sort-vector-list lis))
-  (subseq ret-lis 0 num))
 
 ;;plane　オブジェクト(prismなど）をコピーして渡す
 ;;掴みに行く目標座標
@@ -904,28 +849,6 @@
     )
   (list larm-coords rarm-coords)
   )
-
-(defun quick-sort(seq)
-    (if (< (length seq) 1)
-      (return-from quick-sort seq))
-  (let ((pivot (elt seq 0))
-        ( left nil)
-        ( right nil))
-
-  (dotimes (i (- (length seq) 1))
-    ;; (print i)
-    (if (< (elt seq (+ i 1)) pivot)
-        (setq left (list-insert (elt seq (+ i 1)) (length seq) left))
-      (setq right (list-insert (elt seq (+ i 1)) (length seq) right))
-      ))
-  (format t "left = ~A~%" left)
-  (format t "right = ~A~%" right)
-  (setq left (quick-sort left))
-  (setq right (quick-sort right))
-  (setq fwd (append left (list pivot) ))
-  (setq ret (append fwd right ))
-  ret
-  ))
 
 (defun get-half-plane(obj &key (cut-rate 0.5))
   (setq origin-obj (copy-object obj))
@@ -1460,7 +1383,9 @@
 
   
   (send *ri* :move-gripper :larm 0.6 :wait t)
+
   (send *ri* :move-gripper :rarm 0.6 :wait t)
+  )
   
   ;; (setq zmp-vector (send *ri*  :zmp-vector))
   ;; (setq rleg-coords-new (send *robot* :rleg :end-coords :copy-worldcoords))
@@ -1629,32 +1554,35 @@
   (setq pose-mat (make-matrix row dim))
   (dotimes (i row)
     (progn
-	   (setq vec (float-vector (elt r-f 0) (elt r-f 1) (elt r-f 2) ))
-	   (format t "vec=~A~%" vec)
 	   (setq r-coords (send *robot* :rarm :end-coords :copy-worldcoords))
 	   (format t "dir =~A~% " (elt dir-list i))
-	   (send *ri* :set-ref-force (scale scl (elt dir-list i)) 2000 :arms)
+	   (send *ri* :set-ref-force (scale scl (elt dir-list i)) 1000 :arms)
 	   (setq r-f (low-pass-online "force" "absolute" :rarm :times 10 :sleep 100 :flag nil))
+       (setq vec (float-vector (elt r-f 0) (elt r-f 1) (elt r-f 2) ))
+	   (format t "vec=~A~%" vec)
 	   (send *robot* :angle-vector (send *ri* :state :angle-vector))
 	   (setq r-coords-new (send *robot* :rarm :end-coords :copy-worldcoords))
-	   (setq vec-new (float-vector (elt r-f-new 0) (elt r-f-new 1) (elt r-f-new 2)))
-	   (setq dif-vec (v- vec-new vec))
-	   (format t "dif-vec=~A~%" dif-vec)
+	   ;; (setq vec-new (float-vector (elt r-f-new 0) (elt r-f-new 1) (elt r-f-new 2)))
+	   ;; (setq dif-vec (v- vec-new vec))
+	   ;; (format t "dif-vec=~A~%" dif-vec)
 	   (setq dif-coords (send r-coords :transformation r-coords-new :world))
 	   (setq dif-pos (send dif-coords :worldpos))
 	   ;; (setq dif-rpy (car (rpy-angle  (send dif-coords :worldrot))))
 	   
 	   (progn (setf (aref pose-mat i 0) (elt dif-pos 0)) (setf (aref pose-mat i 1) (elt dif-pos 1)) (setf (aref pose-mat i 2) (elt dif-pos 2)))
 	   (dotimes (j dim)
-	     (setf (aref wrench-mat i j) (elt dif-vec j)))
+	     (setf (aref wrench-mat i j) (elt r-f j)))
 	   (format t "reset ~%")
 	   (move-hand :rarm (scale (* -1.0 scl) (elt dir-list i)))
 	   )
     )
-  (list wrench-mat pose-mat)
-  (setq pose-mat-inv (transpose pose-mat))
-  (setq wrench-mat-inv (transpose wrench-mat))
-  (setq k-mat (m* wrench-mat-inv (pseudo-inverse pose-mat-inv)))
+  (setq pose-mat-T (transpose pose-mat))
+  (setq wrench-mat-T (transpose wrench-mat))
+  (setq k-mat (m* wrench-mat-T (pseudo-inverse pose-mat-T)))
   
+  (setq min-vector (pred-k k-mat :wrench-mat wrench-mat-T :pose-mat pose-mat-T))
+
+  ;; (setq min-vector (elt (elt  eign-eignvector-list 1) 2))
+  min-vector
   )
 (print "load functions.l")
