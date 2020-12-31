@@ -220,10 +220,10 @@
   )
 
 (defun move-hand
-    (arm relative-pos &key (time 4000) (send? t) (sync? nil) (wait? t))
+    (arm relative-pos &key (time 4000) (send? t) (sync? nil) (wait? t) (frame :local))
   (if sync?
       (send *robot* :angle-vector (send *ri* :state :angle-vector)))
-  (send *robot* arm :move-end-pos relative-pos :local)
+  (send *robot* arm :move-end-pos relative-pos frame)
   (objects (list *robot*))
   (if send?
       (progn
@@ -1545,10 +1545,9 @@
   
   )
 
-(defun predict-k-dim3()
-  (setq row 6)
+(defun predict-k-dim3(&key (dir-list (list #f(1 0 0) #f(-1 0 0) #f(0 1 0) #f(0 -1 0) #f(0 0 1) #f(0 0 -1))))
+  (setq row (length dir-list))
   (setq dim 3)
-  (setq dir-list (list #f(1 0 0) #f(-1 0 0) #f(0 1 0) #f(0 -1 0) #f(0 0 1) #f(0 0 -1) ))
   (setq scl 40)
   (setq wrench-mat (make-matrix row dim))
   (setq pose-mat (make-matrix row dim))
@@ -1556,8 +1555,8 @@
     (progn
 	   (setq r-coords (send *robot* :rarm :end-coords :copy-worldcoords))
 	   (format t "dir =~A~% " (elt dir-list i))
-	   (send *ri* :set-ref-force (scale scl (elt dir-list i)) 1000 :arms)
-	   (setq r-f (low-pass-online "force" "absolute" :rarm :times 10 :sleep 100 :flag nil))
+	   (send *ri* :set-ref-force (scale scl (elt dir-list i)) 1000 :rarm)
+	   (setq r-f (low-pass-online "force" "off" :rarm :times 10 :sleep 500000 :flag nil))
        (setq vec (float-vector (elt r-f 0) (elt r-f 1) (elt r-f 2) ))
 	   (format t "vec=~A~%" vec)
 	   (send *robot* :angle-vector (send *ri* :state :angle-vector))
@@ -1573,7 +1572,7 @@
 	   (dotimes (j dim)
 	     (setf (aref wrench-mat i j) (elt r-f j)))
 	   (format t "reset ~%")
-	   (move-hand :rarm (scale (* -1.0 scl) (elt dir-list i)))
+	   ;; (move-hand :rarm (scale (* -1.0 scl) (elt dir-list i)) :frame :world)
 	   )
     )
   (setq pose-mat-T (transpose pose-mat))
@@ -1581,8 +1580,19 @@
   (setq k-mat (m* wrench-mat-T (pseudo-inverse pose-mat-T)))
   
   (setq min-vector (pred-k k-mat :wrench-mat wrench-mat-T :pose-mat pose-mat-T))
-
   ;; (setq min-vector (elt (elt  eign-eignvector-list 1) 2))
   min-vector
   )
+
+(defun pull-out(scl &key (dir-list) (pull-out-dir #f(0 0 0.5)))
+  (setq i 0)
+  (do-until-key
+   (format t "iteration ~A~%" i)
+   (setq min-vector (predict-k-dim3))
+   (format t "scale ~A~%" scl)
+   (format t "move ~A~%" (scale scl (normalize-vector (v+ min-vector pull-out-dir))))
+   (move-hand :rarm  (scale scl (normalize-vector (v+ min-vector pull-out-dir))) :wait? t))
+   ))
+  
+  
 (print "load functions.l")

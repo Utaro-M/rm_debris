@@ -20,7 +20,7 @@
         (send (elt mat-service i) :z (aref mat i 2))
         ))
     (send req :mat :points mat-service)
-    ;; (send req :mat :points mat)
+    
     (setq res (ros::service-call "pred_k" req t))
     (format t "flag=~A~%" (send res :flag :data))
     (if (send res :flag :data)
@@ -39,7 +39,13 @@
           (setq eignvector-service (mapcar #'(lambda (vertice) (float-vector (send vertice :x) (send vertice :y) (send vertice :z))) (send res :eignvector :points)))
           (format t "eign-service =~A~%" eign-service)
           (format t "eignvector-service =~A~%" eignvector-service)
-          (setq min-vector (elt eignvector 2))) ;;smallest
+          (setq eign-abs-list (list (abs (elt eign-service 0)) (abs (elt eign-service 1)) (abs (elt eign-service 2))))
+          (setq sorted-eign-abs-list (quick-sort eign-abs-list))
+          (format t "sorted-eign-abs-list=~A~%" sorted-eign-abs-list)
+          (setq min-idx (- (length eign-abs-list) (length (memq (car sorted-eign-abs-list) eign-abs-list))))
+          (format t "min-idx =~A~%" min-idx)
+          ;; (setq eign-abs-list (list (/ (elt eign-service 0) (abs (elt eign-service 0))) (/ (elt eign-service 1) (abs (elt eign-service 1))) (/ (elt eign-service 2) (abs (elt eign-service 2))))) ;;1 or -1
+          (setq min-vector (elt eignvector-service min-idx))) ;;smallest
       (progn
         (print "fail to get eign")
         ;; f/x=kが小さい方向を見つける
@@ -57,7 +63,14 @@
         (format t "min-idx =~A~%" min-idx)
         (setq min-vector (float-vector (aref pose-mat 0 min-idx) (aref pose-mat 1 min-idx) (aref pose-mat 2 min-idx)))
         ))
-
+    (setq min-vector (normalize-vector min-vector))
     (format t "k min vector = ~A~%" min-vector)
     min-vector
     ))
+
+(defun v-items(vec1 vec2)
+  (setq lis (make-list 0))
+  (dotimes (i (length vec1))
+    (push (* (elt vec1 i) (elt vec2 i)) lis)
+    )
+  (mapcar #'(lambda (vertice) (float-vector )) (reverse lis))
