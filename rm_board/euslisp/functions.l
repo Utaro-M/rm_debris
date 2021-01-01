@@ -7,6 +7,7 @@
 (load "./my-ik.l")
 (load "./stick-pose.l")
 (load "./functions-without-ri.l")
+(load "./client/predict_k.l" )
 ;; (require "../../euslisp/save-log.l")
 ;;平面認識使わないときはcomment out
 ;; (load "./client/make_plane_for_opt.l")
@@ -1646,6 +1647,9 @@
   movable-vector
   )
 
+;;my-init-pose :send? t
+;;move-hand :rarm #f(300 80 -150) :send? t
+;;pull-out 50
 (defun pull-out(&key (pull-scl 60) (pull-out-dir #f(0 0 0.5)) (send? t) (dir-list (list #f(0 0 1) #f(0 0 -1) #f(1 0 0) #f(-1 0 0) #f(0 1 0) #f(0 -1 0))))
   (setq i 0)
   (setq move-ref #f(0 0 40))
