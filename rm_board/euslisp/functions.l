@@ -7,7 +7,9 @@
 (load "./my-ik.l")
 (load "./stick-pose.l")
 (load "./functions-without-ri.l")
-(load "./client/predict_k.l" )
+;; (load "./client/predict_k.l" )
+;; (load "./client/make_plane_for_opt.l" )
+;; (load "./old/predict_from_multi_pose.l")
 ;; (require "../../euslisp/save-log.l")
 ;;平面認識使わないときはcomment out
 ;; (load "./client/make_plane_for_opt.l")
@@ -725,22 +727,10 @@
   (load "change_arm_with_ik.l")
   (prepare-simulator))
 
-
-;;plane　オブジェクト(prismなど）をコピーして渡す
-;;掴みに行く目標座標
-(defun get-target-pose
-    (contact-wall)
-  (let* ((idx-x 0)
-        (idx-y 0)
-        (longest-len 0)
-        ;; (pos-centroid (send contact-wall :centroid))
-        (pos-centroid (elt contact-wall 1))
-        (vertices-list (get-min-val (send (car contact-wall) :vertices) (/ (length (send (car contact-wall) :vertices)) 4))) ;;板の大きさに応じて変えないといけない？
-        (vertices-list-for-com (get-min-val (send (car contact-wall) :vertices) 4))
-        (vertices-list-reverse (reverse vertices-list))
-        ;; (plane-normal (send (elt (send contact-wall :faces) 0) :normal))
-        (plane-normal (elt contact-wall 2)))
-    (format t "plane normal = ~A~%" plane-normal)
+;;長いものを見つける
+(defun get-longest-edge(vertices-list)
+  (let ((vertices-list-reverse (reverse vertices-list))
+        (longest-len 0))
     (dotimes (i (length vertices-list))
       (dotimes (j (- (length vertices-list) (+ 1 i)))
         (setq len-tmp (norm (v- (elt vertices-list i) (elt vertices-list-reverse j))))
@@ -750,7 +740,49 @@
               (setq idx-y j) ;;reverseされているがそのままいく
               (setq longest-len len-tmp)))))
     (setq longest-edge (make-line (elt vertices-list idx-x) (elt vertices-list-reverse idx-y)))
-    (format t "longest-len = ~A~%" longest-len)
+    longest-edge
+    ))
+
+;;重心の左右ごとに平均値をとってそれらを結ぶエッジを得る
+(defun get-y-vector(vertices-list com)
+  (let ((left #f(0 0 0))
+        (right #f(0 0 0))
+        (left-num 0)
+        (right-num 0)
+        (com-y (elt com 1)))
+    (dotimes (i (length vertices-list))
+      (if (< (elt (elt vertices-list i) 1) com-y)
+          (progn
+            (setq right (v+ right (elt vertices-list i)))
+            (setq right-num (+ right-num 1)))
+        (progn
+          (setq left (v+ left (elt vertices-list i)))
+          (setq left-num (+ left-num 1))))
+      )
+    (setq left-ave (scale (/ 1.0 left-num) left))
+    (setq right-ave (scale (/ 1.0 right-num) right))
+    (format t "left-ave =~A~%" left-ave)
+    (format t "right-ave =~A~%" right-ave)    
+    (setq y-vector (make-line left-ave right-ave))
+    y-vector
+    ))
+        
+  
+;;plane　オブジェクト(prismなど）をコピーして渡す
+;;掴みに行く目標座標
+(defun get-target-pose
+    (contact-wall)
+  (let* ((idx-x 0)
+        (idx-y 0)
+        (longest-len 0)
+        ;; (pos-centroid (send contact-wall :centroid))
+        (pos-centroid (elt contact-wall 1))
+        (vertices-list (get-min-val (send (car contact-wall) :vertices) (/ (length (send (car contact-wall) :vertices)) 3))) ;;板の大きさに応じて変えないといけない？
+        (vertices-list-for-com (get-min-val (send (car contact-wall) :vertices) 3))
+        (vertices-list-reverse (reverse vertices-list))
+        ;; (plane-normal (send (elt (send contact-wall :faces) 0) :normal))
+        (plane-normal (elt contact-wall 2)))
+    (format t "plane normal = ~A~%" plane-normal)
     ;; (format t "vertice = ~A~%" (elt vertices-list idx-x))
     ;; (format t "vertice = ~A~%" (elt vertices-list-reverse idx-y))  
     (setq normal-line (make-line #f(0 0 0) plane-normal))
@@ -762,8 +794,16 @@
     (setq pos-tmp (scale (/ 1.0 (length vertices-list-for-com)) sum))
     (setq pos (float-vector (elt pos-tmp 0) (elt pos-centroid 1) (elt pos-tmp 2)))
     (format t "mid-pos = ~A~%" pos)
+
+    ;;edgeを得る
+    ;; (setq longest-edge (get-longest-edge vertices-list))
+    (setq longest-edge (get-y-vector vertices-list pos))
+    (setq longest-len (send (get-longest-edge vertices-list) :length))
+    (format t "longest-len = ~A~%" longest-len)
+    
     (setq y-vec  plane-normal)
-    (setq z-vec (v- (elt vertices-list idx-x) (elt vertices-list-reverse idx-y)))
+    ;; (setq z-vec (v- (elt vertices-list idx-x) (elt vertices-list-reverse idx-y)))
+    (setq z-vec (send longest-edge :direction))
     (setq x-vec (v* y-vec z-vec))
     ;;x-vecは正面方向
     (if (< (elt x-vec 0) 0)
@@ -1256,13 +1296,13 @@
   ;;板の目の前に移動
   (if adjust?
       (progn
-  (format t "(- (elt pos-centroid 1) (elt center-pos 1)) =~A~%" (* 0.5 (- (elt pos-centroid 1) (elt center-pos 1))))
-  (setq rleg-coords-new (send (send rleg-coords :copy-worldcoords) :translate (float-vector 0 (* 0.5 (+ shift-standing-pos (- (elt pos-centroid 1) (elt center-pos 1)))) 0)))
-  (setq lleg-coords-new (send (send lleg-coords :copy-worldcoords) :translate (float-vector 0 (* 0.5 (+ shift-standing-pos (- (elt pos-centroid 1) (elt center-pos 1)))) 0)))
-  (move-on-foot rleg-coords lleg-coords rleg-coords-new lleg-coords-new :wait? t)
-  (format t "lleg-coords = ~A~%" (send *robot* :lleg :end-coords :copy-worldcoords))
-  (format t "rleg-coords = ~A~%" (send *robot* :rleg :end-coords :copy-worldcoords))
-  ))
+        (format t "(- (elt pos-centroid 1) (elt center-pos 1)) =~A~%" (* 0.5 (- (elt pos-centroid 1) (elt center-pos 1))))
+        (setq rleg-coords-new (send (send rleg-coords :copy-worldcoords) :translate (float-vector 0 (* 0.5 (+ shift-standing-pos (- (elt pos-centroid 1) (elt center-pos 1)))) 0)))
+        (setq lleg-coords-new (send (send lleg-coords :copy-worldcoords) :translate (float-vector 0 (* 0.5 (+ shift-standing-pos (- (elt pos-centroid 1) (elt center-pos 1)))) 0)))
+        (move-on-foot rleg-coords lleg-coords rleg-coords-new lleg-coords-new :wait? t)
+        (format t "lleg-coords = ~A~%" (send *robot* :lleg :end-coords :copy-worldcoords))
+        (format t "rleg-coords = ~A~%" (send *robot* :rleg :end-coords :copy-worldcoords))
+        ))
 
   ;;1回目は板のエッジそのままの位置にリーチング出来る立ち位置を決める
   (if (equal target "board")
@@ -1452,7 +1492,7 @@
   (setq dif (v- com-expected center-pos-tmp))
   (setq larm-target-coords (send larm-coords-tmp :translate dif :world))
   (setq rarm-target-coords (send rarm-coords-tmp :translate dif :world))
-  (format t "dif = ~A~%" dif)  
+  (format t "dif = ~A~%" dif)
   (format t "larm-target coords= ~A~%" larm-target-coords)
   (format t "rarm-target coords= ~A~%" rarm-target-coords)  
   (move-hand :larm (scale (- cnt 1) #f(-30 -30 0)))
@@ -1692,4 +1732,90 @@
   (send *robot* :move-coords (send *coords* :get-rleg-new-coords) (send *robot* :rleg :end-coords))
   (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact?)
   )
+
+(defun pred-multi-com
+    (force1 moment1 force2 moment2 pre-coords post-coords &key (g  9.8))
+
+  ;;make f-matrix
+
+  ;;pre-coods座標系で絶対座標系で表現されたforce１を表現し直す
+  (format t "coord1     = ~A~%" pre-coords)
+  (format t "f1 (world) = ~A~%" force1)
+  (setq f  (send pre-coords :inverse-rotate-vector force1))
+  (setq m1 (send pre-coords :inverse-rotate-vector moment1))
+  (format t "f1(coord1) = ~A~%" f)
+  ;; (print (format nil "f1 = ~A" f))
+  (setq f-matrix1 (matrix (float-vector 0 (- 0 (elt f 2)) (elt f 1)) (float-vector (+ 0 (elt f 2)) 0 (- 0 (elt f 0)))  (float-vector (- 0 (elt f 1)) (elt f 0) 0)))
+  (format t "f-matrix1 = ~A~%~%" f-matrix1)
+
+  ;; (setq f (transform change-rot force2))
+  ;;小島さんより
+  ;;post-coods座標系で,絶対座標系で表現されたforce2を表現し直す
+  (format t "coord2     = ~A~%" post-coords)
+  (format t "f2 (world) = ~A~%" force2)
+  ;; (setq f2  (send post-coords :inverse-rotate-vector force2))
+  ;; (setq mm2 (send post-coords :inverse-rotate-vector moment2))
+  (setq f  (send post-coords :inverse-rotate-vector force2))
+  (setq m2 (send post-coords :inverse-rotate-vector moment2))
+  (format t "f2(coord2) = ~A~%" f)
+  ;; (print (format nil "f2 = ~A" f2))
+  ;;pre-coodsに座標系が重なるようにベクトルを回転させる
+  ;; (setq f  (send (send post-coords :transformation pre-coords :world) :inverse-rotate-vector f2))
+  ;; (setq f  (send (send post-coords :transformation pre-coords) :inverse-rotate-vector f2))
+  ;; (setq m2 (send (send post-coords :transformation pre-coords :world) :inverse-rotate-vector mm2))
+  (format t "f2(coord1) = ~A~%" f)
+  (setq f-matrix2 (matrix (float-vector 0 (- 0 (elt f 2)) (elt f 1)) (float-vector (+ 0 (elt f 2)) 0 (- 0 (elt f 0)))  (float-vector (- 0 (elt f 1)) (elt f 0) 0)))
+  (format t "f-matrix2 = ~A~%~%" f-matrix2)
+
+  (setq m (float-vector (elt m1 0) (elt m1 1)  (elt m1 2) (elt m2 0) (elt m2 1)  (elt m2 2)))
+  (print (format nil "moment  = ~A" m))
+
+  ;;f-matrixをくっつける
+  (setq f-matrix (matrix (matrix-row f-matrix1 0) (matrix-row f-matrix1 1)  (matrix-row f-matrix1 2) (matrix-row f-matrix2 0) (matrix-row f-matrix2 1)  (matrix-row f-matrix2 2)))
+  (print (format nil "f-matrix = ~A" f-matrix))
+
+  ;;momentベクトルをくっつける
+  ;;絶対座標系で表現されたmoment１をpre-coods座標系で表現し直す
+  ;; (setq m1 (send pre-coords :inverse-rotate-vector moment1))
+  ;;小島さんより
+  ;; (setq m2 (transform change-rot moment2))
+  ;;絶対座標系で表現されたmoment2をpost-coods座標系で表現し直す
+  ;; (setq mm2 (send post-coords :inverse-rotate-vector moment2))
+  ;;pre-coodsに座標系が重なるようにベクトルを回転させる  
+  ;; (setq m2 (send (send post-coords :transformation pre-coords :world) :rotate-vector mm2))
+  ;; (setq m (float-vector (elt m1 0) (elt m1 1)  (elt m1 2) (elt m2 0) (elt m2 1)  (elt m2 2)))
+  ;; (print (format nil "moment  = ~A" m))
+
+  (setq f-inverse-matrix (pseudo-inverse f-matrix))
+  (format t "f-inverse-matrix = ~A~%" f-inverse-matrix)
+
+  (setq com (scale -1 (transform f-inverse-matrix m)))
+  (format t "com=~A with pseudo-inverse~%" com)
+  (format t "com norm = ~A~%" (norm com))
+  (setq com-world (send pre-coords :rotate-vector com))
+  (format t "com-world =~A with pseudo-inverse~%" com-world)
+  (format t "com-local norm = ~A~%" (norm com-world))
+  com
+
+)
+
+(defun pred-com(&key (send? t) (fix-contact? t))
+  (send *robot* :reset-pose)
+  (send *robot* :rarm :elbow-p :joint-angle -100)
+  (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact?)
+  
+  (setq force-vector (low-pass-online "force" "absolute" :rarm :times 100 :sleep 10000 :flag nil))
+  (setq moment-vector (low-pass-online "moment" "absolute" :rarm :times 100 :sleep 10000 :flag nil))
+  (setq coords (send *robot* :rarm :end-coords :copy-worldcoords))
+
+  (send *robot* :rarm :elbow-p :joint-angle -70)
+  (setq force-vector-next (low-pass-online "force" "absolute" :rarm :times 100 :sleep 10000 :flag nil))
+  (setq moment-vector-next (low-pass-online "moment" "absolute" :rarm :times 100 :sleep 10000 :flag nil))
+  (setq coords-next (send *robot* :rarm :end-coords :copy-worldcoords))
+
+  (setq com-local-vector (pred-multi-com force-vector moment-vector force-vector-next moment-vector-next coords coords-next))
+  (setq mass-world-vector (scale 0.5 (v+ force-vector force-vector-next)))
+  (list com-local-vector mass-world-vector)
+  )
+
 (print "load functions.l")

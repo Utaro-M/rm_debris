@@ -10,6 +10,8 @@
            (send self :set-larm-coords (send *robot* :larm :end-coords :copy-worldcoords))
            (send self :set-rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
            (send self :set-lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
+           (send self :set-rleg-new-coords (send *robot* :rleg :end-coords :copy-worldcoords))
+           (send self :set-lleg-new-coords (send *robot* :lleg :end-coords :copy-worldcoords))
            (send self :set-pre-angle-vector (send *robot* :angle-vector))
            )
          self)
