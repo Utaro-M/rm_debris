@@ -86,9 +86,9 @@
     movable-vector
     ))
 
-(defun v-items(vec1 vec2)
-  (setq lis (make-list 0))
-  (dotimes (i (length vec1))
-    (push (* (elt vec1 i) (elt vec2 i)) lis)
-    )
-  (mapcar #'(lambda (vertice) (float-vector )) (reverse lis))
+;; (defun v-items(vec1 vec2)
+;;   (setq lis (make-list 0))
+;;   (dotimes (i (length vec1))
+;;     (push (* (elt vec1 i) (elt vec2 i)) lis)
+;;     )
+;;   (mapcar #'(lambda (vertice) (float-vector )) (reverse lis))
