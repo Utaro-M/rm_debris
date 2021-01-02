@@ -9,8 +9,14 @@ Panels:
         - /PointCloud21
         - /PointCloud22
         - /PointCloud23
+        - /Polygon1
+        - /PolygonArray1
         - /Image1
         - /BoundingBox1
+        - /PointStamped1
+        - /PointStamped2
+        - /PointStamped3
+        - /PointStamped4
       Splitter Ratio: 0.5
     Tree Height: 1023
   - Class: rviz/Selection
@@ -82,7 +88,7 @@ Visualization Manager:
       Size (Pixels): 3
       Size (m): 0.009999999776482582
       Style: Flat Squares
-      Topic: /plane_extraction/multi_plane_extraction/output
+      Topic: /multisense_local/organized_image_points2_color
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
@@ -164,13 +170,21 @@ Visualization Manager:
       transport hints: raw
       use image: false
     - Alpha: 1
-      Class: jsk_rviz_plugin/PolygonArray
+      Class: rviz/Polygon
       Color: 25; 255; 0
       Enabled: true
-      Name: PolygonArray
-      Topic: /get_plane/output_polygon
+      Name: Polygon
+      Topic: /get_plane/focus_plane
       Unreliable: false
       Value: true
+    - Alpha: 1
+      Class: jsk_rviz_plugin/PolygonArray
+      Color: 25; 255; 0
+      Enabled: false
+      Name: PolygonArray
+      Topic: /plane_extraction/plane_polygons
+      Unreliable: false
+      Value: false
       coloring: Auto
       enable lighting: true
       normal length: 0.10000000149011612
@@ -206,10 +220,229 @@ Visualization Manager:
       Enabled: true
       Links:
         All Links Enabled: true
+        BODY:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        CHEST_LINK0:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        CHEST_LINK1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        CHEST_LINK2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         Expand Joint Details: false
         Expand Link Details: false
         Expand Tree: false
+        HEAD_LINK0:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        HEAD_LINK1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        LARM_FINGER0:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        LARM_FINGER1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        LARM_LINK0:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        LARM_LINK1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        LARM_LINK2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        LARM_LINK3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        LARM_LINK4:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        LARM_LINK5:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        LARM_LINK6:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        LARM_LINK7:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        LLEG_LINK0:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        LLEG_LINK1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        LLEG_LINK2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        LLEG_LINK3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        LLEG_LINK4:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        LLEG_LINK5:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
         Link Tree Style: Links in Alphabetic Order
+        RANGE_LINK:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        RARM_FINGER0:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        RARM_FINGER1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        RARM_LINK0:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        RARM_LINK1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        RARM_LINK2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        RARM_LINK3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        RARM_LINK4:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        RARM_LINK5:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        RARM_LINK6:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        RARM_LINK7:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        RLEG_LINK0:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        RLEG_LINK1:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        RLEG_LINK2:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        RLEG_LINK3:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        RLEG_LINK4:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        RLEG_LINK5:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+          Value: true
+        head_end_coords:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        head_root:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        larm_end_coords:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        lleg_end_coords:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        rarm_end_coords:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
+        rleg_end_coords:
+          Alpha: 1
+          Show Axes: false
+          Show Trail: false
       Name: RobotModel
       Robot Description: robot_description
       TF Prefix: ""
@@ -228,6 +461,46 @@ Visualization Manager:
       line width: 0.004999999888241291
       only edge: true
       show coords: false
+    - Alpha: 1
+      Class: rviz/PointStamped
+      Color: 32; 74; 135
+      Enabled: true
+      History Length: 1
+      Name: PointStamped
+      Radius: 0.10000000149011612
+      Topic: /larm_target
+      Unreliable: false
+      Value: true
+    - Alpha: 1
+      Class: rviz/PointStamped
+      Color: 239; 41; 41
+      Enabled: true
+      History Length: 1
+      Name: PointStamped
+      Radius: 0.10000000149011612
+      Topic: /rarm_target
+      Unreliable: false
+      Value: true
+    - Alpha: 1
+      Class: rviz/PointStamped
+      Color: 239; 41; 41
+      Enabled: true
+      History Length: 1
+      Name: PointStamped
+      Radius: 0.05000000074505806
+      Topic: /normal_start
+      Unreliable: false
+      Value: true
+    - Alpha: 1
+      Class: rviz/PointStamped
+      Color: 239; 41; 41
+      Enabled: true
+      History Length: 1
+      Name: PointStamped
+      Radius: 0.05000000074505806
+      Topic: /normal_end
+      Unreliable: false
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -256,7 +529,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/Orbit
-      Distance: 5.231663227081299
+      Distance: 5.329169750213623
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -271,10 +544,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.46039867401123047
+      Pitch: 0.38539919257164
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 5.00041389465332
+      Yaw: 4.565406799316406
     Saved: ~
 Window Geometry:
   Displays:

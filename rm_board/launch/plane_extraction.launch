@@ -15,19 +15,25 @@
   
   <arg name="manager" default="plane_extraction_manager" />
 
+  <!-- <rosparam param="/use_sim_time">true</rosparam> -->
+
   <!-- 自作  -->
-  <node pkg="rm_debris_vision" name="get_plane" type="get_plane.py" output="screen" />
+  <!-- <node pkg="rm_debris_vision" name="get_plane" type="get_plane.py" output="screen" > -->
+  <!-- <remap from="~output" to="~focus_plane" /> -->
+  <!-- </node> -->
+  <node pkg="rm_debris_vision" name="get_plane" type="get_plane_with_service.py" output="screen" />    
   <node pkg="rm_debris_vision" name="make_plane_realtime" type="make_plane_for_ik.l" output="screen" />
   <node pkg="rm_debris_vision" name="make_plane_for_ik_loop" type="make_plane_for_ik_server.l" output="screen" />
   <node pkg="rm_debris_vision" name="change_clip_box" type="change_clip_box_server.l" output="screen" />
   <!-- <node pkg="rm_debris_vision" name="hz_down" type="hz_down_realsense.py" output="screen" /> -->
-  <node pkg="rm_debris_vision" name="switch_input_cloud" type="switch_input_cloud.py" output="screen" />    
+  <!-- <node pkg="rm_debris_vision" name="switch_input_cloud" type="switch_input_cloud.py" output="screen" /> -->
+  <node pkg="rm_debris_vision" name="predict_k_server" type="predict_k_server.py" output="screen" />
 
   <group ns="plane_extraction">
     <node name="$(arg manager)"
           pkg="nodelet" type="nodelet"
           args="manager" output="screen" />
-    
+
     <node name="bounding_box_array_publisher"
           pkg="jsk_recognition_utils" type="bounding_box_array_publisher.py">
       <rosparam>
@@ -37,11 +43,15 @@
           dimension: [3, 2.0, 2]
       </rosparam>
     </node>
-          <!-- dimension: [3, 1.5, 2] -->
+        <!-- - position: [1, 0, 1.1] -->
+        <!--   dimension: [3, 1.5, 2] -->
+        
     <node name="attention_clipper"
           pkg="nodelet" type="nodelet"
           args="load jsk_pcl/AttentionClipper $(arg manager)">
       <remap from="~input/points" to="$(arg input_cloud)" />
+      <!-- <remap from="~input/points" to="$(arg transformed_cloud)" /> -->
+      <!-- <remap from="~input/points" to="$(arg input_cloud)" /> -->
       <remap from="~input/box_array" to="bounding_box_array_publisher/output" />
       <rosparam>
         use_multiple_attention: true
@@ -51,6 +61,7 @@
     <node name="extract_indices"
           pkg="nodelet" type="nodelet"
           args="load jsk_pcl/ExtractIndices $(arg manager)">
+      <!-- <remap from="~input" to="$(arg transformed_cloud)" /> -->
       <remap from="~input" to="$(arg input_cloud)" />
       <remap from="~indices" to="attention_clipper/output/point_indices" />
       <rosparam>
@@ -66,7 +77,6 @@
         target_frame_id: odom_ground
       </rosparam>
     </node>
-
 
     <!-- 平面検出 -->
     <node name="plane_segmentation"
@@ -108,9 +118,16 @@
           pkg="nodelet" type="nodelet"
           args="load jsk_pcl/ClusterPointIndicesDecomposer $(arg manager)">
       <remap from="~input" to="$(arg transformed_cloud)" />
-      <remap from="~target" to="filtered_plane_cluster_indices" />
+      <!-- <remap from="~target" to="filtered_plane_cluster_indices" /> -->
+      <remap from="~target" to="plane_cluster_indices" />
+      <remap from="~align_planes" to="plane_polygons"/>
+      <remap from="~align_planes_coefficients" to="plane_coefficients"/>
       <remap from="~negative_indices" to="not_plane_indices" />
       <rosparam>
+        use_pca: true
+        sort_by: "z_axis"
+        align_boxes: true
+        align_boxes_with_plane: true
         fill_boxes_label_with_nearest_plane_index: true
       </rosparam>
     </node>
@@ -121,16 +138,16 @@
     <!--       pkg="nodelet" type="nodelet" -->
     <!--       args="load jsk_pcl/OrganizedEdgeDetector $(arg manager)"> -->
     <!--   <remap from="~input" to="$(arg filtered_cloud)" /> -->
-      <!-- <remap from="~/output_rgb_edge_indices" to="edge_indices" /> -->
-      <!-- <remap from="~/output_rgb_edge" to="edge_cloud" />       -->
-    <!--   <remap from="~/output_straight_edges_indices" to="edge_indices" /> -->
-    <!--   <remap from="~/output" to="edge_cloud" />       -->
+    <!--   <remap from="~/output_rgb_edge_indices" to="edge_indices" /> -->
+    <!--   <remap from="~/output_rgb_edge" to="edge_cloud" /> -->
+    <!--   <remap from="~/output_straight_edges_indices" to="straight_edge_indices" /> -->
+    <!--   <remap from="~/output" to="edge_cloud" /> -->
     <!--   <rosparam> -->
     <!--     publish_normal: true -->
     <!--     use_nan_boundary: true -->
     <!--     use_rgb: true -->
     <!--     use_straightline_detection: true -->
-        <!-- min_line_length: 1000 -->
+    <!--     min_line_length: 1000 -->
     <!--   </rosparam> -->
     <!-- </node> -->
 

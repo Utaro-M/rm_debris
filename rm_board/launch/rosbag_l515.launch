@@ -1,19 +1,15 @@
 <launch>
   <arg name="bagfile"
-       default="/home/leus/matsuura/ros_bag/check_in_hand.bag"/>
+       default="/home/leus/matsuura/ros_bag/l515_search_top_board.bag"/>
   <node name="rosbag_record"
 	pkg="rosbag" type="record"
 	args="-o $(arg bagfile)
 	      -b 0
 	      /rs_l515/depth_registered/points
 	      /rs_l515/color/image_rect_color
-	      /rhsensor
-	      /lhsensor	      
 	      /tf
 	      /tf_static"
 	output="screen">
   </node>
 </launch>
-	      <!-- /multisense_local/left/camera_info -->
-	      <!-- /static_virtual_camera/camera_info -->
-	      <!-- /multisense_local/left/image_rect_color -->
+<!-- /get_plane/focus_plane -->

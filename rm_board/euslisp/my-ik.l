@@ -107,7 +107,8 @@
   (send (send *robot* :joint "CHEST_JOINT0") :max-angle 0.5)
   
   (send (send *robot* :joint "CHEST_JOINT1") :min-angle 0)
-  (send (send *robot* :joint "CHEST_JOINT1") :max-angle 30)
+  ;; (send (send *robot* :joint "CHEST_JOINT1") :max-angle 30)
+  (send (send *robot* :joint "CHEST_JOINT1") :max-angle 20)
   
   (send (send *robot* :joint "RLEG_JOINT0") :max-angle 20)
   (send (send *robot* :joint "LLEG_JOINT0") :min-angle -20)
@@ -129,11 +130,11 @@
   (send (send *robot* :joint "RARM_JOINT1") :max-angle 140)
   (send (send *robot* :joint "LARM_JOINT1") :min-angle -140)
   (send (send *robot* :joint "LARM_JOINT1") :max-angle 140)
-
-  (send (send *robot* :joint "LARM_JOINT3") :min-angle -170)
-  (send (send *robot* :joint "LARM_JOINT3") :max-angle 170)
-  (send (send *robot* :joint "RARM_JOINT3") :min-angle -170)
-  (send (send *robot* :joint "RARM_JOINT3") :max-angle 170)
+;;腕が180度回転するのを防ぐ
+  (send (send *robot* :joint "LARM_JOINT3") :min-angle -90)
+  (send (send *robot* :joint "LARM_JOINT3") :max-angle 90)
+  (send (send *robot* :joint "RARM_JOINT3") :min-angle -90)
+  (send (send *robot* :joint "RARM_JOINT3") :max-angle 90)
   ;; (send (send *robot* :joint "RARM_JOINT6") :min-angle -50)
   ;; (send (send *robot* :joint "RARM_JOINT6") :max-angle 50)
   ;; (send (send *robot* :joint "LARM_JOINT5") :min-angle -50)
@@ -154,13 +155,18 @@
 
 ;;reachとかに使ってるやつ
 (defun ik-opt
-    (rarm-coords larm-coords 
-    &key
+    (rarm-coords
+     larm-coords 
+     &key (arm "both")
      (optimize-torque? t)
      (avoid-collision? t)
      (apply-external-force? nil)
      (fix-contact? nil)
-     (set-kin-scale? t)
+     (set-unique-kin-scale? nil)
+     (kin-scale-list (list 1.0
+                            1.0
+                            (list 1 1 1 1 1 0.2)
+                            0.0))
      (only-kinematics? nil)
      (pre-process-func)
      (reset? t)
@@ -168,22 +174,24 @@
                                  (float-vector 0 0 -80 0 0 0)))
      (external-coords-list (if (boundp '*robot-env*)
 			       (list (send *robot-env* :robot :get :rarm-contact-coords)
-				     (send *robot-env* :robot :get :larm-contact-coords))
-			     (list (send *robot* :rarm :end-coords)
-				   (send *robot* :larm :end-coords))))
+                         (send *robot-env* :robot :get :larm-contact-coords))
+                   (list (send *robot* :rarm :end-coords)
+                         (send *robot* :larm :end-coords))))
      ;; (rleg-pos #f( 0 -200 -10))
      ;; (lleg-pos #f( 0  200 -10))
-     (rleg-pos-shift #f(0 0 0))
-     (lleg-pos-shift #f(0 0 0))
+     (rleg-pos-shift #f(-100 0 0))
+     (lleg-pos-shift #f( 100 0 0))
      &allow-other-keys
      )
   (setq rleg-pos-shift (v+ rleg-pos-shift #f(0 0 -10)))
   (setq lleg-pos-shift (v+ lleg-pos-shift #f(0 0 -10)))
   ;; (setq *ground-rleg* (make-cube 800 400 20))
   ;; (setq *ground-lleg* (make-cube 800 400 20))
-  (setq *ground-rleg* (make-cube 600 400 20))
-  (setq *ground-lleg* (make-cube 600 400 20))  
-    (send *ground-rleg* :newcoords
+  ;; (setq *ground-rleg* (make-cube 600 400 20))
+  ;; (setq *ground-lleg* (make-cube 600 400 20))
+  (setq *ground-rleg* (make-cube 500 400 20))
+  (setq *ground-lleg* (make-cube 500 400 20))  
+  (send *ground-rleg* :newcoords
         (make-coords :pos (send (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate rleg-pos-shift) :worldpos)  :rpy (list 0 0 0))
         )
   (send *ground-lleg* :newcoords
@@ -368,17 +376,30 @@
                                   )
                        ))
                   :kin-scale-list
-                  (if set-kin-scale?
-                      (list 1.0
-                            1.0
-                            1.0
-                            1.0
+                  (if set-unique-kin-scale?
+                      kin-scale-list
+                      (cond
+                       ((equal arm "both")
+                        (list 1.0
+                              1.0
+                              (list 1 1 1 1 1 0.5)
+                              (list 1 1 1 1 1 0.5)
+                              1.0
+                              1.0))
+                       ((equal arm "rarm")
+                        (list 1.0
+                              1.0
+                              (list 1 1 1 1 0.5 1)
+                              0.0))
+                       ((equal arm "larm")
+                        (list 1.0
+                              1.0
+                              0.0
+                              (list 1 1 1 1 0.5 1)))))
                             ;;axis y周りは自由 heaveの時
                             ;; (list 1 1 1 1 0 1)
                             ;; (list 1 1 1 1 0 1)
-                            ))
                   :collision-pair-list
-
                   (if avoid-collision?
                       (mapcar #'(lambda (l) (list l *obst*)) (flatten (send *robot-env* :robot :legs :links)))
                   )
@@ -432,7 +453,7 @@
                       (return nil))
                   ))
   (send *sqp-opt* :optimize :loop-num 100)
-  (send *sqp-opt* :status)
+  ;; (send *sqp-opt* :status)
   )
 (warn "(jaxon_red-sqp-optimization-instant)~%")
 
@@ -931,6 +952,11 @@
   (send (send *robot* :joint "LARM_JOINT1") :min-angle -140)
   (send (send *robot* :joint "LARM_JOINT1") :max-angle 140)
 
+;;腕が180度回転するのを防ぐ
+  (send (send *robot* :joint "LARM_JOINT3") :min-angle -90)
+  (send (send *robot* :joint "LARM_JOINT3") :max-angle 90)
+  (send (send *robot* :joint "RARM_JOINT3") :min-angle -90)
+  (send (send *robot* :joint "RARM_JOINT3") :max-angle 90)  
   
   )
 
@@ -1263,6 +1289,10 @@
                         (validate-element-jacobian :config-task (send sqp :config-task))
                         ;; (validate-jacobian :config-task (send sqp :config-task))
                         ))
+                  :no-print? t
+                  :failure-callback-func
+                  #'(lambda(val)
+                      (return nil))
                   ))
   (send *sqp-opt* :optimize :loop-num 100)
   )

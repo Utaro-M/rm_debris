@@ -526,6 +526,7 @@
           )
   ;; (move-hand (read-from-string (format nil ":~A" arm)) #f(-180 0   0) :sync? nil)
   ;; (move-hand (read-from-string (format nil ":~A" arm)) #f(0   -180 0) :sync? nil)
+  (setq movetime-tmp 5000)
   (setq origin-face (make_plane))
   (setq face-arm (get-half-plane origin-face))
   (setq pre-angle (send *robot* :angle-vector))
@@ -548,7 +549,7 @@
             (progn
               (send *ri* :set-gait-generator-param :zmp-weight-map (float-vector rleg-ratio lleg-ratio 1 1))
               ;; (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5) :is-hand-world-fix-mode t)
-              (send-pose 5000 :force-move flag-simulator :pre-pose pre-angle :pre-lleg pre-lleg :look-at-object? look-at-object? :wait? nil)
+              (send-pose movetime-tmp :force-move flag-simulator :pre-pose pre-angle :pre-lleg pre-lleg :look-at-object? look-at-object? :wait? nil)
               (move-on-foot rleg-coords lleg-coords rleg-coords-new lleg-coords-new :wait? t :force-move t)
         ;; (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5) :is-hand-world-fix-mode nil)
               ))
@@ -556,18 +557,6 @@
         ))
   )
 
-;;reach 1203
-(defun reach-new()
-  ;; (board-holding-pose)
-  (send *ri* :start-impedance :arms)
-  (send *ri* :set-reference-force-updater-param :arms :motion-dir #f(0 0 -1) :p-gain 0.01 :update-time-ratio 1.0)
-  (send *ri* :start-reference-force-updater :arms)
-  (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5))
-  
-  (setq rarm-coords (make-coords :pos (float-vector 360 -310 300) :rpy (float-vector (deg2rad 0) (deg2rad  30) (deg2rad -90))))
-  (setq larm-coords (make-coords :pos (float-vector 360  310 300)  :rpy (float-vector (deg2rad 0) (deg2rad  30) (deg2rad  90))))
-  (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t :rleg-pos-shift #f(0 -100 -10) :lleg-pos-shift #f(0 100 -10) :look-at-object? t)
-  )
 
 (defun test-change-arm()
   ;; (board-holding-pose)
