@@ -694,3 +694,22 @@ next-rcoords = #<coordinates #X7f02bd55bb20  395.97 -250.115 -0.002 / -0.075 -5.
 #<coordinates #X7f541de78528  104.745 109.342 -0.009 / -0.007 -3.460e-07 -1.236e-06>
 26.B2-irteusgl$ send *coords* :get-rleg-coords
 #<coordinates #X7f541de783a8  100.497 -176.101 -0.009 / -0.024 -2.481e-07 1.708e-06>
+
+
+(progn
+  (send *ri* :angle-vector (send *robot* :reset-manip-pose) 5000)
+  (send *ri* :move-gripper :larm 0.0 :wait t)
+  (send *ri* :move-gripper :rarm 0.0 :wait t)
+  (setq lleg-coords-new (make-coords :pos #f(48.356 245.005 -0.008) :rpy #f(0.022 4.965e-06 1.208e-05)))
+  (setq rleg-coords-new (make-coords :pos #f(50 -249 -0.009) :rpy #f(-0.024 -2.481e-07 1.708e-06)))
+  (setq zmp-vector (send *ri*  :zmp-vector)) 
+  (setq lleg-ratio (abs (norm (v- (send lleg-coords-new :worldpos) zmp-vector))))
+  (setq rleg-ratio (abs (norm (v- (send rleg-coords-new :worldpos) zmp-vector))))
+  (send *ri* :set-gait-generator-param :zmp-weight-map (float-vector rleg-ratio lleg-ratio 1 1))
+  (send *ri* :set-foot-steps
+        (list
+         (make-coords :coords (send *robot* :rleg :end-coords :copy-worldcoords) :name :rleg)
+         (make-coords :coords  lleg-coords-new :name :lleg)
+         (make-coords :coords  rleg-coords-new :name :rleg)
+         ))
+  )

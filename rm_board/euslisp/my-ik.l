@@ -191,19 +191,20 @@
   (send *coords* :set-larm-coords (send *robot* :larm :end-coords :copy-worldcoords))
   (setq rleg-pos-shift (v+ rleg-pos-shift #f(0 0 -10)))
   (setq lleg-pos-shift (v+ lleg-pos-shift #f(0 0 -10)))
+  (format t "rleg-pos-shift in ik = ~A~%" rleg-pos-shift)
   ;; (setq *ground-rleg* (make-cube 800 400 20))
   ;; (setq *ground-lleg* (make-cube 800 400 20))
   ;; (setq *ground-rleg* (make-cube 600 400 20))
   ;; (setq *ground-lleg* (make-cube 600 400 20))
   (setq *ground-rleg* (make-cube 500 400 20))
-  (setq *ground-lleg* (make-cube 500 400 20))  
+  (setq *ground-lleg* (make-cube 500 400 20))
   (send *ground-rleg* :newcoords
         (make-coords :pos (send (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate rleg-pos-shift) :worldpos)  :rpy (list 0 0 0))
         )
   (send *ground-lleg* :newcoords
         (make-coords :pos (send (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate lleg-pos-shift) :worldpos)  :rpy (list 0 0 0))
         )
-
+  (format t "ground-rleg in ik = ~A~%" (send *ground-rleg* :copy-worldcoords))
   (setq *env-list* (list *ground-rleg* *ground-lleg*))
   (send-all *env-list* :worldcoords)
   ;; (send-all *env-list* :set-color (float-vector 0.5 0.5 0.25))
