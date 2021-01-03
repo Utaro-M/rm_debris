@@ -696,6 +696,7 @@ next-rcoords = #<coordinates #X7f02bd55bb20  395.97 -250.115 -0.002 / -0.075 -5.
 #<coordinates #X7f541de783a8  100.497 -176.101 -0.009 / -0.024 -2.481e-07 1.708e-06>
 
 
+
 ;;calib
 absolute
 com-list =(#f(0.089906 6.881544e-05 0.071121) #f(0.090729 -0.000351 0.080593) #f(0.089672 -1.886754e-05 0.071464) #f(0.088781 -0.000354 0.07266) #f(0.087193 -0.001668 0.075643) #f(0.090167 -0.001309 0.071161) #f(0.088462 -0.003424 0.073298) #f(0.089761 -0.000719 0.074825) #f(0.086913 -0.003183 0.068969) #f(0.083521 -0.003543 0.070206) #f(0.0 0.0 0.0))
@@ -737,3 +738,22 @@ com-local norm = 0.533926
 com-local-vector subtract  offset=#f(-0.091175 -0.40075 0.352702)
 com-local-vector subtract  offset norm =0.541583
 (#f(0.008825 -0.40075 0.352702) #f(1.87763 7.06089 -10.2389) #f(-0.091175 -0.40075 0.352702))
+
+(progn
+  (send *ri* :angle-vector (send *robot* :reset-manip-pose) 5000)
+  (send *ri* :move-gripper :larm 0.0 :wait t)
+  (send *ri* :move-gripper :rarm 0.0 :wait t)
+  (setq lleg-coords-new (make-coords :pos #f(48.356 245.005 -0.008) :rpy #f(0.022 4.965e-06 1.208e-05)))
+  (setq rleg-coords-new (make-coords :pos #f(50 -249 -0.009) :rpy #f(-0.024 -2.481e-07 1.708e-06)))
+  (setq zmp-vector (send *ri*  :zmp-vector)) 
+  (setq lleg-ratio (abs (norm (v- (send lleg-coords-new :worldpos) zmp-vector))))
+  (setq rleg-ratio (abs (norm (v- (send rleg-coords-new :worldpos) zmp-vector))))
+  (send *ri* :set-gait-generator-param :zmp-weight-map (float-vector rleg-ratio lleg-ratio 1 1))
+  (send *ri* :set-foot-steps
+        (list
+         (make-coords :coords (send *robot* :rleg :end-coords :copy-worldcoords) :name :rleg)
+         (make-coords :coords  lleg-coords-new :name :lleg)
+         (make-coords :coords  rleg-coords-new :name :rleg)
+         ))
+  )
+
