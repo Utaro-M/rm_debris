@@ -867,7 +867,7 @@
   (setq pos   (elt ret 3))
   (setq longest-len (elt ret 4))
   
-  (setq pos-larm (v+ pos (float-vector 0 pos-shift 0)))
+  ;; (setq pos-larm (v+ pos (float-vector 0 pos-shift 0)))
   (if (< (elt y-vec 2) 0)
       (setq y-vec-larm (scale -1 y-vec))
     (setq y-vec-larm  y-vec))
@@ -875,7 +875,7 @@
       (setq z-vec-larm (scale -1 z-vec))
     (setq z-vec-larm z-vec))
 
-  (setq pos-rarm (v+ pos (float-vector 0 (- 0 pos-shift) 0)))
+  ;; (setq pos-rarm (v+ pos (float-vector 0 (- 0 pos-shift) 0)))
   (if (> (elt y-vec 2) 0)
       (setq y-vec-rarm (scale -1 y-vec))
     (setq y-vec-rarm y-vec))
@@ -888,19 +888,25 @@
   (setq rot-rarm (transpose
                   (matrix x-vec y-vec-rarm z-vec-rarm)))
   
-  (format t "pos-larm = ~A~%" pos-larm)
-  (format t "rot-larm = ~A~%" rot-larm)
-  (format t "pos-rarm = ~A~%" pos-rarm)
-  (format t "rot-rarm = ~A~%" rot-rarm)
+  ;; (format t "pos-larm = ~A~%" pos-larm)
+  ;; (format t "rot-larm = ~A~%" rot-larm)
+  ;; (format t "pos-rarm = ~A~%" pos-rarm)
+  ;; (format t "rot-rarm = ~A~%" rot-rarm)
   (setq coords1 (make-coords))
-  (setq larm-coords (make-coords :pos pos-larm :rpy (elt (rpy-angle rot-larm)  0)))
-  (setq rarm-coords (make-coords :pos pos-rarm :rpy (elt (rpy-angle rot-rarm)  0)))
+  ;; (setq larm-coords (make-coords :pos pos-larm :rpy (elt (rpy-angle rot-larm)  0)))
+  ;; (setq rarm-coords (make-coords :pos pos-rarm :rpy (elt (rpy-angle rot-rarm)  0)))
+  ;;傾いたエッジ対応
+  (setq larm-coords (make-coords :pos (v+ pos (scale (* -1 pos-shift) z-vec-larm)) :rpy (elt (rpy-angle rot-larm)  0)))
+  (setq rarm-coords (make-coords :pos (v+ pos (scale (* -1 pos-shift) z-vec-rarm)) :rpy (elt (rpy-angle rot-rarm)  0)))
+  (format t "ram-coords = ~A~%" rarm-coords)
+  ;; (setq larm-coords (send larm-coords :translate (float-vector 0 0 (- 0 pos-shift)) :local))
+  ;; (setq rarm-coords (send rarm-coords :translate (float-vector 0 0 (+ 0 pos-shift)) :local))
   
   ;;少し回転
   (setq larm-coords (send larm-coords :rotate (deg2rad (- 0 rot-z)) :z))
   (setq rarm-coords (send rarm-coords :rotate (deg2rad rot-z) :z))
-  (setq larm-coords (send larm-coords :translate larm-shift))
-  (setq rarm-coords (send rarm-coords :translate rarm-shift))
+  (setq larm-coords (send larm-coords :translate larm-shift :local))
+  (setq rarm-coords (send rarm-coords :translate rarm-shift :local))
   (format t "ik larm-coords = ~A~%" larm-coords)
   (format t "ik rarm-coords = ~A~%" rarm-coords)
   (objects (list (car cu) coords1 larm-coords rarm-coords))
@@ -1219,7 +1225,7 @@
 
 ;;reach-auto :pos-shift 280 :reaching-offset (list #f(-140 50 0) #f(-140 50 0))  ;;rotate
 (defun reach-auto
-    (&key  (fix-contact? nil) (send? t) (target "board") (pos-shift 290) (one-hand? nil) (adjust? t) (ik3? t)
+    (&key  (fix-contact? nil) (send? t) (target "board") (pos-shift 290) (one-hand? nil) (adjust? t) (ik2? t) (ik3? t)
 
            ;;  (larm-force #f(0 0 -60))
            ;;  (rarm-force #f(0 0 -60))
@@ -1339,7 +1345,7 @@
   (setq lleg-pos-shift (v+ lleg-pos-shift (float-vector 0 0 0)))
   (setq rleg-pos-shift (v+ rleg-pos-shift (float-vector 0 0 0)))
   (format t "rleg-pos-shift = ~A~%" rleg-pos-shift)
-  (setq fix-contact? nil)
+  ;; (setq fix-contact? nil)
   ;;手先力適当
   ;; (setq larm-force #f(0 0 -60))
   ;; (setq rarm-force #f(0 0 -60))
@@ -1367,6 +1373,8 @@
   ;;立ち位置変更
   (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact? :only-move-foot? t :fix-hand? fix-hand? :look-at-object? look-at-object?)
 
+  (if ik2?
+      (progn
   (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
   (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
 
@@ -1407,7 +1415,7 @@
   ;; (move-hand :larm (scale -1 (elt reaching-offset 0)) :send? nil)
   ;; (move-hand :rarm (scale -1 (elt reaching-offset 1)) :send? nil)
 
-  (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact? :fix-hand? fix-hand? :look-at-object? look-at-object?)
+  (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact? :fix-hand? fix-hand? :look-at-object? look-at-object?)))
   (if send?
     (progn
       (send *robot* :head-neck-p :joint-angle -5)
@@ -1738,13 +1746,21 @@
 (defun emergency-check-pose(&key (send? t) (fix-contact? nil))
   ;; (send *coords* :set-rleg-new-coords (make-coords :pos #f(156.984 1.812 -0.008) :rpy #f(-0.009 6.967e-07 -3.684e-06)))
   ;; (send *coords* :set-lleg-new-coords (make-coords :pos #f(156.985 261.812 -0.012) :rpy #f(0.014 1.315e-06 -9.876e-07)))
-    (send *coords* :set-rleg-new-coords (make-coords :pos #f(156.984 -130 -0.008) :rpy #f(-0.009 6.967e-07 -3.684e-06)))
-  (send *coords* :set-lleg-new-coords (make-coords :pos #f(156.985 132 -0.012) :rpy #f(0.014 1.315e-06 -9.876e-07)))
+  ;;   (send *coords* :set-rleg-new-coords (make-coords :pos #f(156.984 -130 -0.008) :rpy #f(-0.009 6.967e-07 -3.684e-06)))
+  ;; (send *coords* :set-lleg-new-coords (make-coords :pos #f(156.985 132 -0.012) :rpy #f(0.014 1.315e-06 -9.876e-07)))
+  ;;足首ゆるくて転倒したので横に開くようにした一時的に
+  (send *coords* :set-rleg-new-coords (make-coords :pos #f(0.984 -134 -0.008) :rpy #f(-0.009 6.967e-07 -3.684e-06)))
+  (send *coords* :set-lleg-new-coords (make-coords :pos #f(0.985 132 -0.012) :rpy #f(0.014 1.315e-06 -9.876e-07)))  
   (send *robot* :angle-vector #f(-4.30965 2.78768 -46.61 64.8649 -19.4957 -0.259879 -2.8812 7.6575 -48.3618 65.4802 -18.4271 -5.15996 -1.76532 16.1927 -0.218483 -1.86632 10.0 37.0 -10.5421 -37.7312 11.7252 -48.9479 32.3991 -4.75814 18.1441 -37.0 -4.73756 49.4529 -5.47873 -48.3535 -34.726 -0.928479 3.70811))
   (send *ri* :start-log)
   (send *robot* :move-coords (send *coords* :get-rleg-new-coords) (send *robot* :rleg :end-coords))
-  (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact?)
+  (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact?))
 
+;;力センサのログをとるため
+(defun save-hand-force-log()
+  (progn (send *ri* :start-log ) (unix::sleep 30) (save-log :log-dir "matsuura/log")))
+
+  
 (defun pred-multi-com
     (force1 moment1 force2 moment2 pre-coords post-coords &key (g  9.8))
 

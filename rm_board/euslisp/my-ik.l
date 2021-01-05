@@ -228,7 +228,8 @@
     ;;big board version
     (format t "avoid collision~%")
     (setq *obst* (make-cube 100 1000 200)) 
-    (send *obst* :translate (float-vector (+ (/ (+ (elt (send rarm-coords :worldpos) 0) (elt (send larm-coords :worldpos) 0)) 2) 50) 0 100))
+    ;; (send *obst* :translate (float-vector (+ (/ (+ (elt (send rarm-coords :worldpos) 0) (elt (send larm-coords :worldpos) 0)) 2) 50) 0 100))
+    (send *obst* :translate (v+ (scale 0.5 (v+ (send rarm-coords :worldpos) (send larm-coords :worldpos))) #f(0 0 -400)))
     (send *obst* :set-color (float-vector 1 0 0) 0.5)
     )
   ;; setup robot
