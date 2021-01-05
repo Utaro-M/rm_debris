@@ -9,7 +9,6 @@
        default="/self_filter/filtered_cloud" />
 
   <arg name="manager" default="check_in_hand_manager" />
->>>>>>> 69f449071e16edc5882b68babb6514d056da82dc
   <!-- <rosparam param="/use_sim_time">true</rosparam> -->
   <node pkg="count_points" name="count_points" type="count_points.py" output="screen" />
 
