@@ -155,6 +155,8 @@
       (send *robot* :angle-vector (send *ri* :state :angle-vector)))
   (send *robot* :move-coords (send (send next-lcoords :copy-worldcoords) :translate #f(0 0 100)) (send *robot* :link "LLEG_LINK5"))
   (send *robot* :move-coords (send (send next-rcoords :copy-worldcoords) :translate #f(0 0 100)) (send *robot* :link "RLEG_LINK5"))
+  ;; (send *robot* :move-coords (send (send next-lcoords :copy-worldcoords) :translate #f(0 0 40)) (send *robot* :lleg :end-coords :copy-worldcoords))
+  ;; (send *robot* :move-coords (send (send next-rcoords :copy-worldcoords) :translate #f(0 0 40)) (send *robot* :lleg :end-coords :copy-worldcoords))
   (objects)
   (send *ri* :angle-vector (send *ri* :potentio-vector))
   (if fix-hand?
@@ -429,8 +431,10 @@
     (setq larm-f  (low-pass-online "force" "absolute" :larm :times 10 :sleep 100 :flag nil))
     (setq flag 0)
     ;;絶対値バージョン
-    (setq rarm-f-dif (abs (elt (v- rarm-f rarm-f-pre) 2)))
-    (setq larm-f-dif (abs (elt (v- larm-f larm-f-pre) 2)))
+    ;; (setq rarm-f-dif (abs (elt (v- rarm-f rarm-f-pre) 2)))
+    ;; (setq larm-f-dif (abs (elt (v- larm-f larm-f-pre) 2)))
+    (setq rarm-f-dif (abs (norm (v- rarm-f rarm-f-pre))))
+    (setq larm-f-dif (abs (norm (v- larm-f larm-f-pre))))
     ;; (setq rarm-f-dif (elt (v- rarm-f rarm-f-pre) 2))
     ;; (setq larm-f-dif (elt (v- larm-f larm-f-pre) 2))
     (setq drop (list nil nil))
@@ -606,8 +610,8 @@
     (print "do nothing"))))
 
 (defun start-coords()
-  (send *robot* :move-coords (make-coords :pos  #f(0 100 0)) (send *robot* :lleg :end-coords))
-  ;; (send *robot* :move-coords (make-coords :pos #f(0 100 100) :rpy #f(0 0 0) ) (send *robot* :link "LLEG_LINK5"))
+  ;; (send *robot* :move-coords (make-coords :pos  #f(0 100 40)) (send *robot* :lleg :end-coords))
+  (send *robot* :move-coords (make-coords :pos #f(0 100 100) :rpy #f(0 0 0) ) (send *robot* :link "LLEG_LINK5"))
   (objects))
 
   
@@ -728,7 +732,7 @@
     (setq ret (cdr y-predict))
 ;;    (print (format nil "~A vector through filter = ~A" target ret))
     (setq ret-average (average ret))
-
+    ;;センサからの値は手先センサ座標系,ret-averageの方はとりあえず座標変更した
     (if flag
         (list  (cdr y-data) ret)
       (progn
