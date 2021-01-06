@@ -172,9 +172,12 @@
      (pre-process-func)
      (kin-task-value-thre 0.03)
      (eom-rot-task-value-thre 0.2)
+     (eom-trans-task-value-thre 0.5)
      (convergence-check-func #'(lambda(sqp)
                       (if (and (< (norm (send (send sqp :config-task) :kinematics-task-value :update? nil)) kin-task-value-thre)
-                               (< (norm (send (send sqp :config-task) :eom-rot-task-value :update? nil)) eom-rot-task-value-thre))
+                               (< (norm (send (send sqp :config-task) :eom-rot-task-value :update? nil)) eom-rot-task-value-thre)
+			       (< (norm (send (send sqp :config-task) :eom-trans-task-value :update? nil)) eom-trans-task-value-thre)
+			       )
                           t ;converge
                         nil)))
      (reset? (send *ik-param* :get-reset?))
@@ -204,7 +207,7 @@
   (send *ground-lleg* :newcoords
         (make-coords :pos (send (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate lleg-pos-shift) :worldpos)  :rpy (list 0 0 0))
         )
-  (format t "ground-rleg in ik = ~A~%" (send *ground-rleg* :copy-worldcoords))
+  ;; (format t "ground-rleg in ik = ~A~%" (send *ground-rleg* :copy-worldcoords))
   (setq *env-list* (list *ground-rleg* *ground-lleg*))
   (send-all *env-list* :worldcoords)
   ;; (send-all *env-list* :set-color (float-vector 0.5 0.5 0.25))
@@ -228,7 +231,8 @@
     ;;big board version
     (format t "avoid collision~%")
     (setq *obst* (make-cube 100 1000 200)) 
-    (send *obst* :translate (float-vector (+ (/ (+ (elt (send rarm-coords :worldpos) 0) (elt (send larm-coords :worldpos) 0)) 2) 50) 0 100))
+    ;; (send *obst* :translate (float-vector (+ (/ (+ (elt (send rarm-coords :worldpos) 0) (elt (send larm-coords :worldpos) 0)) 2) 50) 0 100))
+    (send *obst* :translate (v+ (scale 0.5 (v+ (send rarm-coords :worldpos) (send larm-coords :worldpos))) #f(0 0 -400)))
     (send *obst* :set-color (float-vector 1 0 0) 0.5)
     )
   ;; setup robot
@@ -384,27 +388,34 @@
                        ))
                   :kin-scale-list
                   (if set-unique-kin-scale?
-                      kin-scale-list
+                      kin-scale-list ;;足平は前を向くように
                       (cond
                        ((equal arm "both")
-                        (list ;; 1.0
+                        (list
 			 ;; 1.0
-			 (list 1 1 1 1 1 1)
-			 (list 1 1 1 1 1 1)
+			 ;; 1.0
+			 (list 1 1 1 1 1 0)
+			 (list 1 1 1 1 1 0)
 			 (list 1 1 1 1 1 0.5)
 			 (list 1 1 1 1 1 0.5)
 			 1.0
 			 1.0))
                        ((equal arm "rarm")
-                        (list 1.0
-                              1.0
-                              (list 1 1 1 1 0.5 1)
-                              0.0))
+                        (list
+			 ;; 1.0
+			 ;; 1.0
+			 (list 1 1 1 1 1 0)
+			 (list 1 1 1 1 1 0)
+			 (list 1 1 1 1 0.5 1)
+			 0.0))
                        ((equal arm "larm")
-                        (list 1.0
-                              1.0
-                              0.0
-                              (list 1 1 1 1 0.5 1)))))
+                        (list
+			 ;; 1.0
+			 ;; 1.0
+			 (list 1 1 1 1 1 0)
+			 (list 1 1 1 1 1 0)
+			 0.0
+			 (list 1 1 1 1 0.5 1)))))
                             ;;axis y周りは自由 heaveの時
                             ;; (list 1 1 1 1 0 1)
                             ;; (list 1 1 1 1 0 1)
@@ -442,9 +453,9 @@
                   :external-coords-list  ;;外レンチ作用点リスト
                   (if (and (not only-kinematics?) apply-external-force?)
                       (progn
-                        ;; external-coords-list
-                        (list (send *robot-env* :robot :get :rarm-contact-coords)
-                              (send *robot-env* :robot :get :larm-contact-coords))
+                        external-coords-list
+                        ;; (list (send *robot-env* :robot :get :rarm-contact-coords)
+                        ;;       (send *robot-env* :robot :get :larm-contact-coords))
                         ;;pivot
                         ;; (list (send *robot-env* :robot :get :rarm-contact-coords))
                         ;;support

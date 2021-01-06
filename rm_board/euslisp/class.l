@@ -33,6 +33,7 @@
                            (setq larm-target-coords val))
   (:set-pre-angle-vector (val)
                   (setq pre-angle-vector val))
+
   
   (:get-rarm-coords ()
              rarm-coords)
@@ -82,10 +83,16 @@
                                                 (list 1 1 1 1 1 0.2)
                                                 0.0))
            (send self :set-external-coords-list (if (boundp '*robot-env*)
-                                                    (list (send *robot-env* :robot :get :rarm-contact-coords)
-                                                          (send *robot-env* :robot :get :larm-contact-coords))
-                                                  (list (send *robot* :rarm :end-coords)
-                                                        (send *robot* :larm :end-coords))))
+                                                    (list
+						     (send *robot-env* :robot :get :rleg-contact-coords)
+						     (send *robot-env* :robot :get :lleg-contact-coords)
+						     (send *robot-env* :robot :get :rarm-contact-coords)
+						     (send *robot-env* :robot :get :larm-contact-coords))
+						  (list
+						   (send *robot* :rleg :end-coords)
+						   (send *robot* :lleg :end-coords)
+						   (send *robot* :rarm :end-coords)
+						   (send *robot* :larm :end-coords))))
            )
          self)
   (:set-only-kinematics? (val)
@@ -121,6 +128,7 @@
   (:set-external-coords-list(val)
                             (setq external-coords-list val))
 
+  
   (:get-only-kinematics? ()
                         only-kinematics?)
   (:get-optimize-torque? ()
@@ -175,7 +183,6 @@
                     fin-pose-robot )
     
   )
-
 
 (defclass point-num-save
   :super propertied-object

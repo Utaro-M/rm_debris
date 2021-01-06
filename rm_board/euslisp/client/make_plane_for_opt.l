@@ -14,7 +14,7 @@
 ;; (while (not (send res :pts :polygon :points))
 ;;   (print "can not find any plane")
 ;;   (setq res (ros::service-call "make_plane" req t)))
-    (format t "res =~A~%" res )
+    ;; (format t "res =~A~%" res )
 
     (setq coords (make-coords))
     (setq com-box (make-cube 100 100 100))
