@@ -170,37 +170,44 @@
       (send *ik-param* :get-kin-scale-list))
      (only-kinematics? (send *ik-param* :get-only-kinematics?))
      (pre-process-func)
-     (kin-task-value-thre 0.03)
-     (eom-rot-task-value-thre 0.2)
-     (eom-trans-task-value-thre 0.5)
+     (kin-task-value-thre (send *ik-param* :get-kin-task-value-thre))
+     (eom-rot-task-value-thre (send *ik-param* :get-eom-rot-task-value-thre))
+     (eom-trans-task-value-thre (send *ik-param* :get-eom-trans-task-value-thre))
      (convergence-check-func #'(lambda(sqp)
-                      (if (and (< (norm (send (send sqp :config-task) :kinematics-task-value :update? nil)) kin-task-value-thre)
-                               (< (norm (send (send sqp :config-task) :eom-rot-task-value :update? nil)) eom-rot-task-value-thre)
-			       (< (norm (send (send sqp :config-task) :eom-trans-task-value :update? nil)) eom-trans-task-value-thre)
-			       )
-                          t ;converge
-                        nil)))
+                                 (if (and (< (norm (send (send sqp :config-task) :kinematics-task-value :update? nil)) kin-task-value-thre)
+                                          (< (norm (send (send sqp :config-task) :eom-rot-task-value :update? nil)) eom-rot-task-value-thre)
+                                          (< (norm (send (send sqp :config-task) :eom-trans-task-value :update? nil)) eom-trans-task-value-thre)
+                                          )
+                                     t ;converge
+                                   nil)))
      (reset? (send *ik-param* :get-reset?))
-     (external-force-list  (send *ik-param* :get-external-force-list))
+     (external-force-list   (list  (send *ik-param* :get-rleg-force)
+                                   (send *ik-param* :get-lleg-force)
+                                   (send *ik-param* :get-rarm-force)
+                                   (send *ik-param* :get-larm-force)))
      (external-coords-list (send *ik-param* :get-external-coords-list))
      (rleg-pos-shift (send *ik-param* :get-rleg-pos-shift))
      (lleg-pos-shift (send *ik-param* :get-lleg-pos-shift))
      &allow-other-keys
      )
+  (let ((inner-width (* 0.45 (abs (- (elt (send *robot* :lleg :end-coords :worldpos) 1) (elt (send *robot* :rleg :end-coords :worldpos) 1))))))
+  (format t "external force-list=~A~%" external-force-list)
   (send *coords* :set-pre-angle-vector (send *robot* :angle-vector))
   (send *coords* :set-rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
   (send *coords* :set-lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
   (send *coords* :set-rarm-coords (send *robot* :rarm :end-coords :copy-worldcoords))
   (send *coords* :set-larm-coords (send *robot* :larm :end-coords :copy-worldcoords))
-  (setq rleg-pos-shift (v+ rleg-pos-shift #f(0 0 -10)))
-  (setq lleg-pos-shift (v+ lleg-pos-shift #f(0 0 -10)))
+
+  (setq rleg-pos-shift (v+ rleg-pos-shift (float-vector 0 (* -1 (- (* 0.5 (+ inner-width 200)) inner-width)) -10)))
+  (setq lleg-pos-shift (v+ lleg-pos-shift (float-vector 0 (- (* 0.5 (+ inner-width 200)) inner-width) -10)))
   (format t "rleg-pos-shift in ik = ~A~%" rleg-pos-shift)
   ;; (setq *ground-rleg* (make-cube 800 400 20))
   ;; (setq *ground-lleg* (make-cube 800 400 20))
   ;; (setq *ground-rleg* (make-cube 600 400 20))
   ;; (setq *ground-lleg* (make-cube 600 400 20))
-  (setq *ground-rleg* (make-cube 500 400 20))
-  (setq *ground-lleg* (make-cube 500 400 20))
+
+  (setq *ground-rleg* (make-cube 500 (+ 200 inner-width) 20))
+  (setq *ground-lleg* (make-cube 500 (+ 200 inner-width) 20))
   (send *ground-rleg* :newcoords
         (make-coords :pos (send (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate rleg-pos-shift) :worldpos)  :rpy (list 0 0 0))
         )
@@ -230,7 +237,7 @@
   (when avoid-collision?
     ;;big board version
     (format t "avoid collision~%")
-    (setq *obst* (make-cube 100 1000 200)) 
+    (setq *obst* (make-cube 100 1000 400)) 
     ;; (send *obst* :translate (float-vector (+ (/ (+ (elt (send rarm-coords :worldpos) 0) (elt (send larm-coords :worldpos) 0)) 2) 50) 0 100))
     (send *obst* :translate (v+ (scale 0.5 (v+ (send rarm-coords :worldpos) (send larm-coords :worldpos))) #f(0 0 -400)))
     (send *obst* :set-color (float-vector 1 0 0) 0.5)
@@ -392,44 +399,45 @@
                       (cond
                        ((equal arm "both")
                         (list
-			 ;; 1.0
-			 ;; 1.0
-			 (list 1 1 1 1 1 0)
-			 (list 1 1 1 1 1 0)
-			 (list 1 1 1 1 1 0.5)
-			 (list 1 1 1 1 1 0.5)
-			 1.0
-			 1.0))
+                         ;; 1.0
+                         ;; 1.0
+                         (list 1 1 1 1 1 1)
+                         (list 1 1 1 1 1 1)
+                         (list 1 1 1 1 1 0.5)
+                         (list 1 1 1 1 1 0.5)
+                         1.0
+                         1.0))
                        ((equal arm "rarm")
                         (list
-			 ;; 1.0
-			 ;; 1.0
-			 (list 1 1 1 1 1 0)
-			 (list 1 1 1 1 1 0)
-			 (list 1 1 1 1 0.5 1)
-			 0.0))
+                         ;; 1.0
+                         ;; 1.0
+                         (list 1 1 1 1 1 1)
+                         (list 1 1 1 1 1 1)
+                         (list 1 1 1 1 0.5 1)
+                         0.0))
                        ((equal arm "larm")
                         (list
-			 ;; 1.0
-			 ;; 1.0
-			 (list 1 1 1 1 1 0)
-			 (list 1 1 1 1 1 0)
-			 0.0
-			 (list 1 1 1 1 0.5 1)))))
+                         ;; 1.0
+                         ;; 1.0
+                         (list 1 1 1 1 1 1)
+                         (list 1 1 1 1 1 1)
+                         0.0
+                         (list 1 1 1 1 0.5 1)))))
                             ;;axis y周りは自由 heaveの時
                             ;; (list 1 1 1 1 0 1)
                             ;; (list 1 1 1 1 0 1)
                   :collision-pair-list
                   (if avoid-collision?
-		      (list 
-		       (flatten (mapcar #'(lambda (l) (list l *obst*)) (flatten (send *robot-env* :robot :legs :links))))
-		       (list (send *robot* :link "LLEG_LINK1") (send *robot* :link "LARM_LINK7"))
-		       ;; (list (send *robot* :link "LLEG_LINK1") (send *robot* :link "LARM_LINK6"))
-		       (list (send *robot* :link "RLEG_LINK1") (send *robot* :link "RARM_LINK7"))
-		       ;; (list (send *robot* :link "RLEG_LINK1") (send *robot* :link "RARM_LINK6"))
-		       ;; (list (send *robot* :link "LLEG_LINK1") (send *robot* :link "LARM_LINK7"))
-		       ;; (list (send *robot* :link "RLEG_LINK1") (send *robot* :link "RARM_LINK7"))
-		       )
+                      ;; (list 
+                       ;; (flatten (mapcar #'(lambda (l) (list l *obst*)) (flatten (send *robot-env* :robot :legs :links))))
+                       (append (mapcar #'(lambda (l) (list l *obst*)) (flatten (send *robot-env* :robot :legs :links)))
+                       (list (list (send *robot* :link "LLEG_LINK1") (send *robot* :link "LARM_LINK7")))
+                       ;; (list (send *robot* :link "LLEG_LINK1") (send *robot* :link "LARM_LINK6"))
+                       (list (list (send *robot* :link "RLEG_LINK1") (send *robot* :link "RARM_LINK7")))
+                       ;; (list (send *robot* :link "RLEG_LINK1") (send *robot* :link "RARM_LINK6"))
+                       ;; (list (send *robot* :link "LLEG_LINK1") (send *robot* :link "LARM_LINK7"))
+                       ;; (list (send *robot* :link "RLEG_LINK1") (send *robot* :link "RARM_LINK7"))
+                       )
                   )
                   
                   ;; (list  (send *robot-env* :robot :rleg :links)  (send *robot-env* :robot :lleg :links))
@@ -453,7 +461,13 @@
                   :external-coords-list  ;;外レンチ作用点リスト
                   (if (and (not only-kinematics?) apply-external-force?)
                       (progn
-                        external-coords-list
+                        ;; external-coords-list
+                        (list
+                         (send *robot-env* :robot :get :rleg-contact-coords)
+                         (send *robot-env* :robot :get :lleg-contact-coords)
+                         (send *robot-env* :robot :get :rarm-contact-coords)
+                         (send *robot-env* :robot :get :larm-contact-coords))
+                        
                         ;; (list (send *robot-env* :robot :get :rarm-contact-coords)
                         ;;       (send *robot-env* :robot :get :larm-contact-coords))
                         ;;pivot
@@ -497,6 +511,7 @@
         nil
         )
     t)
+  )
   ;; (send *sqp-opt* :status)
   )
 (warn "(jaxon_red-sqp-optimization-instant)~%")
@@ -686,6 +701,20 @@
   ;; setup robot
   ;; (setup-jaxon_red-ik-opt-with-larmcontact :only-kinematics? only-kinematics? ) 
   (setup-jaxon_red-ik-opt-with-larmcontact-face :only-kinematics? only-kinematics? ) ;;contact coords larm を少しずらした
+
+  (send *ik-param* :set-external-coords-list
+        (list
+         (send *robot-env* :robot :get :rarm-contact-coords)
+         (send *robot-env* :robot :get :larm-contact-coords)
+         (send *robot-env* :robot :get :rleg-contact-coords)
+         (send *robot-env* :robot :get :lleg-contact-coords))
+        
+        (list
+         (send *robot* :rarm :end-coords :copy-worldcoords)
+         (send *robot* :larm :end-coords :copy-worldcoords)
+         (send *robot* :rleg :end-coords :copy-worldcoords)
+         (send *robot* :lleg :end-coords :copy-worldcoords)))
+  (setq external-coords-list (send *ik-param* :get-external-coords-list))
   ;;fix-contact nil 足を自由な位置へ
   ;;t contact-coordsの位置へ
   ;;2 その場で
@@ -883,25 +912,26 @@
                         ;; (list (float-vector 0 -80 0 0 0 0))
                         ;; (list (float-vector 0 80 0 0 0 0))
                         ;; 力の正負が微妙かも
-                        (list 
-                              ;; (float-vector 0 0 -80 0 0 0)
-                              (float-vector -40 0 -10 0 0 0))
                         ;;pivot
                         ;; (list (float-vector 0 -50 0 0 0 0))
                         ;; ;;support
                         ;; ;; (list (float-vector 0 0 -50 0 0 0))
                         ;; (list (float-vector -40 0 0 0 0 0))
+
+                        ;; (list 
+                        ;;       (float-vector -40 0 -10 0 0 0))
+                        external-force-list
                         ))
                   :external-coords-list  ;;外レンチ作用点リスト
                   (if (and (not only-kinematics?) apply-external-force?)
                       (progn
-                        (list 
-                              ;; (send *robot-env* :robot :get :larm-contact-coords)
-                              (send *robot-env* :robot  :link "LARM_LINK4"))
                         ;;pivot
                         ;; (list (send *robot-env* :robot :get :rarm-contact-coords))
                         ;;support
                         ;; (list (send *robot-env* :robot :link "LARM_LINK5"))
+                        ;; (list 
+                        ;;  (send *robot-env* :robot  :link "LARM_LINK4"))
+                        external-coords-list
                         )
                     )
                   ))
