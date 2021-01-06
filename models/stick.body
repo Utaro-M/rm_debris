@@ -7,14 +7,14 @@ links:
   -
     name: body
     jointType: free
-    mass: 2.0      
+    mass: 5.0      
     inertia: [
       0.72533, 0,       0,
       0,       0.08533, 0,
       0,       0,       0.72533 ]
     elements:
       Shape:
-        geometry: { type: Box, size: [ 0.06 , 0.06, 1.0 ] }
+        geometry: { type: Box, size: [ 0.06 , 0.06, 1.4 ] }
         appearance:
           material:
             diffuseColor: [ 0.5, 0.7, 0.8 ]

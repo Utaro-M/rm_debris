@@ -1,0 +1,6 @@
+<launch>
+  <node name="rosbag_play"
+        pkg="rosbag" type="play"
+        args="$(find jsk_perception)/sample/data/2016-10-15-23-21-42_moving_bottle.bag --clock --loop">
+  </node>
+</launch>
