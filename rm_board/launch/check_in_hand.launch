@@ -1,5 +1,8 @@
 <launch>
   <!-- <rosparam param="/use_sim_time">true</rosparam> -->
+  <arg name="COLLADA_FILE"
+       default="$(find hrpsys_ros_bridge_tutorials)/models/JAXON_RED_WH_SENSORS.urdf" />
+  <param name="robot_description" textfile="$(arg COLLADA_FILE)" />
   <arg name="input_cloud"
        default="/rs_l515/depth_registered/points" />
   <!-- default="/multisense_local/organized_image_points2_color" /> -->
