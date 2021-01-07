@@ -181,17 +181,17 @@
                                      t ;converge
                                    nil)))
      (reset? (send *ik-param* :get-reset?))
-     (external-force-list   (list  (send *ik-param* :get-rleg-force)
-                                   (send *ik-param* :get-lleg-force)
-                                   (send *ik-param* :get-rarm-force)
-                                   (send *ik-param* :get-larm-force)))
+     (external-wrench-list   (list  (send *ik-param* :get-rleg-wrench)
+                                   (send *ik-param* :get-lleg-wrench)
+                                   (send *ik-param* :get-rarm-wrench)
+                                   (send *ik-param* :get-larm-wrench)))
      (external-coords-list (send *ik-param* :get-external-coords-list))
      (rleg-pos-shift (send *ik-param* :get-rleg-pos-shift))
      (lleg-pos-shift (send *ik-param* :get-lleg-pos-shift))
      &allow-other-keys
      )
   (let ((inner-width (* 0.45 (abs (- (elt (send *robot* :lleg :end-coords :worldpos) 1) (elt (send *robot* :rleg :end-coords :worldpos) 1))))))
-  (format t "external force-list=~A~%" external-force-list)
+  (format t "external wrench-list=~A~%" external-wrench-list)
   (send *coords* :set-pre-angle-vector (send *robot* :angle-vector))
   (send *coords* :set-rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
   (send *coords* :set-lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
@@ -451,7 +451,7 @@
                         ;; 力の正負が微妙かも
                         ;; (list (float-vector 0 0 -80 0 0 0)
                         ;;       (float-vector 0 0 -80 0 0 0))
-                        external-force-list
+                        external-wrench-list
                         ;;pivot
                         ;; (list (float-vector 0 -50 0 0 0 0))
                         ;; ;;support
@@ -920,7 +920,7 @@
 
                         ;; (list 
                         ;;       (float-vector -40 0 -10 0 0 0))
-                        external-force-list
+                        external-wrench-list
                         ))
                   :external-coords-list  ;;外レンチ作用点リスト
                   (if (and (not only-kinematics?) apply-external-force?)
@@ -1336,7 +1336,7 @@
                   :external-wrench-list
                   (if (and (not only-kinematics?) apply-external-force?)
                       (progn
-                        external-force-list
+                        external-wrench-list
                         ;; (list 
                         ;;       ;; (float-vector 0 0 -80 0 0 0)
                         ;;       (float-vector -40 0 -10 0 0))
