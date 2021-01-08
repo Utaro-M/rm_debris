@@ -249,7 +249,9 @@
   ;;2 その場で
   (cond (fix-contact?
          (setq *robot-env*
-               (instance robot-environment :init :robot *robot*))
+               (instance robot-environment :init :robot *robot*
+			 :root-virtual-joint-min-angle-list #f(-1.000000e+07 -1.000000e+07 -1.000000e+07 -1.745329e-08 -1.745329e+08 -1.745329e-08)
+			 :root-virtual-joint-max-angle-list #f(1.000000e+07 1.000000e+07 1.000000e+07 1.745329e-08 1.745329e+08 1.745329e-08)))
          )
         (t
          (setq *contact-list*
@@ -258,7 +260,11 @@
                      ;; (instance 2d-planar-contact :init :name "larm")
                      ))
          (setq *robot-env*
-               (instance robot-environment :init :robot *robot* :contact-list *contact-list*))
+	       (instance robot-environment :init :robot *robot*
+			 :root-virtual-joint-min-angle-list #f(-1.000000e+07 -1.000000e+07 -1.000000e+07 -1.745329e-08 -1.745329e+08 -1.745329e-08)
+			 :root-virtual-joint-max-angle-list #f(1.000000e+07 1.000000e+07 1.000000e+07 1.745329e-08 1.745329e+08 1.745329e-08) :contact-list *contact-list*)
+               ;; (instance robot-environment :init :robot *robot* :contact-list *contact-list*)
+	       )
          (send *robot-env* :contact "rleg" :set-from-face :face (elt (send *ground-rleg* :faces) 1))
          (send *robot-env* :contact "lleg" :set-from-face :face (elt (send *ground-lleg* :faces) 1))
          ;; (send *robot-env* :contact "larm" :set-from-face :face (elt (send *ground-larm* :faces) 1))
@@ -934,7 +940,7 @@
                         external-coords-list
                         )
                     )
-                  ))
+		                    ))
 
   (setq *sqp-opt*
         (instance sqp-optimization :init
