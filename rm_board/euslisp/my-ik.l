@@ -261,8 +261,8 @@
                      ))
          (setq *robot-env*
 	       (instance robot-environment :init :robot *robot*
-			 :root-virtual-joint-min-angle-list #f(-1.000000e+07 -1.000000e+07 -1.000000e+07 -1.745329e-08 -1.745329e+08 -1.745329e-08)
-			 :root-virtual-joint-max-angle-list #f(1.000000e+07 1.000000e+07 1.000000e+07 1.745329e-08 1.745329e+08 1.745329e-08) :contact-list *contact-list*)
+			 :root-virtual-joint-min-angle-list (list -1.000000e+07 -1.000000e+07 -1.000000e+07 -1.745329e-08 -1.745329e+08 -1.745329e-08)
+			 :root-virtual-joint-max-angle-list (list 1.000000e+07 1.000000e+07 1.000000e+07 1.745329e-08 1.745329e+08 1.745329e-08) :contact-list *contact-list*)
                ;; (instance robot-environment :init :robot *robot* :contact-list *contact-list*)
 	       )
          (send *robot-env* :contact "rleg" :set-from-face :face (elt (send *ground-rleg* :faces) 1))

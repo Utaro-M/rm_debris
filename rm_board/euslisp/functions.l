@@ -826,27 +826,44 @@
 (defun get-target-pose
     (contact-wall)
   (let* ((idx-x 0)
-        (idx-y 0)
-        (longest-len 0)
-        ;; (pos-centroid (send contact-wall :centroid))
-        (pos-centroid (elt contact-wall 1))
-        (vertices-list (get-min-val (send (car contact-wall) :vertices) (/ (length (send (car contact-wall) :vertices)) 3))) ;;板の大きさに応じて変えないといけない？
-        (vertices-list-for-com (get-min-val (send (car contact-wall) :vertices) 3))
-        (vertices-list-reverse (reverse vertices-list))
-        ;; (plane-normal (send (elt (send contact-wall :faces) 0) :normal))
-        (plane-normal (elt contact-wall 2)))
+         (idx-y 0)
+         (longest-len 0)
+         ;; (pos-centroid (send contact-wall :centroid))
+         (pos-centroid (elt contact-wall 1))
+         (vertices-list (get-min-val (send (car contact-wall) :vertices) (/ (length (send (car contact-wall) :vertices)) 3))) ;;板の大きさに応じて変えないといけない？
+         ;; (vertices-list-for-com (get-min-val (send (car contact-wall) :vertices) 2)) ;;2この頂点しか使ってなかったn
+         (vertices-list-for-hand-pos-y (get-min-val (send (car contact-wall) :vertices) (/ (* 5 (length (send (car contact-wall) :vertices))) 6)))
+         (vertices-list-for-hand-pos-xz (get-min-val (send (car contact-wall) :vertices) (/ (* 1 (length (send (car contact-wall) :vertices))) 3)))
+         (vertices-list-reverse (reverse vertices-list))
+         ;; (plane-normal (send (elt (send contact-wall :faces) 0) :normal))
+         (plane-normal (elt contact-wall 2)))
     (format t "plane normal = ~A~%" plane-normal)
     ;; (format t "vertice = ~A~%" (elt vertices-list idx-x))
     ;; (format t "vertice = ~A~%" (elt vertices-list-reverse idx-y))  
     (setq normal-line (make-line #f(0 0 0) plane-normal))
+    (format t "vertices list       = ~A~%" (length vertices-list))
+    (format t "vertices list for y = ~A~%" (length vertices-list-for-hand-pos-y))
+    (format t "vertices list for xz= ~A~%" vertices-list-for-hand-pos-xz)
     
     ;;手先の目標
-    (setq sum #f(0 0 0))
-    (dotimes (i (length vertices-list-for-com))
-      (setq sum (v+ sum (elt vertices-list-for-com i))))
-    (setq pos-tmp (scale (/ 1.0 (length vertices-list-for-com)) sum))
-    (setq pos (float-vector (elt pos-tmp 0) (elt pos-centroid 1) (elt pos-tmp 2)))
-    (format t "mid-pos = ~A~%" pos)
+    (setq sum-y #f(0 0 0))
+    (setq min-x (elt (car vertices-list-for-hand-pos-y) 0))
+    (dotimes (i (length vertices-list-for-hand-pos-y))
+      (if (< (elt (elt vertices-list-for-hand-pos-y i) 0) (+ min-x 30))
+          (setq sum-y (v+ sum-y (elt vertices-list-for-hand-pos-y i)))))
+    (setq pos-tmp-y (scale (/ 1.0 (length vertices-list-for-hand-pos-y)) sum-y))
+
+    (setq sum-xz #f(0 0 0))
+    (setq min-x (elt (car vertices-list-for-hand-pos-xz) 0))
+    (dotimes (i (length vertices-list-for-hand-pos-xz))
+      (if (< (elt (elt vertices-list-for-hand-pos-xz i) 0) (+ min-x 30))
+          (setq sum-xz (v+ sum-xz (elt vertices-list-for-hand-pos-xz i)))))
+    (setq pos-tmp-xz (scale (/ 1.0 (length vertices-list-for-hand-pos-xz)) sum-xz))
+    
+    ;; (setq pos (float-vector (elt pos-tmp 0) (elt pos-centroid 1) (elt pos-tmp 2)))
+    ;; (format t "mid-pos whole board= ~A~%" pos)
+    (setq pos (float-vector (elt pos-tmp-xz 0) (elt pos-tmp-y 1) (elt pos-tmp-xz 2)))
+    (format t "mid-pos near hands= ~A~%" pos)
 
     ;;edgeを得る
     ;; (setq longest-edge (get-longest-edge vertices-list))
@@ -871,7 +888,8 @@
     ;; (format t "x-vec = ~A~%" x-vec)
     ;; (format t "y-vec = ~A~%" y-vec)
     ;; (format t "z-vec = ~A~%" z-vec)    
-    (list x-vec y-vec z-vec pos longest-len pos-centroid)
+    (list x-vec y-vec z-vec pos longest-len pos-centroid
+          )
     ))
 
 ;;掴みに行く目標座標　微調整
@@ -1328,7 +1346,7 @@
 
 ;;reach-auto :pos-shift 280 :reaching-offset (list #f(-140 50 0) #f(-140 50 0))  ;;rotate
 (defun reach-auto
-    (&key  (fix-contact? nil) (send? t) (target "board") (pos-shift 290) (one-hand? nil) (adjust? t) (ik2? t) (ik3? t) (only-move-foot? t)
+    (&key  (fix-contact? nil) (send? t) (target "board") (pos-shift 290) (one-hand? nil) (adjust? t) (ik2? nil) (ik3? nil) (only-move-foot? t)
            (kin-task-value-thre 0.01) (eom-rot-task-value-thre 0.01) (eom-rot-trans-value-thre 0.01)
            ;;  (larm-force #f(0 0 -60))
            ;;  (rarm-force #f(0 0 -60))
@@ -1480,20 +1498,19 @@
 
   (format t "hand offset~%")
   (setq angle-vec (send *robot* :angle-vector))
-  (move-hand :rarm (scale +1 (elt reaching-offset 0)) :send? nil)
-  (move-hand :larm (scale +1 (elt reaching-offset 1)) :send? nil)
-  (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact? :only-move-foot? only-move-foot? :fix-hand? fix-hand? :look-at-object? look-at-object?)
-  
-  ;; ;; hand offset
-  ;; (format t "hand offset~%")
-  ;; (move-hand :larm (scale -1 (elt reaching-offset 0)) :send? nil)
-  ;; (move-hand :rarm (scale -1 (elt reaching-offset 1)) :send? nil)
-  (send *robot* :angle-vector angle-vec)
   (send *coords* :set-rleg-new-coords (send *robot* :rleg :end-coords :copy-worldcoords))
   (send *coords* :set-lleg-new-coords (send *robot* :lleg :end-coords :copy-worldcoords))
-  
+  (move-hand :rarm (scale +1 (elt reaching-offset 0)) :send? nil)
+  (move-hand :larm (scale +1 (elt reaching-offset 1)) :send? nil)
   ;;立ち位置変更
   (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact? :only-move-foot? only-move-foot? :fix-hand? fix-hand? :look-at-object? look-at-object?)
+
+  ;;姿勢変更
+  (setq fix-contact? 2)
+  (send *robot* :angle-vector angle-vec)
+  (send *coords* :set-pre-angle-vector (send *robot* :angle-vector))
+  (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact?  :fix-hand? fix-hand? :look-at-object? look-at-object?)
+
   (setq fix-contact? 2)
   (if ik2?
       (progn
@@ -2022,4 +2039,10 @@
   (format t "scl-candidates =~A~%" scl-candidates)
   (format t "scl =~A~%" scl)
   scl)
+
+(defun reset-coords()
+  (send *robot* :angle-vector (send *ri* :state :angle-vector))
+  (send *robot* :move-coords (make-coords) (send *robot* :lleg :end-coords))
+  (format t "~%reset lleg coords ~%")
+  )
 (print "load functions.l")
