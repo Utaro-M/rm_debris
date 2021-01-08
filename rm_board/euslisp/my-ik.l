@@ -250,8 +250,8 @@
   (cond (fix-contact?
          (setq *robot-env*
                (instance robot-environment :init :robot *robot*
-			 :root-virtual-joint-min-angle-list #f(-1.000000e+07 -1.000000e+07 -1.000000e+07 -1.745329e-08 -1.745329e+08 -1.745329e-08)
-			 :root-virtual-joint-max-angle-list #f(1.000000e+07 1.000000e+07 1.000000e+07 1.745329e-08 1.745329e+08 1.745329e-08)))
+			 :root-virtual-joint-min-angle-list (list -1.000000e+07 -1.000000e+07 -1.000000e+07 -1.745329e-08 -1.745329e+08 -1.745329e-08)
+			 :root-virtual-joint-max-angle-list (list 1.000000e+07 1.000000e+07 1.000000e+07 1.745329e-08 1.745329e+08 1.745329e-08)))
          )
         (t
          (setq *contact-list*
