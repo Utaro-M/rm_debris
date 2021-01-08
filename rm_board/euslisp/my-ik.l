@@ -407,8 +407,8 @@
                         (list
                          ;; 1.0
                          ;; 1.0
-                         (list 1 1 1 1 1 1)
-                         (list 1 1 1 1 1 1)
+                         (list 1 1 1 1 1 0)
+                         (list 1 1 1 1 1 0)
                          (list 1 1 1 1 1 0.5)
                          (list 1 1 1 1 1 0.5)
                          1.0
@@ -417,16 +417,16 @@
                         (list
                          ;; 1.0
                          ;; 1.0
-                         (list 1 1 1 1 1 1)
-                         (list 1 1 1 1 1 1)
+                         (list 1 1 1 1 1 0)
+                         (list 1 1 1 1 1 0)
                          (list 1 1 1 1 0.5 1)
                          0.0))
                        ((equal arm "larm")
                         (list
                          ;; 1.0
                          ;; 1.0
-                         (list 1 1 1 1 1 1)
-                         (list 1 1 1 1 1 1)
+                         (list 1 1 1 1 1 0)
+                         (list 1 1 1 1 1 0)
                          0.0
                          (list 1 1 1 1 0.5 1)))))
                             ;;axis y周りは自由 heaveの時
@@ -437,9 +437,9 @@
                       ;; (list 
                        ;; (flatten (mapcar #'(lambda (l) (list l *obst*)) (flatten (send *robot-env* :robot :legs :links))))
                        (append (mapcar #'(lambda (l) (list l *obst*)) (flatten (send *robot-env* :robot :legs :links)))
-                       (list (list (send *robot* :link "LLEG_LINK1") (send *robot* :link "LARM_LINK7")))
+                       (list (list (send *robot* :link "LLEG_LINK2") (send *robot* :link "LARM_LINK7")))
                        ;; (list (send *robot* :link "LLEG_LINK1") (send *robot* :link "LARM_LINK6"))
-                       (list (list (send *robot* :link "RLEG_LINK1") (send *robot* :link "RARM_LINK7")))
+                       (list (list (send *robot* :link "RLEG_LINK2") (send *robot* :link "RARM_LINK7")))
                        ;; (list (send *robot* :link "RLEG_LINK1") (send *robot* :link "RARM_LINK6"))
                        ;; (list (send *robot* :link "LLEG_LINK1") (send *robot* :link "LARM_LINK7"))
                        ;; (list (send *robot* :link "RLEG_LINK1") (send *robot* :link "RARM_LINK7"))
@@ -447,7 +447,7 @@
                   )
                   
                   ;; (list  (send *robot-env* :robot :rleg :links)  (send *robot-env* :robot :lleg :links))
-                  :collision-distance-margin 0.03
+                  :collision-distance-margin 0.06
                   :external-wrench-list
                   (if (and (not only-kinematics?) apply-external-force?)
                       (progn

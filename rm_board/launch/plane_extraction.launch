@@ -10,6 +10,7 @@
   <arg name="masked_cloud"
        default="mask_extract_indices/output" />
   <arg name="manager" default="plane_extraction_manager" />
+  <arg name="frame-id" default="odom" />
 
   <!-- <rosparam param="/use_sim_time">true</rosparam> -->
 
@@ -17,7 +18,7 @@
   <!-- <node pkg="rm_debris_vision" name="get_plane" type="get_plane.py" output="screen" > -->
   <!-- <remap from="~output" to="~focus_plane" /> -->
   <!-- </node> -->
-  <node pkg="rm_debris_vision" name="get_plane" type="get_plane_with_service.py" output="screen" />    
+  <node pkg="rm_debris_vision" name="get_plane" type="get_plane_with_service.py" output="screen" />
   <node pkg="rm_debris_vision" name="make_plane_realtime" type="make_plane_for_ik.l" output="screen" />
   <node pkg="rm_debris_vision" name="make_plane_for_ik_loop" type="make_plane_for_ik_server.l" output="screen" />
   <!-- <node pkg="rm_debris_vision" name="get_larm_remove_indices_server" type="get_larm_remove_indices_server.l" output="screen" /> -->
@@ -32,15 +33,15 @@
     <node name="bounding_box_array_publisher"
           pkg="jsk_recognition_utils" type="bounding_box_array_publisher.py">
       <rosparam>
-        frame_id: odom
+        frame_id: lleg_end_coords
         boxes:
         - position: [1, 0, 1]
-          dimension: [3, 1.5, 2]
+          dimension: [3, 2.0, 2]
       </rosparam>
     </node>
-        <!-- - position: [1, 0, 1.1] -->
-        <!--   dimension: [3, 1.5, 2] -->
-        
+    <!-- - position: [1, 0, 1.1] -->
+    <!--   dimension: [3, 1.5, 2] -->
+
     <node name="attention_clipper"
           pkg="nodelet" type="nodelet"
           args="load jsk_pcl/AttentionClipper $(arg manager)">
@@ -71,7 +72,7 @@
       <!-- <remap from="~input" to="$(arg input_cloud)" /> -->
       <remap from="~input" to="extract_indices/output" />
       <rosparam>
-        target_frame_id: odom
+        target_frame_id: lleg_end_coords
       </rosparam>
     </node>
 

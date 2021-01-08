@@ -1,9 +1,9 @@
 <launch>
   <arg name="bagfile"
-       default="/home/leus/matsuura/ros_bag/l515_search_top_board.bag"/>
+       default="l515_search_top_board"/>
   <node name="rosbag_record"
 	pkg="rosbag" type="record"
-	args="-o $(arg bagfile)
+	args="-o /home/leus/matsuura/ros_bag/$(arg bagfile).bag
 	      -b 0
 	      /rs_l515/depth_registered/points
 	      /rs_l515/color/image_rect_color
