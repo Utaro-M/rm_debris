@@ -112,8 +112,11 @@
   
   ;; (send (send *robot* :joint "RLEG_JOINT0") :max-angle 20)
   ;; (send (send *robot* :joint "LLEG_JOINT0") :min-angle -20)
-  ;; (send (send *robot* :joint "RLEG_JOINT3") :max-angle 60)
-  ;; (send (send *robot* :joint "LLEG_JOINT3") :max-angle 60)
+  (send (send *robot* :joint "RLEG_JOINT2") :max-angle -20)
+  (send (send *robot* :joint "LLEG_JOINT2") :max-angle -20)
+  (send (send *robot* :joint "RLEG_JOINT3") :min-angle 60)
+  (send (send *robot* :joint "LLEG_JOINT3") :min-angle 60)
+  
   
   (send (send *robot* :joint "RARM_JOINT0") :min-angle 0)
   (send (send *robot* :joint "RARM_JOINT0") :max-angle 40)
@@ -517,6 +520,8 @@
         nil
         )
     t)
+  (send (send *robot* :joint "RLEG_JOINT3") :min-angle 0)
+  (send (send *robot* :joint "LLEG_JOINT3") :min-angle 0)
   )
   ;; (send *sqp-opt* :status)
   )
