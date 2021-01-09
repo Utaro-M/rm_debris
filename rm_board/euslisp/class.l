@@ -39,7 +39,7 @@
 
 (defclass my-ik-param
   :super propertied-object
-  :slots (only-kinematics? optimize-torque? fix-contact? avoid-collision? apply-external-force? wait? rleg-pos-shift lleg-pos-shift external-wrench-list set-unique-kin-scale? fix-hand?  send? reset? kin-scale-list external-coords-list rleg-force-offset lleg-force-offset kin-task-value-thre eom-trans-task-value-thre eom-rot-task-value-thre )
+  :slots (only-kinematics? optimize-torque? fix-contact? avoid-collision? apply-external-force? wait? rleg-pos-shift lleg-pos-shift external-wrench-list set-unique-kin-scale? fix-hand?  send? reset? kin-scale-list external-coords-list rleg-force-offset lleg-force-offset kin-task-value-thre eom-trans-task-value-thre eom-rot-task-value-thre obj)
   )
 
 (defmethod my-ik-param
@@ -115,7 +115,7 @@
   (:set-kin-task-value-thre (val)               (setq kin-task-value-thre  val))
   (:set-eom-trans-task-value-thre (val)         (setq eom-trans-task-value-thre  val))
   (:set-eom-rot-task-value-thre (val)           (setq eom-rot-task-value-thre val))
-
+  (:set-object(val)                             (setq obj val))
   
   (:get-only-kinematics? ()                      only-kinematics?)
   (:get-optimize-torque? ()                      optimize-torque?)
@@ -142,7 +142,7 @@
   (:get-eom-trans-task-value-thre ()             eom-trans-task-value-thre)
   (:get-eom-rot-task-value-thre ()               eom-rot-task-value-thre)
   (:get-kin-task-value-thre ()                   kin-task-value-thre)
-  
+  (:get-object()                                 obj)  
   )
 
 (defclass poses

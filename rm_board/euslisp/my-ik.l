@@ -282,7 +282,7 @@
     (send *irtviewer* :draw-floor 500)
     (send *irtviewer* :floor-color (float-vector 0 0 0))
     )
-  (objects (append (list *robot* *rarm-coords* *larm-coords* ) *env-list*  (if avoid-collision? (list *obst*))
+  (objects (append (list *robot* *rarm-coords* *larm-coords* (send *ik-param* :get-object)) *env-list*  (if avoid-collision? (list *obst*))
                    ))
 
   (setq *instant-config-task*
@@ -409,8 +409,8 @@
                          ;; 1.0
                          (list 1 1 1 1 1 0)
                          (list 1 1 1 1 1 0)
-                         (list 1 1 1 1 1 0.5)
-                         (list 1 1 1 1 1 0.5)
+                         ;; (list 1 1 1 1 1 0.5)
+                         ;; (list 1 1 1 1 1 0.5)
                          1.0
                          1.0))
                        ((equal arm "rarm")
