@@ -194,7 +194,7 @@
 	      (if (not wait?)
 		  (progn
 		    (setq force-move-tmp t)
-		    (unix::sleep 2))
+		    (unix::sleep 1))
 		(setq force-move-tmp flag-simulator))
               (send-pose time :force-move force-move-tmp :look-at-object? look-at-object? :wait? t)
               ))))
@@ -1211,7 +1211,7 @@
     ;;立ち位置変更の切り替え
     (setq waist-z-thre 700)
     ;; (setq hand-x-thre 500)
-    (setq hand-x-thre 400)
+    (setq hand-x-thre 500)
     ;; (setq hand-z-thre 1200)
     (setq hand-z-thre 1000)
     (format t "waist z = ~A  limit =~A~%" (elt (send (car (send *robot* :links)) :worldpos) 2) waist-z-thre)
@@ -1221,7 +1221,7 @@
     (if (< 0 i)
         (progn
           (if (and (< waist-z-thre (elt (send (car (send *robot* :links)) :worldpos) 2))
-                   (or (< hand-z-thre (elt (send larm-coords :worldpos) 2)) (< hand-x-thre (-(elt (send larm-coords :worldpos) 0) (elt (send (send *coords* :get-lleg-coords) :worldpos) 0)))))
+                   (and (< hand-z-thre (elt (send larm-coords :worldpos) 2)) (< hand-x-thre (-(elt (send larm-coords :worldpos) 0) (elt (send (send *coords* :get-lleg-coords) :worldpos) 0)))));;0109 or to and
               (progn 
                 (setq fix-contact? nil)
                 (setq fix-hand? nil)
@@ -1265,7 +1265,8 @@
           (send *ik-param* :set-rleg-wrench   (v+ (send *ik-param* :get-rleg-wrench-offset) half-wrench))
           (send *ik-param* :set-lleg-wrench   (v+ (send *ik-param* :get-lleg-wrench-offset) half-wrench))
 
-          (setq ret (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision?  :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :arm (if (equal target "board") arm "rarm")  :kin-task-value-thre 0.15 :eom-trans-task-value-thre 0.15))
+          ;; (setq ret (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision?  :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :arm (if (equal target "board") arm "rarm")  :kin-task-value-thre 0.15 :eom-trans-task-value-thre 0.15))
+	  (setq ret (ik-opt rarm-coords larm-coords  :fix-contact? fix-contact?  :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift  :kin-task-value-thre 0.15 :eom-trans-task-value-thre 2))
           (send *robot-env* :dissoc-root-virtual)))
     ;; (send *robot* :head-neck-p :joint-angle -40)
     (format t "ret ik = ~A~%" ret)
@@ -1290,7 +1291,7 @@
     ;; (send-pose movetime :force-move flag-simulator :look-at-object? look-at-object? :wait? t)
     (send *ri* :start-log)
     (if (not wait?)
-	(setq movetime-tmp (* 3 (send (send *ri* :get-gait-generator-param) :default_step_time)))
+	(setq movetime-tmp (* 3000 (send (send *ri* :get-gait-generator-param) :default_step_time)))
       (setq movetime-tmp 5000))
 
     ;; ;; hand offset
@@ -1884,13 +1885,25 @@
   ;; (send *coords* :set-lleg-new-coords (make-coords :pos #f(104.745 109.342 -0.009) :rpy #f( -0.00 0 0)))
   ;; (send *robot* :angle-vector #f(0.897233 -5.17316 -30.3655 70.966 -32.5286 3.39279 0.817664 2.15006 -29.2349 69.2021 -31.8935 -3.86937 -0.084729 13.3282 0.165979 0.113276 26.0 37.0 23.572 -24.405 5.82802 -61.7925 45.8089 -15.8428 9.01074 -37.0 22.7147 22.8779 -5.17243 -54.4999 -36.9803 22.1565 19.5136))
   (reset-coords)
-  (setq lcoords (send (make-coords :pos #f(1.641e-13 -3.808e-14 1.705e-13) :rpy #f( 4.615e-18 -5.575e-17 2.776e-17)) :translate #f(60 170 0)))
+
+  ;;足が前後に開いている
+  ;; (setq lcoords (send (make-coords :pos #f(1.641e-13 -3.808e-14 1.705e-13) :rpy #f( 4.615e-18 -5.575e-17 2.776e-17)) :translate #f(60 170 0)))
+  ;; (send *coords* :set-lleg-new-coords lcoords)
+  ;; (format t "lcoords =~A~%" lcoords)
+  ;; (setq rcoords (send (make-coords :pos #f(-128.208 -349.071 -0.03) :rpy #f(0.052 2.726e-06 4.098e-05)) :translate #f(60 170 0)))
+  ;; (send *coords* :set-rleg-new-coords rcoords)
+  ;; (format t "rcoords =~A~%" rcoords)
+  ;; (send *robot* :angle-vector #f(0.576351 -8.58841 -49.3331 72.3813 -32.2978 8.38789 -0.281562 4.89258 -59.1932 67.249 -17.2386 -4.78654 6.0 23.3898 -12.4538 2.93443 -5.0 37.0 20.361 -38.6374 -12.9775 -68.3973 42.3067 -22.3984 9.44434 -37.0 9.53446 26.8474 5.81806 -77.1031 -58.4279 13.6935 25.763))
+
+  (setq lcoords (make-coords :pos #f(2.832e-14 -3.453e-14 4.263e-14) :rpy #f(-2.075e-17 1.663e-18 2.776e-17)))
+  (send lcoords :translate #f(8 180 0))
   (send *coords* :set-lleg-new-coords lcoords)
   (format t "lcoords =~A~%" lcoords)
-  (setq rcoords (send (make-coords :pos #f(-128.208 -349.071 -0.03) :rpy #f(0.052 2.726e-06 4.098e-05)) :translate #f(60 170 0)))
+  (setq rcoords (make-coords :pos #f(16.216 -370.186 -0.002) :rpy #f(-0.041 -7.191e-07 5.665e-06)))
+  (send rcoords  :translate #f(8 180 0))
   (send *coords* :set-rleg-new-coords rcoords)
   (format t "rcoords =~A~%" rcoords)
-  (send *robot* :angle-vector #f(0.576351 -8.58841 -49.3331 72.3813 -32.2978 8.38789 -0.281562 4.89258 -59.1932 67.249 -17.2386 -4.78654 6.0 23.3898 -12.4538 2.93443 -5.0 37.0 20.361 -38.6374 -12.9775 -68.3973 42.3067 -22.3984 9.44434 -37.0 9.53446 26.8474 5.81806 -77.1031 -58.4279 13.6935 25.763))
+ (send *robot* :angle-vector  #f(-1.76859 -6.82574 -46.7277 85.9558 -39.4514 6.83213 0.648952 9.15973 -44.2373 85.3872 -41.3745 -9.1629 -4.58023 21.1258 1.08981 -1.38348 -5.0 37.0 16.9453 -29.5958 -4.01948 -73.3314 48.134 -13.0157 20.4156 -37.0 21.3996 33.0076 6.06592 -71.559 -44.4047 15.882 17.5909))
   (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact?)
     ;; (send *robot* :move-coords (send *coords* :get-rleg-new-coords) (send *robot* :rleg :end-coords))
     ;; (if fix-contact?

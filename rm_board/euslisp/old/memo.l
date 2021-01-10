@@ -775,3 +775,12 @@ ver2
 
 ;;tilted pose
 reach-auto :send? nil :adjust? nil :fix-contact? nil :pos-shift 280 :ik2? nil :ik3? nil
+
+
+;;
+"force vector through filter and average = #f(-15.225 -9.00004 7.33008)"
+"force vector through filter and average = #f(-4.34633 36.5878 -47.9027)"
+init-lcoords = #<coordinates #X7f56bf93e8f0  2.849e-14 8.105e-15 1.421e-14 / 1.384e-17 -1.084e-18 2.776e-17>
+init-rcoords = #<coordinates #X7f56bf93e098  16.215 -370.183 -0.002 / -0.041 -5.999e-07 4.696e-06>
+next-lcoords = #<coordinates #X7f57852c1b08  190.253 62.217 -0.022 / -0.072 1.139e-07 2.250e-06>
+next-rcoords = #<coordinates #X7f56bdfeaff8  204.87 -446.04 -0.019 / 0.027 7.562e-07 -1.726e-06>

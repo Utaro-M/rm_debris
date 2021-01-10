@@ -112,8 +112,8 @@
   
   ;; (send (send *robot* :joint "RLEG_JOINT0") :max-angle 20)
   ;; (send (send *robot* :joint "LLEG_JOINT0") :min-angle -20)
-  (send (send *robot* :joint "RLEG_JOINT2") :max-angle -20)
-  (send (send *robot* :joint "LLEG_JOINT2") :max-angle -20)
+  ;; (send (send *robot* :joint "RLEG_JOINT2") :max-angle -20)
+  ;; (send (send *robot* :joint "LLEG_JOINT2") :max-angle -20)
   (send (send *robot* :joint "RLEG_JOINT3") :min-angle 60)
   (send (send *robot* :joint "LLEG_JOINT3") :min-angle 60)
   
@@ -209,8 +209,8 @@
   ;; (setq *ground-rleg* (make-cube 600 400 20))
   ;; (setq *ground-lleg* (make-cube 600 400 20))
 
-  (setq *ground-rleg* (make-cube 500 (+ 200 inner-width) 20))
-  (setq *ground-lleg* (make-cube 500 (+ 200 inner-width) 20))
+  (setq *ground-rleg* (make-cube 500 (+ 100 inner-width) 20)) ;;200
+  (setq *ground-lleg* (make-cube 500 (+ 100 inner-width) 20)) ;;200
   (send *ground-rleg* :newcoords
         (make-coords :pos (send (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate rleg-pos-shift) :worldpos)  :rpy (list 0 0 0))
         )
@@ -410,8 +410,8 @@
                         (list
                          ;; 1.0
                          ;; 1.0
-                         (list 1 1 1 1 1 0)
-                         (list 1 1 1 1 1 0)
+                         (list 1 1 1 1 1 1)
+                         (list 1 1 1 1 1 1)
                          ;; (list 1 1 1 1 1 0.5)
                          ;; (list 1 1 1 1 1 0.5)
                          1.0
@@ -420,16 +420,16 @@
                         (list
                          ;; 1.0
                          ;; 1.0
-                         (list 1 1 1 1 1 0)
-                         (list 1 1 1 1 1 0)
+                         (list 1 1 1 1 1 1)
+                         (list 1 1 1 1 1 1)
                          (list 1 1 1 1 0.5 1)
                          0.0))
                        ((equal arm "larm")
                         (list
                          ;; 1.0
                          ;; 1.0
-                         (list 1 1 1 1 1 0)
-                         (list 1 1 1 1 1 0)
+                         (list 1 1 1 1 1 1)
+                         (list 1 1 1 1 1 1)
                          0.0
                          (list 1 1 1 1 0.5 1)))))
                             ;;axis y周りは自由 heaveの時
@@ -1910,3 +1910,4 @@
         :post-process-func post-process-func
         )
   )
+;; #f(-1.76859 -6.82574 -46.7277 85.9558 -39.4514 6.83213 0.648952 9.15973 -44.2373 85.3872 -41.3745 -9.1629 -4.58023 21.1258 1.08981 -1.38348 -5.0 37.0 16.9453 -29.5958 -4.01948 -73.3314 48.134 -13.0157 20.4156 -37.0 21.3996 33.0076 6.06592 -71.559 -44.4047 15.882 17.5909)
