@@ -13,6 +13,7 @@
            (send self :set-rleg-new-coords (send *robot* :rleg :end-coords :copy-worldcoords))
            (send self :set-lleg-new-coords (send *robot* :lleg :end-coords :copy-worldcoords))
            (send self :set-pre-angle-vector (send *robot* :angle-vector))
+           (send self :set-latest-angle-vector (send *robot* :angle-vector))
            )
          self)
   (:set-rarm-coords (val)             (setq rarm-coords val))
@@ -24,7 +25,7 @@
   (:set-rarm-target-coords (val)      (setq rarm-target-coords val))
   (:set-larm-target-coords (val)      (setq larm-target-coords val))
   (:set-pre-angle-vector (val)        (setq pre-angle-vector val))
-
+  (:set-latest-angle-vector (val)     (setq latest-angle-vector val))
   
   (:get-rarm-coords ()                 rarm-coords)
   (:get-larm-coords ()                 larm-coords)
@@ -35,6 +36,7 @@
   (:get-rarm-target-coords ()          rarm-target-coords)
   (:get-larm-target-coords ()          larm-target-coords)
   (:get-pre-angle-vector ()            pre-angle-vector)
+  (:get-latest-angle-vector ()         latest-angle-vector)
   )
 
 (defclass my-ik-param

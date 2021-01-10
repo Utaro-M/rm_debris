@@ -135,7 +135,8 @@
     <!-- <node name="organized_edge_detector" -->
     <!--       pkg="nodelet" type="nodelet" -->
     <!--       args="load jsk_pcl/OrganizedEdgeDetector $(arg manager)"> -->
-    <!--   <remap from="~input" to="$(arg filtered_cloud)" /> -->
+    <!--   <!-\- <remap from="~input" to="$(arg filtered_cloud)" /> -\-> -->
+    <!--   <remap from="~input" to="$(arg transformed_cloud)" />       -->
     <!--   <remap from="~/output_rgb_edge_indices" to="edge_indices" /> -->
     <!--   <remap from="~/output_rgb_edge" to="edge_cloud" /> -->
     <!--   <remap from="~/output_straight_edges_indices" to="straight_edge_indices" /> -->
