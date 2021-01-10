@@ -194,8 +194,8 @@
   ;; (setq *ground-rleg* (make-cube 600 400 20))
   ;; (setq *ground-lleg* (make-cube 600 400 20))
 
-  (setq *ground-rleg* (make-cube 500 (+ 100 inner-width) 20)) ;;200
-  (setq *ground-lleg* (make-cube 500 (+ 100 inner-width) 20)) ;;200
+  (setq *ground-rleg* (make-cube 500 (+ 150 inner-width) 20)) ;;200
+  (setq *ground-lleg* (make-cube 500 (+ 150 inner-width) 20)) ;;200
   (send *ground-rleg* :newcoords
         (make-coords :pos (send (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate rleg-pos-shift) :worldpos)  :rpy (list 0 0 0))
         )
