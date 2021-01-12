@@ -24,6 +24,7 @@
     (setq normal-vec (float-vector (send (send res :normal_vec) :x) (send (send res :normal_vec) :y) (send (send res :normal_vec) :z))) 
     (setq vertices (mapcar #'(lambda (vertice) (scale 1000 (float-vector (send vertice :x) (send vertice :y) (send vertice :z)))) (send res :pts :polygon :points)))
     (setq my-plane (make-prism vertices 10))
+    (send my-plane :set-color (scale (/ 1.0 (norm #f(116 80 48))) #f(116 80 48)))
     ;; (setq com (scale 1 (send my-plane :centroid)))
     (send com-box :translate com)
     ;; (progn (send (send *irtviewer* :viewer) :draw-arrow (v+ com #f(0 0 0)) (v+ com normal-vec) :color #f(0 0 1)) (send *irtviewer* :viewer :flush))
