@@ -512,50 +512,26 @@
 ;; change-arm-auto :send? nil
 ;;progn (board-holding-pose :send? t)
 ;;(move-hand :larm #f(-120 0 0) :sync? nil) (move-hand :larm #f(0 -120 0) :sync? nil) (send *ri* :start-grasp :larm) (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5) :is-hand-fix-mode t)
-(defun change-arm-auto
-    (&key (fix-contact? nil)
-          (send? nil)
-          (wait? t)
-          (avoid-collision? nil)
-          (apply-external-force? nil)
-          (lleg-pos-shift #f(50 0 0))
-          (rleg-pos-shift #f(50 0 0))
-          (look-at-object? t)
-          (arm "larm")
-          (arm-coords (send *robot* :rarm :end-coords))
-          )
-  ;; (move-hand (read-from-string (format nil ":~A" arm)) #f(-180 0   0) :sync? nil)
-  ;; (move-hand (read-from-string (format nil ":~A" arm)) #f(0   -180 0) :sync? nil)
-  (setq movetime-tmp 5000)
-  (setq origin-face (make_plane))
-  (setq face-arm (get-half-plane (elt origin-face 0)))
-  (setq pre-angle (send *robot* :angle-vector))
-  (setq pre-lleg (send *robot* :lleg :end-coords :copy-worldcoords))
-  (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
-  (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
 
-  (ik-opt-change-arm  arm-coords :arm arm :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :face-arm face-arm )
-  (send *robot-env* :dissoc-root-virtual)
-
-  (setq zmp-vector (send *ri*  :zmp-vector))
-  (setq rleg-coords-new (send *robot* :rleg :end-coords :copy-worldcoords))
-  (setq lleg-coords-new (send *robot* :lleg :end-coords :copy-worldcoords))
-  (setq lleg-ratio (abs (norm (v- (send lleg-coords-new :worldpos) zmp-vector))))
-  (setq rleg-ratio (abs (norm (v- (send rleg-coords-new :worldpos) zmp-vector))))
-  (if send?
-      (progn
-        (send *ri* :start-log)
-        (if (not fix-contact?)
-            (progn
-              (send *ri* :set-gait-generator-param :zmp-weight-map (float-vector rleg-ratio lleg-ratio 1 1))
-              ;; (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5) :is-hand-world-fix-mode t)
-              (send-pose movetime-tmp :force-move flag-simulator :pre-pose pre-angle :pre-lleg pre-lleg :look-at-object? look-at-object? :wait? nil)
-              (move-on-foot rleg-coords lleg-coords rleg-coords-new lleg-coords-new :wait? t :force-move t)
-              ;; (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5) :is-hand-world-fix-mode nil)
-              ))
-        ;; (send-pose movetime :force-move flag-simulator :pre-pose pre-angle :pre-lleg pre-lleg :look-at-object? look-at-object?)
-        ))
-  )
+  ;; (setq zmp-vector (send *ri*  :zmp-vector))
+  ;; (setq rleg-coords-new (send *robot* :rleg :end-coords :copy-worldcoords))
+  ;; (setq lleg-coords-new (send *robot* :lleg :end-coords :copy-worldcoords))
+  ;; (setq lleg-ratio (abs (norm (v- (send lleg-coords-new :worldpos) zmp-vector))))
+  ;; (setq rleg-ratio (abs (norm (v- (send rleg-coords-new :worldpos) zmp-vector))))
+  ;; (if send?
+  ;;     (progn
+  ;;       (send *ri* :start-log)
+  ;;       (if (not fix-contact?)
+  ;;           (progn
+  ;;             (send *ri* :set-gait-generator-param :zmp-weight-map (float-vector rleg-ratio lleg-ratio 1 1))
+  ;;             ;; (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5) :is-hand-world-fix-mode t)
+  ;;             (send-pose movetime-tmp :force-move flag-simulator :pre-pose pre-angle :pre-lleg pre-lleg :look-at-object? look-at-object? :wait? nil)
+  ;;             (move-on-foot rleg-coords lleg-coords rleg-coords-new lleg-coords-new :wait? t :force-move t)
+  ;;             ;; (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5) :is-hand-world-fix-mode nil)
+  ;;             ))
+  ;;       ;; (send-pose movetime :force-move flag-simulator :pre-pose pre-angle :pre-lleg pre-lleg :look-at-object? look-at-object?)
+  ;;       ))
+  
 
 
 (defun test-change-arm()

@@ -52,9 +52,9 @@
            (send self :set-fix-contact? nil)
            (send self :set-avoid-collision? t)
            (send self :set-apply-external-force? t)
-           (send self :set-wait? t)
-           (send self :set-rleg-pos-shift #f(0 0 0))
-           (send self :set-lleg-pos-shift #f(0 0 0))
+           (send self :set-wait? t)  
+           (send self :set-rleg-pos-shift #f(80 -20 0))
+           (send self :set-lleg-pos-shift #f(80 20 0))
            ;; (send self :set-external-wrench-list (list
            ;;                                      (float-vector 0 0 400 0 0 0)
            ;;                                      (float-vector 0 0 400 0 0 0)

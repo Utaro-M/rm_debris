@@ -1312,11 +1312,31 @@
                                           :l-max-y (- (elt (find-extream vs #'(lambda (v) (elt v 1)) #'>) 1) 20)
                                           ))
                                   )
-                       (instance default-contact-constraint
-                                 :init-from-support-polygon :support-polygon nil)
+                       (instance* default-contact-constraint
+                                  :init
+                                  :mu-trans 0.2
+                                  :mu-rot 0.01
+                                  :max-fz 100
+                                  (let* ((poly
+                                          (send *robot-env* :robot :get :larm_link7-support-polygon))
+                                         (vs
+                                          (mapcar #'(lambda (v)
+                                                      (send (send (send *robot-env* :robot :get :larm-contact-coords) :worldcoords)
+                                                            :inverse-transform-vector v))
+                                                  (send poly :vertices)
+                                                  ))
+                                         )
+                                    (list :l-min-x (+ (elt (find-extream vs #'(lambda (v) (elt v 0)) #'<) 0) 20)
+                                          :l-max-x (- (elt (find-extream vs #'(lambda (v) (elt v 0)) #'>) 0) 20)
+                                          :l-min-y (+ (elt (find-extream vs #'(lambda (v) (elt v 1)) #'<) 1) 20)
+                                          :l-max-y (- (elt (find-extream vs #'(lambda (v) (elt v 1)) #'>) 1) 20)
+                                          ))
+                                  )
+                       ;; (instance default-contact-constraint
+                       ;;           :init-from-support-polygon :support-polygon nil)
                        
-                       )
-                    )
+                       ;; )
+                    ))
                   :kin-scale-list
                                           (list
                          ;; 1.0

@@ -24,7 +24,7 @@
   <!-- <node pkg="rm_debris_vision" name="get_larm_remove_indices_server" type="get_larm_remove_indices_server.l" output="screen" /> -->
   <!-- <node pkg="rm_debris_vision" name="get_rarm_remove_indices_server" type="get_rarm_remove_indices_server.l" output="screen" /> -->
   <node pkg="rm_debris_vision" name="change_clip_box" type="change_clip_box_server.l" output="screen" />
-  <node pkg="rm_debris_vision" name="predict_k_server" type="predict_k_server.py" output="screen" />
+  <!-- <node pkg="rm_debris_vision" name="predict_k_server" type="predict_k_server.py" output="screen" /> -->
   <group ns="plane_extraction">
     <node name="$(arg manager)"
           pkg="nodelet" type="nodelet"
