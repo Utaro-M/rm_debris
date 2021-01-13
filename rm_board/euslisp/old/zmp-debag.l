@@ -2,8 +2,30 @@
 (jaxon_red-init)
 (setq *robot* *jaxon_red*)
 
+(defun prepare-real-machine(&key (set-ref-force-updater? t) (emergency-off? t))
+  (send *ri* :start-auto-balancer :limbs (list :lleg :rleg :larm :rarm))
+  (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 200 :k-r 200)
+  (if set-ref-force-updater?
+      (progn 
+	(send *ri* :set-reference-force-updater-param :arms :motion-dir #f(0 0 -1) :p-gain 0.01 :update-time-ratio 0.5 :frame "world")
+	(send *ri* :start-reference-force-updater :arms)
+	(print "set ref force updater ON")))
+  (send *ri* :set-auto-balancer-param :use-limb-stretch-avoidance t :limb-length-margin #f(0.06 0.06 0 0) :limb-stretch-avoidance-vlimit #f(-10e-5 1e-5))
+  (setq flag-simulator nil)
+  (if emergency-off?
+      (unless (= (send (send *ri* :get-st-param) :emergency_check_mode) 0)
+	(warn "disable emergency-check~%")
+	;;COPのemergencyをきる
+	(send *ri* :stop-st)
+	(send *ri* :set-st-param :emergency-check-mode 0)
+	(send *ri* :start-st)))
+  (send *ri* :set-log-maxlength (* 500 120))
+  (format t "prepare-real-machine~%")
+  )
+
 ;;脚を開いた状態から0.1m前進する
 (defun debag-func()
+  (prepare-real-machine)
   (send *robot* :reset-manip-pose)
   (send *robot* :move-coords (make-coords) (send *robot* :lleg :end-coords))
   (send *ri* :angle-vector (send *robot* :angle-vector) 10000)
