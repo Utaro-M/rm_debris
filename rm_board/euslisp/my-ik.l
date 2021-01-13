@@ -1003,8 +1003,10 @@
   
   (send (send *robot* :joint "RLEG_JOINT0") :min-angle -18)
   (send (send *robot* :joint "LLEG_JOINT0") :max-angle 18)
-  (send (send *robot* :joint "RLEG_JOINT3") :max-angle 60)
-  (send (send *robot* :joint "LLEG_JOINT3") :max-angle 60)
+  ;; (send (send *robot* :joint "RLEG_JOINT3") :max-angle 60)
+  ;; (send (send *robot* :joint "LLEG_JOINT3") :max-angle 60)
+  (send (send *robot* :joint "RLEG_JOINT3") :min-angle 50)
+  (send (send *robot* :joint "LLEG_JOINT3") :min-angle 50)
   
   (send (send *robot* :joint "RARM_JOINT0") :min-angle 0)
   (send (send *robot* :joint "RARM_JOINT0") :max-angle 40)
@@ -1312,28 +1314,28 @@
                                           :l-max-y (- (elt (find-extream vs #'(lambda (v) (elt v 1)) #'>) 1) 20)
                                           ))
                                   )
-                       (instance* default-contact-constraint
-                                  :init
-                                  :mu-trans 0.2
-                                  :mu-rot 0.01
-                                  :max-fz 100
-                                  (let* ((poly
-                                          (send *robot-env* :robot :get :larm_link7-support-polygon))
-                                         (vs
-                                          (mapcar #'(lambda (v)
-                                                      (send (send (send *robot-env* :robot :get :larm-contact-coords) :worldcoords)
-                                                            :inverse-transform-vector v))
-                                                  (send poly :vertices)
-                                                  ))
-                                         )
-                                    (list :l-min-x (+ (elt (find-extream vs #'(lambda (v) (elt v 0)) #'<) 0) 20)
-                                          :l-max-x (- (elt (find-extream vs #'(lambda (v) (elt v 0)) #'>) 0) 20)
-                                          :l-min-y (+ (elt (find-extream vs #'(lambda (v) (elt v 1)) #'<) 1) 20)
-                                          :l-max-y (- (elt (find-extream vs #'(lambda (v) (elt v 1)) #'>) 1) 20)
-                                          ))
-                                  )
-                       ;; (instance default-contact-constraint
-                       ;;           :init-from-support-polygon :support-polygon nil)
+                       ;; (instance* default-contact-constraint
+                       ;;            :init
+                       ;;            :mu-trans 0.2
+                       ;;            :mu-rot 0.01
+                       ;;            :max-fz 40
+                       ;;            (let* ((poly
+                       ;;                    (send *robot-env* :robot :get :larm_link7-support-polygon))
+                       ;;                   (vs
+                       ;;                    (mapcar #'(lambda (v)
+                       ;;                                (send (send (send *robot-env* :robot :get :larm-contact-coords) :worldcoords)
+                       ;;                                      :inverse-transform-vector v))
+                       ;;                            (send poly :vertices)
+                       ;;                            ))
+                       ;;                   )
+                       ;;              (list :l-min-x (+ (elt (find-extream vs #'(lambda (v) (elt v 0)) #'<) 0) 20)
+                       ;;                    :l-max-x (- (elt (find-extream vs #'(lambda (v) (elt v 0)) #'>) 0) 20)
+                       ;;                    :l-min-y (+ (elt (find-extream vs #'(lambda (v) (elt v 1)) #'<) 1) 20)
+                       ;;                    :l-max-y (- (elt (find-extream vs #'(lambda (v) (elt v 1)) #'>) 1) 20)
+                       ;;                    ))
+                       ;;            )
+                       (instance default-contact-constraint
+                                 :init-from-support-polygon :support-polygon nil)
                        
                        ;; )
                     ))
@@ -1343,6 +1345,7 @@
                          ;; 1.0
                          (list 1 1 1 1 1 1)
                          (list 1 1 1 1 1 1)
+			 1.0
                          (list 1 1 1 0 0 1)
                          (list 1 1 1 1 0.5 1))
                   ;; (if set-unique-kin-scale?

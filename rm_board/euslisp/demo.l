@@ -571,4 +571,13 @@
   (send *robot* :angle-vector (send *robot* :state :angle-vector))
   (move-hand :larm #f(-140 0 0) :sync? nil)
   )
+
+;;(reaching-pose-high :send? t)
+(defun change-arm-demo()
+  (heave-with-sensor 160 160 1 :first-lift 160)
+  (change-arm-auto-without-plane :send? t)
+  (send *coords* :set-rleg-new-coords (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate #f(100 0 0)))
+  (send *coords* :set-lleg-new-coords (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(100 0 0)))
+  (send-pose-and-move-on-foot :time 5000 :send? t :fix-contact? nil :look-at-object? t :wait? nil :fix-hand? nil)
   
+)

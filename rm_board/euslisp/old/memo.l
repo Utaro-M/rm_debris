@@ -805,3 +805,7 @@ init-lcoords = #<coordinates #X7f6c52c91cf0  5.435e-14 4.446e-14 -1.421e-13 / 6.
 init-rcoords = #<coordinates #X7f6c52c91b88  -210.556 -375.72 0.021 / 0.319 -1.113e-05 -3.014e-06>
 next-lcoords = #<coordinates #X7f6a586ef310  37.009 3.933 -0.024 / -0.035 -2.027e-06 1.375e-07>
 next-rcoords = #<coordinates #X7f6a587035c0  -34.33 -367.14 0.063 / 0.139 -1.420e-06 -1.671e-05
+
+;;0113
+send *ri* :set-auto-balancer-param :default-zmp-offsets (list #f(20 20 0.0) #f(20 -20 0.0) #f(0.0 0.0 0.0) #f(0.0 0.0 0.0))
+send (send (send *ri* :get-auto-balancer-param) :default_zmp_offsets) :data
