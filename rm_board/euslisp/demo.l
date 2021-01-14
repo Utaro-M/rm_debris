@@ -574,10 +574,15 @@
 
 ;;(reaching-pose-high :send? t)
 (defun change-arm-demo()
+  (send *ri* :start-log)
   (heave-with-sensor 160 160 1 :first-lift 160)
   (change-arm-auto-without-plane :send? t)
-  (send *coords* :set-rleg-new-coords (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate #f(100 0 0)))
-  (send *coords* :set-lleg-new-coords (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(100 0 0)))
-  (send-pose-and-move-on-foot :time 5000 :send? t :fix-contact? nil :look-at-object? t :wait? nil :fix-hand? nil)
+  ;; (send *ri* :set-auto-balancer-param :default-zmp-offsets (list #f(30 20 0.0) #f(30 -20 0.0) #f(0.0 0.0 0.0) #f(0.0 0.0 0.0)))
+  (unix::sleep 1)
+  (format t "zmp offset = ~A~%" (send (send (send *ri* :get-auto-balancer-param) :default_zmp_offsets) :data))
+  (send *ri* :go-pos 0.2 0 0)
   
+  ;; (send *coords* :set-rleg-new-coords (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate #f(100 0 0)))
+  ;; (send *coords* :set-lleg-new-coords (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(100 0 0)))
+  ;; (send-pose-and-move-on-foot :time 5000 :send? t :fix-contact? nil :look-at-object? t :wait? nil :fix-hand? nil :only-move-foot? t)
 )

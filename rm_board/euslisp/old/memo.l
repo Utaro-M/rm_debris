@@ -809,3 +809,8 @@ next-rcoords = #<coordinates #X7f6a587035c0  -34.33 -367.14 0.063 / 0.139 -1.420
 ;;0113
 send *ri* :set-auto-balancer-param :default-zmp-offsets (list #f(20 20 0.0) #f(20 -20 0.0) #f(0.0 0.0 0.0) #f(0.0 0.0 0.0))
 send (send (send *ri* :get-auto-balancer-param) :default_zmp_offsets) :data
+;;debag zmp
+(progn (send *ri* :start-log) (unix:sleep 5) (debag-func) (unix::sleep 10) (save-log :log-dir "matsuura/log"))
+
+
+;;calib memo -28363
