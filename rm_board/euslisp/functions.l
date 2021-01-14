@@ -1949,12 +1949,15 @@
   ;; (setq rcoords (make-coords :pos #f(-59.735 -321.362 -0.007) :rpy #f(0.021 9.093e-07 1.857e-06)))
   ;; (send rcoords :translate #f(30 160 0))
   ;; (send *robot* :angle-vector  #f(0.845168 -4.76947 -39.7486 76.4653 -40.7972 4.69775 0.428295 5.99958 -45.3741 76.0349 -34.7505 -6.01463 -1.82797 7.89905 -5.87246 4.67899 1.83123 37.0 10.28 -27.6137 -0.426646 -64.7098 50.3253 -4.42444 15.1117 -37.0 23.5686 28.2448 6.40036 -65.7202 -40.0836 13.8851 15.4743))
-
-  (let ((llegcoords (make-coords :pos #f(-1.137e-13 1.915e-14 1.705e-13) :rpy #f(-3.466e-18 1.546e-19 1.388e-17)))
-	(rlegcoords (make-coords :pos #f( -29.787 -318.721 0.002) :rpy #f(-0.029 -1.529e-06 -4.615e-06))))
+  ;;0113
+  ;; (llegcoords (make-coords :pos #f(-1.137e-13 1.915e-14 1.705e-13) :rpy #f(-3.466e-18 1.546e-19 1.388e-17)))
+  ;; 	(rlegcoords (make-coords :pos #f( -29.787 -318.721 0.002) :rpy #f(-0.029 -1.529e-06 -4.615e-06)))
+    ;; (send llegcoords :translate #f(15 160 0) :world)
+  ;; (send rlegcoords :translate #f(15 160 0) :world)
+  
+  (let ((llegcoords (make-coords :pos #f(15.0 160.0 1.705e-13) :rpy #f(-3.466e-18 1.546e-19 1.388e-17)))
+	(rlegcoords (make-coords :pos #f(-14.787 -158.721 0.002) :rpy #f(-0.029 -1.529e-06 -4.615e-06))))
     (reset-coords)
-    (send llegcoords :translate #f(15 160 0) :world)
-    (send rlegcoords :translate #f(15 160 0) :world)
     (send *robot* :angle-vector  #f(-1.704 -6.44234 -42.038 88.5287 -47.1159 6.46033 0.05511 5.10885 -45.2001 88.979 -44.4028 -5.10899 1.13229 11.6047 -7.23663 2.69917 0.824779 37.0 26.4666 -34.0665 -4.80595 -73.4077 43.7561 -8.55578 13.5856 -37.0 25.2936 19.536 4.02469 -77.5973 -48.1484 12.0398 25.3355))
   
   
@@ -2203,8 +2206,8 @@
     (setq larm-coords (send *robot* :larm :end-coords :copy-worldcoords))
     (move-hand :larm #f(-160 0 0) :send? t)
     (send *ri* :move-gripper :larm 1 :wait t)
-    (move-hand :larm #f(-80 0 -200) :send? t :frame :world)
-    (send larm-coords :translate #f(0 0 -80) :world) 
+    (move-hand :larm #f(-80 0 -240) :send? t :frame :world)
+    (send larm-coords :translate #f(10 0 -100) :world) 
     ;; (setq larm-coords (send larm-coords :translate #f(100 -150 0))) 
 	;; (setq larm-coords (send larm-coords :rotate (deg2rad -20) :z))
     (move-hand :larm (v- (send larm-coords :worldpos) (send *robot* :larm :end-coords :worldpos)) :send? t :frame :world)
@@ -2215,9 +2218,9 @@
     (setq rarm-coords (send *robot* :rarm :end-coords :copy-worldcoords))
     (move-hand :rarm #f(-160 0 0) :send? t)
     (send *ri* :move-gripper :rarm 1 :wait t)
-    (move-hand :rarm #f(-80 0 -200) :send? t :frame :world)
+    (move-hand :rarm #f(-80 0 -240) :send? t :frame :world)
     ;; (setq rarm-coords (send rarm-coords :translate #f(100 150 0) :world))
-    (send rarm-coords :translate #f(0 0 -80) :world)
+    (send rarm-coords :translate #f(0 0 -100) :world)
     ;; (setq rarm-coords (send rarm-coords :rotate (deg2rad -20) :z))
     (move-hand :rarm (v- (send rarm-coords :worldpos) (send *robot* :rarm :end-coords :worldpos)) :send? t :frame :world)
 )
@@ -2227,3 +2230,4 @@
 ;; rarm-coords next= #<coordinates #X7f6176c42d08  434.272 -412.57 894.724 / 0.196 0.999 -1.4
 ;; larm-coords next= #<coordinates #X7f61a4627550  514.705 289.401 1043.785 / 0.616 1.174 1.858>
 ;; rarm-coords next= #<coordinates #X7f61a4612508  533.323 -400.6 1062.898 / 0.301 1.184 -1.382>
+
