@@ -788,7 +788,7 @@
     (if flag
         (list  (cdr y-data) ret)
       (progn
-        (print (format nil "~A vector through filter and average = ~A" target ret-average))
+        (print (format nil "~A  ~A vector through filter and average = ~A" arm target ret-average))
         ret-average)
     )
     )
@@ -1798,22 +1798,22 @@
     ;; (setq larm-force-tmp (low-pass-online "force" "off" :larm :times 10 :sleep 100 :flag nil))
     ;; (setq rarm-force-tmp (low-pass-online "force" "off" :rarm :times 10 :sleep 100 :flag nil))
     (setq lf-list (append (list larm-force-tmp) lf-list)
-	  rf-list (append (list rarm-force-tmp) rf-list)
-	  lp-list (append (list larm-coords-tmp) lp-list)
-	  rp-list (append (list rarm-coords-tmp) rp-list)
-	  f-diff-list (append (list (- (elt larm-force-tmp 2) (elt  rarm-force-tmp 2))) f-diff-list))
+          rf-list (append (list rarm-force-tmp) rf-list)
+          lp-list (append (list larm-coords-tmp) lp-list)
+          rp-list (append (list rarm-coords-tmp) rp-list)
+          f-diff-list (append (list (- (elt larm-force-tmp 2) (elt  rarm-force-tmp 2))) f-diff-list))
     (format t "force diff = ~A~%" (elt f-diff-list i))
     ;; (setq move-dir (normalize-vector (float-vector (elt (send rarm-coords-tmp :z-axis) 0) (elt (send rarm-coords-tmp :z-axis) 1) 0)))
     (setq move-dir #f(0 1 0))
-    (if (> (abs (elt larm-force-tmp 2)) (abs (elt rarm-force-tmp 2)))
-	(progn
-	  (format t "move right")
-	  (setq lpos-list (append  (list (+ (elt lpos-list i)  +1)) lpos-list))
-	  ;; (setq lpos (+ lpos -1))
-	  (setq move-dir (scale -1 move-dir)))
+    (if (< (abs (elt larm-force-tmp 2)) (abs (elt rarm-force-tmp 2)))
+        (progn
+          (format t "move right~%")
+          (setq lpos-list (append  (list (+ (elt lpos-list i)  +1)) lpos-list))
+          ;; (setq lpos (+ lpos -1))
+          (setq move-dir (scale -1 move-dir)))
       (progn 
-	(format t "move left")
-	(setq lpos-list (append  (list (+ (elt lpos-list i) +1)) lpos-list))))
+        (format t "move left~%")
+        (setq lpos-list (append  (list (+ (elt lpos-list i) +1)) lpos-list))))
 
     (send *ri* :move-gripper :arms 0 :wait t)
     (format t "hand down ~%")
