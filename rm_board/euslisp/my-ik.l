@@ -141,19 +141,33 @@
   ;; (send (send *robot* :joint "LARM_JOINT1") :min-angle -140)
   ;; (send (send *robot* :joint "LARM_JOINT1") :max-angle 140)
 
-  (send (send *robot* :joint "RARM_JOINT1") :min-angle -100)
-  (send (send *robot* :joint "RARM_JOINT1") :max-angle 80)
-  (send (send *robot* :joint "LARM_JOINT1") :min-angle -100)
-  (send (send *robot* :joint "LARM_JOINT1") :max-angle 80)
+  ;; (send (send *robot* :joint "RARM_JOINT1") :min-angle -100)
+  (send (send *robot* :joint "RARM_JOINT1") :min-angle -90)
+  (send (send *robot* :joint "RARM_JOINT1") :max-angle 70)
+  ;; (send (send *robot* :joint "LARM_JOINT1") :min-angle -100)
+  (send (send *robot* :joint "LARM_JOINT1") :min-angle -90)
+  (send (send *robot* :joint "LARM_JOINT1") :max-angle 70)
 ;;腕が180度回転するのを防ぐ
   ;; (send (send *robot* :joint "LARM_JOINT3") :min-angle -90)
   ;; (send (send *robot* :joint "LARM_JOINT3") :max-angle 90)
   ;; (send (send *robot* :joint "RARM_JOINT3") :min-angle -90)
   ;; (send (send *robot* :joint "RARM_JOINT3") :max-angle 90)
+;;0116
+  (send (send *robot* :joint "LARM_JOINT2") :max-angle 90)
+  (send (send *robot* :joint "RARM_JOINT2") :min-angle -90)
+  
   (send (send *robot* :joint "LARM_JOINT3") :min-angle -70)
   (send (send *robot* :joint "LARM_JOINT3") :max-angle 70)
   (send (send *robot* :joint "RARM_JOINT3") :min-angle -70)
-  (send (send *robot* :joint "RARM_JOINT3") :max-angle 70)  
+  (send (send *robot* :joint "RARM_JOINT3") :max-angle 70)
+
+  (send (send *robot* :joint "LARM_JOINT5") :min-angle -70)
+  (send (send *robot* :joint "LARM_JOINT5") :max-angle 70)
+  (send (send *robot* :joint "RARM_JOINT5") :min-angle -70)
+  (send (send *robot* :joint "RARM_JOINT5") :max-angle 70)
+
+  (send (send *robot* :joint "RARM_JOINT7") :min-angle -60)
+  (send (send *robot* :joint "LARM_JOINT7") :min-angle -60)
   )
 
 ;;reachとかに使ってるやつ
@@ -288,7 +302,8 @@
     (send *irtviewer* :draw-floor 500)
     (send *irtviewer* :floor-color (float-vector 0 0 0))
     )
-  (objects (append (list *robot* *rarm-coords* *larm-coords* (send *ik-param* :get-object)) *env-list*  (if avoid-collision? (list *obst*))
+  (objects (append (list *robot* *rarm-coords* *larm-coords* ;; (send *ik-param* :get-object)
+                         ) *env-list*  (if avoid-collision? (list *obst*))
                    ))
 
   (setq *instant-config-task*
