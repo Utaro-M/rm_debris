@@ -1,14 +1,15 @@
 <launch>
-  <rosparam param="/use_sim_time">true</rosparam>
+  <!-- <rosparam param="/use_sim_time">true</rosparam> -->
   <arg name="input_cloud"
-       default="/multisense_local/organized_image_points2_color" />
-         <!-- default="/rs_l515/depth_registered/points" /> -->
+       default="/rs_l515/depth_registered/points" />
+       <!-- default="/multisense_local/organized_image_points2_color" /> -->
   <arg name="filtered_cloud"
        default="/self_filter/filtered_cloud" />
   <!-- <arg name="SELF_FILTER_PARAM" default="/home/leus/catkin_ws/jaxon_tutorial/src/matsuura_rm_debris/rm_board/models/self_filter_param.yaml"/> -->
-  <arg name="SELF_FILTER_PARAM" default="/home/utaro/research/rm_debris/rm_board/models/self_filter_param_sim.yaml"/>  
-  <arg name="manager" default="plane_extraction_manager" />
-  <!-- <rosparam param="/use_sim_time">true</rosparam> -->
+  <arg name="SELF_FILTER_PARAM" default="/home/utaro/research/rm_debris/rm_board/models/self_filter_param_sim.yaml"/>
+  <!-- <arg name="SELF_FILTER_PARAM" default="/home/utaro/research/rm_debris/rm_board/models/self_filter_param.yaml"/> <!-\- rosbag -\-> -->
+  <arg name="manager" default="check_in_hand_manager" />
+  <rosparam param="/use_sim_time">true</rosparam>
   <node pkg="count_points" name="count_points" type="count_points.py" output="screen" />
 
   <node pkg="pr2_navigation_self_filter" type="self_filter"
@@ -17,6 +18,7 @@
     <remap from="cloud_out" to="~/filtered_cloud" />
     <rosparam command="load" file="$(arg SELF_FILTER_PARAM)" />
   </node>
+
   <group ns="in_hand_point">
 
     <node name="$(arg manager)"
@@ -36,7 +38,8 @@
     <node name="attention_clipper_larm"
           pkg="nodelet" type="nodelet"
           args="load jsk_pcl/AttentionClipper $(arg manager)">
-      <remap from="~input/points" to="$(arg filtered_cloud)" />
+      <!-- <remap from="~input/points" to="$(arg filtered_cloud)" />  -->
+      <remap from="~input/points" to="$(arg input_cloud)" />
       <remap from="~input/box_array" to="bounding_box_array_publisher_larm/output" />
       <rosparam>
         use_multiple_attention: true
@@ -46,7 +49,8 @@
     <node name="extract_indices_larm"
           pkg="nodelet" type="nodelet"
           args="load jsk_pcl/ExtractIndices $(arg manager)">
-      <remap from="~input" to="$(arg filtered_cloud)"/>
+      <!-- <remap from="~input" to="$(arg filtered_cloud)"/> -->
+      <remap from="~input" to="$(arg input_cloud)" />      
       <remap from="~indices" to="attention_clipper_larm/output/point_indices"/>
       <rosparam>
         keep_organized: true
@@ -66,7 +70,8 @@
     <node name="attention_clipper_rarm"
           pkg="nodelet" type="nodelet"
           args="load jsk_pcl/AttentionClipper $(arg manager)">
-      <remap from="~input/points" to="$(arg filtered_cloud)" />
+      <!-- <remap from="~input/points" to="$(arg filtered_cloud)" /> -->
+      <remap from="~input/points" to="$(arg input_cloud)" />
       <remap from="~input/box_array" to="bounding_box_array_publisher_rarm/output" />
       <rosparam>
         use_multiple_attention: true
@@ -76,7 +81,8 @@
     <node name="extract_indices_rarm"
           pkg="nodelet" type="nodelet"
           args="load jsk_pcl/ExtractIndices $(arg manager)">
-      <remap from="~input" to="$(arg filtered_cloud)" />
+      <!-- <remap from="~input" to="$(arg filtered_cloud)" /> -->
+      <remap from="~input" to="$(arg input_cloud)" />
       <remap from="~indices" to="attention_clipper_rarm/output/point_indices" />
       <rosparam>
         keep_organized: true

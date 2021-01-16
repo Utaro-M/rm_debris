@@ -27,7 +27,7 @@
   <node pkg="rm_debris_vision" name="change_clip_box" type="change_clip_box_server.l" output="screen" />
   <!-- <node pkg="rm_debris_vision" name="hz_down" type="hz_down_realsense.py" output="screen" /> -->
   <!-- <node pkg="rm_debris_vision" name="switch_input_cloud" type="switch_input_cloud.py" output="screen" /> -->
-  <node pkg="rm_debris_vision" name="predict_k_server" type="predict_k_server.py" output="screen" />
+  <!-- <node pkg="rm_debris_vision" name="predict_k_server" type="predict_k_server.py" output="screen" /> -->
 
   <group ns="plane_extraction">
     <node name="$(arg manager)"
@@ -37,7 +37,7 @@
     <node name="bounding_box_array_publisher"
           pkg="jsk_recognition_utils" type="bounding_box_array_publisher.py">
       <rosparam>
-        frame_id: odom_ground
+        frame_id: lleg_end_coords
         boxes:
         - position: [1, 0, 0.95]
           dimension: [3, 2.0, 2]
@@ -74,7 +74,7 @@
           args="load jsk_pcl_utils/TfTransformCloud $(arg manager)">
       <remap from="~input" to="extract_indices/output" />
       <rosparam>
-        target_frame_id: odom_ground
+        target_frame_id: lleg_end_coords
       </rosparam>
     </node>
 
@@ -87,7 +87,7 @@
       <remap from="~output_refined_polygon" to="plane_polygons" />
       <remap from="~output_refined_coefficients" to="plane_coefficients" />
 
-      <param name="~min_size" value="500" />
+      <param name="~min_size" value="1500" />
       <param name="~max_curvature" value="0.01" />
       <param name="~distance_threshold" value="0.03" />
       <param name="~angular_threshold" value="0.05" />
@@ -170,104 +170,104 @@
     <!-- </node> -->
   </group>  <!-- end of plane_extraction namespace-->
 
-  
-  <arg name="grid_cloud" value="voxelgrid/output" />
-  <group ns="stick_pose">
-    <node name="line_segment_manager"
-          pkg="nodelet" type="nodelet"
-          args="manager" output="screen" />
+<!-- 重いので消しておく   -->
+  <!-- <arg name="grid_cloud" value="voxelgrid/output" /> -->
+  <!-- <group ns="stick_pose"> -->
+  <!--   <node name="line_segment_manager" -->
+  <!--         pkg="nodelet" type="nodelet" -->
+  <!--         args="manager" output="screen" /> -->
 
-    <node name="bounding_box_array_publisher"
-          pkg="jsk_recognition_utils" type="bounding_box_array_publisher.py">
-      <rosparam>
-        frame_id: odom_ground
-        boxes:
-        - position: [1, 0, 1.25]
-          dimension: [2, 1.5, 2]
-      </rosparam>
-    </node>
+  <!--   <node name="bounding_box_array_publisher" -->
+  <!--         pkg="jsk_recognition_utils" type="bounding_box_array_publisher.py"> -->
+  <!--     <rosparam> -->
+  <!--       frame_id: odom_ground -->
+  <!--       boxes: -->
+  <!--       - position: [1, 0, 1.25] -->
+  <!--         dimension: [2, 1.5, 2] -->
+  <!--     </rosparam> -->
+  <!--   </node> -->
 
-    <node name="voxelgrid"
-          pkg="nodelet" type="nodelet"
-          args="load pcl/VoxelGrid line_segment_manager"
-          output="screen">
-      <remap from="~input" to="$(arg input_cloud)" />    
-      <rosparam>
-        filter_field_name: z
-        filter_limit_min: 0.0
-        filter_limit_max: 5.0
-        leaf_size: 0.01
-      </rosparam>
-    </node>
+  <!--   <node name="voxelgrid" -->
+  <!--         pkg="nodelet" type="nodelet" -->
+  <!--         args="load pcl/VoxelGrid line_segment_manager" -->
+  <!--         output="screen"> -->
+  <!--     <remap from="~input" to="$(arg input_cloud)" />     -->
+  <!--     <rosparam> -->
+  <!--       filter_field_name: z -->
+  <!--       filter_limit_min: 0.0 -->
+  <!--       filter_limit_max: 5.0 -->
+  <!--       leaf_size: 0.01 -->
+  <!--     </rosparam> -->
+  <!--   </node> -->
 
-    <node name="attention_clipper"
-          pkg="nodelet" type="nodelet"
-          args="load jsk_pcl/AttentionClipper line_segment_manager">
-      <remap from="~input/points" to="$(arg grid_cloud)" />
-      <remap from="~input/box_array" to="bounding_box_array_publisher/output" />
-      <rosparam>
-        use_multiple_attention: true
-      </rosparam>
-    </node>
+  <!--   <node name="attention_clipper" -->
+  <!--         pkg="nodelet" type="nodelet" -->
+  <!--         args="load jsk_pcl/AttentionClipper line_segment_manager"> -->
+  <!--     <remap from="~input/points" to="$(arg grid_cloud)" /> -->
+  <!--     <remap from="~input/box_array" to="bounding_box_array_publisher/output" /> -->
+  <!--     <rosparam> -->
+  <!--       use_multiple_attention: true -->
+  <!--     </rosparam> -->
+  <!--   </node> -->
 
-    <node name="extract_indices"
-          pkg="nodelet" type="nodelet"
-          args="load jsk_pcl/ExtractIndices line_segment_manager">
-      <remap from="~input" to="$(arg grid_cloud)" />
-      <remap from="~indices" to="attention_clipper/output/point_indices" />
-      <rosparam>
-        keep_organized: true
-      </rosparam>
-    </node>
+  <!--   <node name="extract_indices" -->
+  <!--         pkg="nodelet" type="nodelet" -->
+  <!--         args="load jsk_pcl/ExtractIndices line_segment_manager"> -->
+  <!--     <remap from="~input" to="$(arg grid_cloud)" /> -->
+  <!--     <remap from="~indices" to="attention_clipper/output/point_indices" /> -->
+  <!--     <rosparam> -->
+  <!--       keep_organized: true -->
+  <!--     </rosparam> -->
+  <!--   </node> -->
 
-    <node name="transform_org_cloud"
-          pkg="nodelet" type="nodelet"
-          args="load jsk_pcl_utils/TfTransformCloud line_segment_manager">
-      <remap from="~input" to="extract_indices/output" />
-      <rosparam>
-        target_frame_id: odom_ground
-      </rosparam>
-    </node>
+  <!--   <node name="transform_org_cloud" -->
+  <!--         pkg="nodelet" type="nodelet" -->
+  <!--         args="load jsk_pcl_utils/TfTransformCloud line_segment_manager"> -->
+  <!--     <remap from="~input" to="extract_indices/output" /> -->
+  <!--     <rosparam> -->
+  <!--       target_frame_id: odom_ground -->
+  <!--     </rosparam> -->
+  <!--   </node> -->
     
-    <node name="euclidean_clustering"
-          pkg="nodelet" type="nodelet"
-          args="load jsk_pcl/EuclideanClustering line_segment_manager"
-          output="screen">
-      <remap from="~input" to="transform_org_cloud/output" />    
-      <rosparam>
-        max_size: 100000
-        min_size: 110
-      </rosparam>
-    </node>
+  <!--   <node name="euclidean_clustering" -->
+  <!--         pkg="nodelet" type="nodelet" -->
+  <!--         args="load jsk_pcl/EuclideanClustering line_segment_manager" -->
+  <!--         output="screen"> -->
+  <!--     <remap from="~input" to="transform_org_cloud/output" />     -->
+  <!--     <rosparam> -->
+  <!--       max_size: 100000 -->
+  <!--       min_size: 110 -->
+  <!--     </rosparam> -->
+  <!--   </node> -->
 
-    <node name="euclidean_clustering_decomposer"
-          pkg="nodelet" type="nodelet"
-          args="load jsk_pcl/ClusterPointIndicesDecomposerZAxis line_segment_manager"
-          output="screen">
-      <remap from="~input" to="transform_org_cloud/output" />    
-      <remap from="~target" to="euclidean_clustering/output" />
-      <rosparam>
-        max_size: 100000
-        min_size: 110
-        use_pca: true
-        sort_by: "z_axis"
-      </rosparam>
-    </node>
+  <!--   <node name="euclidean_clustering_decomposer" -->
+  <!--         pkg="nodelet" type="nodelet" -->
+  <!--         args="load jsk_pcl/ClusterPointIndicesDecomposerZAxis line_segment_manager" -->
+  <!--         output="screen"> -->
+  <!--     <remap from="~input" to="transform_org_cloud/output" />     -->
+  <!--     <remap from="~target" to="euclidean_clustering/output" /> -->
+  <!--     <rosparam> -->
+  <!--       max_size: 100000 -->
+  <!--       min_size: 110 -->
+  <!--       use_pca: true -->
+  <!--       sort_by: "z_axis" -->
+  <!--     </rosparam> -->
+  <!--   </node> -->
 
-    <node name="line_segment_detector"
-          pkg="nodelet" type="nodelet"
-          args="standalone jsk_pcl/LineSegmentDetector"
-          output="screen">
-      <remap from="~input" to="transform_org_cloud/output" />
-      <remap from="~input_indices" to="euclidean_clustering/output" />
-      <rosparam>
-        outlier_threshold: 0.04
-        max_iteration: 10000
-        min_indices: 10
-        min_length: 0.3
-      </rosparam>
-    </node>
-  </group>
+  <!--   <node name="line_segment_detector" -->
+  <!--         pkg="nodelet" type="nodelet" -->
+  <!--         args="standalone jsk_pcl/LineSegmentDetector" -->
+  <!--         output="screen"> -->
+  <!--     <remap from="~input" to="transform_org_cloud/output" /> -->
+  <!--     <remap from="~input_indices" to="euclidean_clustering/output" /> -->
+  <!--     <rosparam> -->
+  <!--       outlier_threshold: 0.04 -->
+  <!--       max_iteration: 10000 -->
+  <!--       min_indices: 10 -->
+  <!--       min_length: 0.3 -->
+  <!--     </rosparam> -->
+  <!--   </node> -->
+  <!-- </group> -->
   <!-- <node pkg="rgbd_self_filter" name="get_plane" type="get_plane.py" output="screen"/> -->
   <!-- <node name="rviz" -->
   <!--       pkg="rviz" type="rviz" -->
