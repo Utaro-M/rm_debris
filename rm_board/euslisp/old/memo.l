@@ -815,5 +815,25 @@ send (send (send *ri* :get-auto-balancer-param) :default_zmp_offsets) :data
 
 ;;calib memo -28363
 
+
 ;;0119 for thesis
 ;;progn (setq pl (car (make_plane))) (setq bxr (make-cube 200 200 250 )) (setq bxl (make-cube 200 200 250 )) (send bxr :set-color #f(0 0 1 0.5)) (send bxl :set-color #f(0 0 1 0.5))  (send bxr :newcoords (make-coords :coords (send *robot* :rarm :end-coords :copy-worldcoords))) (send bxl :newcoords (make-coords :coords (send *robot* :larm :end-coords :copy-worldcoords))) (objects (list *robot* bxr bxl pl))
+my-init-pose :tilt? t :send? t
+reach-auto :send? t :pos-shift 290 :adjust? nil :ik1? nil :larm-shift #f(0 -10 0) :rarm-shift #f(0 10 0) :fix-contact? 2 :reaching-offset (list #f(-50 -0 0) #f(-50 0 0))
+heave-with-sensor 180 180 1 :first-lift 180
+heave-with-sensor 180 180 1 :first-lift 180
+change-arm-auto-without-plane :send? t
+
+
+
+;;
+#f(-1.704 -6.44234 -42.038 88.5287 -47.1159 6.46033 0.05511 5.10885 -45.2001 88.979 -44.4028 -5.10899 1.13229 11.6047 -7.23663 2.87177 20.4036 36.9533 25.5122 -32.6341 -3.3714 -69.7557 44.6898 -11.5719 12.3395 -37.0 25.2936 19.536 4.02469 -77.5973 -48.1484 12.0398 25.3355)
+
+
+lf-list
+(#f(2.26256 2.16654 0.947671) #f(-8.37207 -35.9553 -10.9239) #f(-13.4621 -35.4817 -24.9708))
+rf-list
+(#f(-12.5943 23.0024 -40.6314) #f(-12.8415 27.3765 -34.2001) #f(-13.8794 29.2119 -30.6644))
+f-diff-list
+(41.579 23.2762 5.69357)
+
