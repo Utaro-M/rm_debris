@@ -78,7 +78,7 @@
   )
 
 (defun send-pose
-    (time &key (pre-pose (send *robot* :angle-vector)) (pre-lleg  (send *robot* :lleg :end-coords :copy-worldcoords) ) (force-move nil) (wait? t) (resume? nil) (look-at-object? t))
+    (time &key (pre-pose (send *robot* :angle-vector)) (pre-lleg  (send *robot* :lleg :end-coords :copy-worldcoords) ) (force-move (send *ik-param* :get-force-move)) (wait? t) (resume? nil) (look-at-object? t))
   (if look-at-object?
       (progn
         ;; (send *robot* :head :look-at (v+ (midpoint 0.5 (send (send *robot* :rarm :end-coords :copy-worldcoords) :worldpos) (send (send *robot* :larm :end-coords :copy-worldcoords) :worldpos)) #f(500 0 300)))
@@ -93,7 +93,8 @@
 	;;     (send *robot* :head-neck-p :joint-angle (- (send *robot* :head-neck-p :joint-angle) 12))
 	;;   )
 	(print "look at object")
-	(send *robot* :angle-vector (send *robot* :head :look-at (midpoint 0.5 (send (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate #f(150 -640 0) :local) :worldpos) (send (send (send *robot* :larm :end-coords :copy-worldcoords) :translate #f(150 640 0) :local) :worldpos))))
+	;; (send *robot* :angle-vector (send *robot* :head :look-at (midpoint 0.5 (send (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate #f(150 -640 0) :local) :worldpos) (send (send (send *robot* :larm :end-coords :copy-worldcoords) :translate #f(150 640 0) :local) :worldpos))))
+	(send *robot* :angle-vector (send *robot* :head :look-at (send (send (send (car (send *robot* :links)) :copy-worldcoords) :translate #f(1000 0 600)) :worldpos)))
         ))
   (objects)
   ;; (x::window-main-one)
@@ -2350,10 +2351,11 @@
           (holding-arm-coords (send *robot* :rarm :end-coords))
 	  (rot-z 20)
 	  (pos-shift 280)
-	  (only-hand? nil))
-  ;; (let* ((coords-list (auto-set-reaching-targets :pos-shift pos-shift :larm-shift #f(200 -150 0) :rarm-shift #f(200 150 0) :rot-z rot-z)))
+	  (only-hand? nil)
+	  (force-move nil))  ;; (let* ((coords-list (auto-set-reaching-targets :pos-shift pos-shift :larm-shift #f(200 -150 0) :rarm-shift #f(200 150 0) :rot-z rot-z)))
   ;; (send *ri* :start-log)
   (reset-coords)
+  (send *ik-param* :set-force-move t)
   (setq movetime-tmp 3000)
   (send *coords* :set-rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
   (send *coords* :set-lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
@@ -2362,7 +2364,7 @@
   ;; (reset-coords)
   ;; (send *ri* :angle-vector (send *robot* :angle-vector) 4000)
   ;; (move-hand :arms #f(20 0 0) :send? t :rotation-axis? t)
-  (send *ri* :set-auto-balancer-param :default-zmp-offsets (list #f(10 20 0.0) #f(10 -20 0.0) #f(0.0 0.0 0.0) #f(0.0 0.0 0.0)))
+  (send *ri* :set-auto-balancer-param :default-zmp-offsets (list #f(0 20 0.0) #f(0 -20 0.0) #f(0.0 0.0 0.0) #f(0.0 0.0 0.0)))
   (unix::sleep 1)
   ;; (setq coords-list (auto-set-reaching-targets :pos-shift pos-shift :larm-shift #f(200 -150 0) :rarm-shift #f(200 150 0) :rot-z rot-z))
   ;; (setq rarm-coords (elt coords-list 1))
@@ -2400,13 +2402,13 @@
       
       (send *ri* :move-gripper :rarm 1 :wait t)
       
-      (setq ret (ik-opt (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate #f(-100 0 -240) :world) (send *robot* :larm :end-coords :copy-worldcoords)  :fix-contact? 2  :apply-external-force? t :wait? t   :kin-task-value-thre 0.15 :eom-trans-task-value-thre 0.15 :reset? t))
+      (setq ret (ik-opt (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate #f(-110 0 -240) :world) (send *robot* :larm :end-coords :copy-worldcoords)  :fix-contact? 2  :apply-external-force? t :wait? t   :kin-task-value-thre 0.15 :eom-trans-task-value-thre 0.15 :reset? t))
       (send *robot-env* :dissoc-root-virtual)
       (send *coords* :set-rleg-new-coords (send *robot* :rleg :end-coords :copy-worldcoords))
       (send *coords* :set-lleg-new-coords (send *robot* :lleg :end-coords :copy-worldcoords))
       (send-pose-and-move-on-foot :time 5000 :send? send? :fix-contact? 2 :look-at-object? t :wait? t)
 
-      (setq ret (ik-opt (send (send (send rarm-coords :translate #f(70 50 -180) :world) :copy-worldcoords) :rotate (deg2rad -8) :z :local) (send *robot* :larm :end-coords :copy-worldcoords)  :fix-contact? 2  :apply-external-force? t :wait? t   :kin-task-value-thre 0.15 :eom-trans-task-value-thre 0.15 :reset? t))
+      (setq ret (ik-opt (send (send (send rarm-coords :translate #f(70 50 -220) :world) :copy-worldcoords) :rotate (deg2rad -12) :z :local) (send *robot* :larm :end-coords :copy-worldcoords)  :fix-contact? 2  :apply-external-force? t :wait? t   :kin-task-value-thre 0.15 :eom-trans-task-value-thre 0.15 :reset? t))
       (send *robot-env* :dissoc-root-virtual)
       (send *coords* :set-rleg-new-coords (send *robot* :rleg :end-coords :copy-worldcoords))
       (send *coords* :set-lleg-new-coords (send *robot* :lleg :end-coords :copy-worldcoords))
@@ -2424,13 +2426,13 @@
       
       (send *ri* :move-gripper :larm 1 :wait t)
       
-      (setq ret (ik-opt (send *robot* :rarm :end-coords :copy-worldcoords) (send (send *robot* :larm :end-coords :copy-worldcoords) :translate #f(-100 0 -240) :world)  :fix-contact? 2  :apply-external-force? t :wait? t   :kin-task-value-thre 0.15 :eom-trans-task-value-thre 0.15 :reset? t))
+      (setq ret (ik-opt (send *robot* :rarm :end-coords :copy-worldcoords) (send (send *robot* :larm :end-coords :copy-worldcoords) :translate #f(-110 0 -240) :world)  :fix-contact? 2  :apply-external-force? t :wait? t   :kin-task-value-thre 0.15 :eom-trans-task-value-thre 0.15 :reset? t))
       (send *robot-env* :dissoc-root-virtual)
       (send *coords* :set-rleg-new-coords (send *robot* :rleg :end-coords :copy-worldcoords))
       (send *coords* :set-lleg-new-coords (send *robot* :lleg :end-coords :copy-worldcoords))
       (send-pose-and-move-on-foot :time 5000 :send? send? :fix-contact? 2 :look-at-object? t :wait? t)
 
-      (setq ret (ik-opt (send *robot* :rarm :end-coords :copy-worldcoords) (send (send (send larm-coords :translate #f(70 -10 -180) :world) :copy-worldcoords) :rotate (deg2rad 8) :z :local)  :fix-contact? 2  :apply-external-force? t :wait? t   :kin-task-value-thre 0.15 :eom-trans-task-value-thre 0.15 :reset? t))
+      (setq ret (ik-opt (send *robot* :rarm :end-coords :copy-worldcoords) (send (send (send larm-coords :translate #f(70 -10 -200) :world) :copy-worldcoords) :rotate (deg2rad 12) :z :local)  :fix-contact? 2  :apply-external-force? t :wait? t   :kin-task-value-thre 0.15 :eom-trans-task-value-thre 0.15 :reset? t))
       (send *robot-env* :dissoc-root-virtual)
       (send *coords* :set-rleg-new-coords (send *robot* :rleg :end-coords :copy-worldcoords))
       (send *coords* :set-lleg-new-coords (send *robot* :lleg :end-coords :copy-worldcoords))
