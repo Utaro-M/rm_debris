@@ -814,3 +814,6 @@ send (send (send *ri* :get-auto-balancer-param) :default_zmp_offsets) :data
 
 
 ;;calib memo -28363
+
+;;0119 for thesis
+;;progn (setq pl (car (make_plane))) (setq bxr (make-cube 200 200 250 )) (setq bxl (make-cube 200 200 250 )) (send bxr :set-color #f(0 0 1 0.5)) (send bxl :set-color #f(0 0 1 0.5))  (send bxr :newcoords (make-coords :coords (send *robot* :rarm :end-coords :copy-worldcoords))) (send bxl :newcoords (make-coords :coords (send *robot* :larm :end-coords :copy-worldcoords))) (objects (list *robot* bxr bxl pl))
