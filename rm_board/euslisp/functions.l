@@ -1006,7 +1006,7 @@
   (if (> (elt z-vec 1) 0)
       (setq z-vec-larm (scale -1 z-vec))
     (setq z-vec-larm z-vec))
-(format t "z-vec = ~A~%" z-vec)
+  (format t "z-vec = ~A~%" z-vec)
   ;; (setq pos-rarm (v+ pos (float-vector 0 (- 0 pos-shift) 0)))
   (if (> (elt y-vec 2) 0)
       (setq y-vec-rarm (scale -1 y-vec))
@@ -1014,7 +1014,7 @@
   (if (< (elt z-vec 1) 0)
       (setq z-vec-rarm (scale -1 z-vec))
     (setq z-vec-rarm z-vec))
-(format t "z-vec = ~A~%" z-vec)
+  (format t "z-vec = ~A~%" z-vec)
   (setq rot-larm (transpose
                   (matrix x-vec y-vec-larm z-vec-larm)))
   (setq rot-rarm (transpose
@@ -1034,11 +1034,11 @@
   (format t "lleg-com-dist = ~A~%" lleg-com-dist)
   ;;傾いたエッジ対応
   (setq larm-coords (make-coords :pos (v+ (v- pos lleg-com-dist) (scale (* -1 pos-shift) z-vec-larm)) :rpy (elt (rpy-angle rot-larm)  0)))
-    (setq rarm-coords (make-coords :pos (v+ (v- pos lleg-com-dist) (scale (* -1 pos-shift) z-vec-rarm)) :rpy (elt (rpy-angle rot-rarm)  0)))
+  (setq rarm-coords (make-coords :pos (v+ (v- pos lleg-com-dist) (scale (* -1 pos-shift) z-vec-rarm)) :rpy (elt (rpy-angle rot-rarm)  0)))
   ;; (format t "ram-coords = ~A~%" rarm-coords)
   ;; (setq larm-coords (send larm-coords :translate (float-vector 0 0 (- 0 pos-shift)) :local))
   ;; (setq rarm-coords (send rarm-coords :translate (float-vector 0 0 (+ 0 pos-shift)) :local))
-    (format t "ik larm-coords = ~A~%" larm-coords)
+  (format t "ik larm-coords = ~A~%" larm-coords)
   (format t "ik rarm-coords = ~A~%" rarm-coords)
   ;;少し回転
   (setq larm-coords (send larm-coords :rotate (deg2rad (- 0 rot-z)) :z))
@@ -1049,7 +1049,13 @@
   (setq rarm-coords (send rarm-coords :translate rarm-shift :local))
   (format t "ik larm-coords = ~A~%" larm-coords)
   (format t "ik rarm-coords = ~A~%" rarm-coords)
-  (objects (list (car (make_plane)) coords1 larm-coords rarm-coords))
+
+  (setq larm-coords-draw  (instance arrow-object :init))
+  (send larm-coords-draw :newcoords larm-coords)
+  (setq rarm-coords-draw  (instance arrow-object :init))
+  (send rarm-coords-draw :newcoords rarm-coords)
+  (setq normal-line (make-line (v+ com #f(0 0 0)) (v+ com (scale 300 normal-vec))))
+  (objects (list (car (make_plane)) coords1 larm-coords-draw rarm-coords-draw normal-line))
 
   ;;rviz visualize reaching point 
   (progn
