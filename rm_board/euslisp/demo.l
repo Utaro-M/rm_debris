@@ -586,6 +586,7 @@
 ;;   ;; (send *coords* :set-lleg-new-coords (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(100 0 0)))
 ;;   ;; (send-pose-and-move-on-foot :time 5000 :send? t :fix-contact? nil :look-at-object? t :wait? nil :fix-hand? nil :only-move-foot? t)
 ;;   )
+
 (defun change-arm-demo()
   (start-footguided-modification t)
   (prepare-real-machine)
@@ -595,4 +596,8 @@
   (reach-auto :send? t :pos-shift 290 :adjust? nil :ik1? nil :larm-shift #f(0 -10 0) :rarm-shift #f(0 10 0) :fix-contact? 2 :reaching-offset (list #f(-50 -0 0) #f(-50 0 0)))
   (heave-with-sensor 200 200 1 :first-lift 200)
   (change-arm-auto-without-plane :send? t)
-  (heave-with-sensor 200 200 1 :first-lift 200))
+  (heave-with-sensor 200 200 1 :first-lift 200)
+  (send *ri* :set-auto-balancer-param :default-zmp-offsets (list #f(20 20 0.0) #f(20 -20 0.0) #f(0.0 0.0 0.0) #f(0.0 0.0 0.0)))
+  (unix::sleep 2)
+  (send *ri* :go-velocity 0.1 0 0)
+  )
