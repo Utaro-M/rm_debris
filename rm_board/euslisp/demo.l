@@ -586,3 +586,12 @@
   ;; (send *coords* :set-lleg-new-coords (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(100 0 0)))
   ;; (send-pose-and-move-on-foot :time 5000 :send? t :fix-contact? nil :look-at-object? t :wait? nil :fix-hand? nil :only-move-foot? t)
 )
+
+
+(defun remove-left()
+  (reach-auto :send? t :pos-shift 290 :adjust? nil :ik1? nil :larm-shift #f(0 -10 0) :rarm-shift #f(0 10 0) :fix-contact? 2 :reaching-offset (list #f(-50 -0 0) #f(-50 0 0)))
+  (send *ri* :stop-reference-force-updater :larm)
+  (send *ri* :set-ref-force (float-vector 0 0 (* 9.8 2.5 +1)) 2000 :larm)
+  (send *ri* :wait-interpolation-seq)
+  )
+  

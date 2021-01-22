@@ -446,9 +446,10 @@
         ))
   )
 (setq flag-pcl 0)
+;;thre-list rarm larm
 ;;output flag   0 ::both arms holding , 1 ::larm drop , 2 ::rarm drop , 3 ::both arms drop, 10 ::finish smoothly
 (defun check-force-pcl
-    (&key (checking-time 6) (sleep-time 20000) (working? t) (thre-list (list 10 10)) (fin 3))
+    (&key (checking-time 6) (sleep-time 20000) (working? t) (thre-list (list 10 10)) (fin 3)) 
   (setq initial (send *robot* :angle-vector)
         rarm-f-pre  (low-pass-online "force" "off" :rarm :times 10 :sleep 100 :flag nil)
         larm-f-pre  (low-pass-online "force" "off" :larm :times 10 :sleep 100 :flag nil)
@@ -488,10 +489,10 @@
     (setq larm-f  (low-pass-online "force" "off" :larm :times 10 :sleep 100 :flag nil))
     (setq flag 0)
     ;;絶対値バージョン
-    ;; (setq rarm-f-dif (abs (elt (v- rarm-f rarm-f-pre) 2)))
-    ;; (setq larm-f-dif (abs (elt (v- larm-f larm-f-pre) 2)))
-    (setq rarm-f-dif (abs (norm (v- rarm-f rarm-f-pre))))
-    (setq larm-f-dif (abs (norm (v- larm-f larm-f-pre))))
+    (setq rarm-f-dif (abs (elt (v- rarm-f rarm-f-pre) 2)))
+    (setq larm-f-dif (abs (elt (v- larm-f larm-f-pre) 2)))  ;;0122 commnt in
+    ;; (setq rarm-f-dif (abs (norm (v- rarm-f rarm-f-pre))))
+    ;; (setq larm-f-dif (abs (norm (v- larm-f larm-f-pre)))) ;;0122 comment out
     ;; (setq rarm-f-dif (elt (v- rarm-f rarm-f-pre) 2))
     ;; (setq larm-f-dif (elt (v- larm-f larm-f-pre) 2))
     (setq drop (list nil nil))
@@ -1339,7 +1340,7 @@
           ;; (send *ik-param* :set-rleg-wrench   (v+ (send *ik-param* :get-rleg-wrench-offset) half-wrench))
           ;; (send *ik-param* :set-lleg-wrench   (v+ (send *ik-param* :get-lleg-wrench-offset) half-wrench))
 	  (send *ik-param* :set-rarm-wrench  (make-array 6 :element-type float-vector :initial-contents (scale -1 rarm-force) :initial-element 0))
-          (send *ik-param* :set-larm-wrench  (make-array 6 :element-type float-vector :initial-contents (scale -1 larm-force) :initial-element 0))
+      (send *ik-param* :set-larm-wrench  (make-array 6 :element-type float-vector :initial-contents (scale -1 larm-force) :initial-element 0))
 	  (setq half-wrench (scale 0.5 (v+ (send *ik-param* :get-rarm-wrench) (send *ik-param* :get-larm-wrench))))
 	  (send *ik-param* :set-rleg-wrench   (v+ (send *ik-param* :get-rleg-wrench-offset) (scale -1 half-wrench)))
 	  (send *ik-param* :set-lleg-wrench   (v+ (send *ik-param* :get-lleg-wrench-offset) (scale -1 half-wrench)))
@@ -1380,11 +1381,12 @@
     ;; (send *ri* :angle-vector (send *robot* :angle-vector) 4000)
     (if check? 
         (progn
-	  (setq drop-flag (check-force-pcl :working? t :thre-list (list 8 8)))
+          (setq thre-list (list (* 0.8 (abs (elt (send *ik-param* :get-rarm-wrench) 2))) (* 0.8 (abs (elt (send *ik-param* :get-larm-wrench) 2))))) ;;rarm larm
+          (setq drop-flag (check-force-pcl :working? t :thre-list thre-list))
           (setq pos-shift 230)
-	  (reset-coords)
-	  ;; (if (y-or-n-p "check ?")
-	  ;;     (progn
+          (reset-coords)
+          ;; (if (y-or-n-p "check ?")
+          ;;     (progn
           (cond
            ((or (= drop-flag 1) (= drop-flag 2))
             (progn
