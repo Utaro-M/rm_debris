@@ -64,6 +64,9 @@
            (send self :set-larm-wrench (float-vector 0 0 -80 0 0 0))
            (send self :set-rleg-wrench-offset (float-vector 0 0 530 0 0 0))
            (send self :set-lleg-wrench-offset (float-vector 0 0 530 0 0 0))
+           ;; (send self :set-rleg-wrench-offset (float-vector 0 0 0 0 0 0))
+           ;; (send self :set-lleg-wrench-offset (float-vector 0 0 0 0 0 0))  
+           
            (send self :set-rleg-wrench rleg-wrench-offset)
            (send self :set-lleg-wrench lleg-wrench-offset)
            (send self :set-eom-rot-task-value-thre 0.01)

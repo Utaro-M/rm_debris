@@ -71,17 +71,21 @@
                         :parent (send *robot* :link "LLEG_LINK5")
                         :coords (send (send *robot* :lleg-end-coords) :copy-worldcoords)
                         ))
+  (setq r-co (send (send *robot* :rarm :end-coords :copy-worldcoords) :rotate (deg2rad 90) :x))
   (send *robot* :put :rarm-contact-coords
         (make-cascoords :name :rarm-contact-coords
                         :parent (send *robot* :link "RARM_LINK7")
                         :coords (send (send (send *robot* :link "RARM_LINK7") :copy-worldcoords)
-                                      :translate (scale 1e3 (float-vector -0.0042 -0.0233 -0.2345)))
+                              :translate (scale 1e3 (float-vector -0.0042 -0.0233 -0.2345)))
+                        ;; r-co
                         ))
+  (setq l-co (send (send *robot* :larm :end-coords :copy-worldcoords) :rotate (deg2rad -90) :x))
   (send *robot* :put :larm-contact-coords
         (make-cascoords :name :larm-contact-coords
                         :parent (send *robot* :link "LARM_LINK7")
                         :coords (send (send (send *robot* :link "LARM_LINK7") :copy-worldcoords)
-                                      :translate (scale 1e3 (float-vector -0.0042 0.0233 -0.2345)))
+                              :translate (scale 1e3 (float-vector -0.0042 0.0233 -0.2345)))
+                        ;; l-co
                         ))
   (send *robot* :init-pose)
   (send *robot* :fix-leg-to-coords (make-coords))
