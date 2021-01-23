@@ -72,7 +72,7 @@
     (send *ri* :stop-st)
     (send *ri* :set-st-param :emergency-check-mode 0)
     (send *ri* :start-st)))
-  (send *ri* :set-log-maxlength (* 500 180))
+  (send *ri* :set-log-maxlength (* 500 300))
   (setq movetime 12000)
   (format t "prepare-real-machine~%")
   )
@@ -2439,13 +2439,13 @@
       
       (send *ri* :move-gripper :larm 1 :wait t)
       
-      (setq ret (ik-opt (send *robot* :rarm :end-coords :copy-worldcoords) (send (send *robot* :larm :end-coords :copy-worldcoords) :translate #f(-110 0 -240) :world)  :fix-contact? 2  :apply-external-force? t :wait? t   :kin-task-value-thre 0.15 :eom-trans-task-value-thre 0.15 :reset? t))
+      (setq ret (ik-opt (send *robot* :rarm :end-coords :copy-worldcoords) (send (send *robot* :larm :end-coords :copy-worldcoords) :translate #f(-120 0 -240) :world)  :fix-contact? 2  :apply-external-force? t :wait? t   :kin-task-value-thre 0.15 :eom-trans-task-value-thre 0.15 :reset? t))
       (send *robot-env* :dissoc-root-virtual)
       (send *coords* :set-rleg-new-coords (send *robot* :rleg :end-coords :copy-worldcoords))
       (send *coords* :set-lleg-new-coords (send *robot* :lleg :end-coords :copy-worldcoords))
       (send-pose-and-move-on-foot :time 5000 :send? send? :fix-contact? 2 :look-at-object? t :wait? t)
 
-      (setq ret (ik-opt (send *robot* :rarm :end-coords :copy-worldcoords) (send (send (send larm-coords :translate #f(70 -10 -200) :world) :copy-worldcoords) :rotate (deg2rad 12) :z :local)  :fix-contact? 2  :apply-external-force? t :wait? t   :kin-task-value-thre 0.15 :eom-trans-task-value-thre 0.15 :reset? t))
+      (setq ret (ik-opt (send *robot* :rarm :end-coords :copy-worldcoords) (send (send (send larm-coords :translate #f(70 -30 -200) :world) :copy-worldcoords) :rotate (deg2rad 12) :z :local)  :fix-contact? 2  :apply-external-force? t :wait? t   :kin-task-value-thre 0.15 :eom-trans-task-value-thre 0.15 :reset? t))
       (send *robot-env* :dissoc-root-virtual)
       (send *coords* :set-rleg-new-coords (send *robot* :rleg :end-coords :copy-worldcoords))
       (send *coords* :set-lleg-new-coords (send *robot* :lleg :end-coords :copy-worldcoords))
