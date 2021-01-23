@@ -1030,8 +1030,8 @@
   ;; (setq rarm-coords (make-coords :pos pos-rarm :rpy (elt (rpy-angle rot-rarm)  0)))
   (format t "pos-shift = ~A~%" pos-shift)
 ;;lleg com dist 引くのは間違っている？
-(setq lleg-com-dist (v- (send *robot* :lleg :end-coords :worldpos) (midpoint 0.5 (send *robot* :lleg :end-coords :worldpos) (send *robot* :rleg :end-coords :worldpos))))
-  ;; (setq lleg-com-dist #f(0 0 0))
+;; (setq lleg-com-dist (v- (send *robot* :lleg :end-coords :worldpos) (midpoint 0.5 (send *robot* :lleg :end-coords :worldpos) (send *robot* :rleg :end-coords :worldpos))))
+  (setq lleg-com-dist #f(0 0 0))
   (format t "lleg-com-dist = ~A~%" lleg-com-dist)
   ;;傾いたエッジ対応
   (setq larm-coords (make-coords :pos (v+ (v- pos lleg-com-dist) (scale (* -1 pos-shift) z-vec-larm)) :rpy (elt (rpy-angle rot-larm)  0)))
@@ -1045,7 +1045,8 @@
   (setq larm-coords (send larm-coords :rotate (deg2rad (- 0 rot-z)) :z))
   (setq rarm-coords (send rarm-coords :rotate (deg2rad rot-z) :z))
   (format t "ik larm-coords = ~A~%" larm-coords)
-  (format t "ik rarm-coords = ~A~%" rarm-coords)  
+  (format t "ik rarm-coords = ~A~%" rarm-coords)
+    (format t "ik rarm-shift = ~A~%" rarm-shift)  
   (setq larm-coords (send larm-coords :translate larm-shift :local))
   (setq rarm-coords (send rarm-coords :translate rarm-shift :local))
   (format t "ik larm-coords = ~A~%" larm-coords)
@@ -1198,6 +1199,17 @@
   (setq r-act-coords-save (send *robot* :rarm :end-coords :copy-worldcoords))
   (format t "l-act-coords-save init =~A~%" l-act-coords-save)
   (format t "r-act-coords-save init =~A~%" r-act-coords-save)
+
+  ;;平面が見つからない時
+  (setq neck-angle     (send *robot* :head-neck-p :joint-angle))
+  (while (not (make_plane))
+    (setq neck-angle (+ neck-angle 5))
+    (format t "look down angle = ~A~%" neck-angle)
+    (send *robot* :head-neck-p :joint-angle neck-angle)
+    (send *ri* :angle-vector (send *robot* :angle-vector) 2000)
+    (send *ri* :wait-interpolation)
+    )
+  (format t "find neck angle = ~A~%" neck-angle)
   ;; (send *ri* :start-log)
   ;; (setq lis (list #f(0.30177 0.00669 0.953357)  #f(0.353907 0.000234 0.93528) #f(0.302493 0.003507 0.953145)))
   (dotimes (i times)
@@ -1205,10 +1217,12 @@
     (if (= i 0)
         (progn
           (if (< (abs larm-move-offset) (abs (elt first-lift 0)))
-              (setq l-unit (* larm-move-offset (/ larm-move-offset (abs larm-move-offset))))
+              ;; (setq l-unit (* larm-move-offset (/ larm-move-offset (abs larm-move-offset))))
+	      (setq l-unit larm-move-offset ))
             (setq l-unit (* (elt first-lift 0) (/ larm-move-offset (abs larm-move-offset)))))
           (if (< (abs rarm-move-offset) (abs (elt first-lift 1)))
-              (setq r-unit (* rarm-move-offset (/ rarm-move-offset (abs rarm-move-offset))))
+              ;; (setq r-unit (* rarm-move-offset (/ rarm-move-offset (abs rarm-move-offset))))
+	      (setq r-unit rarm-move-offset))
             (setq r-unit (* (elt first-lift 1) (/ rarm-move-offset (abs rarm-move-offset)))))
           )
       (progn
@@ -1483,7 +1497,8 @@
             (reaching-offset (list #f(-100 -0 0) #f(-100 0 0)))  ;;right left
             (arm "larm")
             (rot-z 20)
-            (shift-stick #f(0 0 -200 )))
+            (shift-stick #f(0 0 -200 ))
+	    (move-left? nil))
 
   (reset-coords)
   (if (equal target "board")
@@ -1511,6 +1526,8 @@
 	    (print "both arms")
             (setq shift-standing-pos 0)
             (setq arm "both")))
+	(if move-left?
+	    (setq shift-standing-pos 150))
         )
     ;;stick
     (progn

@@ -617,14 +617,17 @@
 
 
 (defun remove-left()
+  (start-footguided-modification t)
+  (prepare-real-machine)
   (send *ri* :move-gripper :arms 1.0 :wait t)
-  (reach-auto :send? t :pos-shift 290 :adjust? nil :ik1? nil :larm-shift #f(100 120 0) :rarm-shift #f(100 120 0) :fix-contact? 2 :reaching-offset (list #f(-50 -0 0) #f(-50 0 0)))
+  (reach-auto :send? t :pos-shift 290 :adjust? nil :ik1? nil :larm-shift #f(100 120 0) :rarm-shift #f(160 170 0) :fix-contact? 2 :reaching-offset (list #f(-50 -0 0) #f(-50 0 0)) :move-left? t)
+  ;; (reach-auto :send? t :pos-shift 290 :adjust? nil :ik1? t :larm-shift #f(100 120 0) :rarm-shift #f(100 120 0) :fix-contact? nil :reaching-offset (list #f(-50 -0 0) #f(-50 0 0)))
   (send *ri* :stop-reference-force-updater :larm)
-  (send *ri* :set-ref-force (float-vector 0 0 (* 9.8 2.5 +1)) 2000 :larm)
+  (send *ri* :set-ref-force (float-vector 0 0 (* 9.8 4.0 +1)) 2000 :larm)
   (send *ri* :wait-interpolation-seq)
-  (heave-with-sensor 10 200 2 :first-lift (list 10 100) :apply-external-force? t)
-
-  (send *ri* :start-reference-force-updater :larm)
+  (heave-with-sensor 10 500 2 :first-lift (list 10 200) :apply-external-force? t)
+  ;; (heave-with-sensor 10 200 2 :first-lift (list 10 100) :apply-external-force? t)
+  ;; (send *ri* :start-reference-force-updater :larm)
   ;; (send *ri* :set-ref-force (float-vector 0 0 (* 9.8 2.5 +1)) 2000 :larm)
   ;; (heave-with-sensor 10 200 1 :first-lift (list 10 200) :adj)
   )
