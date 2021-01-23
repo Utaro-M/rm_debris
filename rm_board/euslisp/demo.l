@@ -593,7 +593,7 @@
   (format t "step time  = ~A~%" (send (send *ri* :get-gait-generator-param ) :default_step_time))
   (format t "zmp offset = ~A~%"  (send (send (send *ri* :get-auto-balancer-param) :default_zmp_offsets) :data))
   (reach-auto :send? t :pos-shift 290 :adjust? nil :ik1? nil :larm-shift #f(0 -10 0) :rarm-shift #f(0 10 0) :fix-contact? 2 :reaching-offset (list #f(-50 -0 0) #f(-50 0 0)))
-  (heave-with-sensor 200 200 1 :first-lift 200)
+  (heave-with-sensor 200 200 1 :first-lift (list 200 200))
   (change-arm-auto-without-plane :send? t)
 
   ;; (send *ri* :set-auto-balancer-param :default-zmp-offsets (list #f(30 20 0.0) #f(30 -20 0.0) #f(0.0 0.0 0.0) #f(0.0 0.0 0.0)))
@@ -604,14 +604,20 @@
   ;; (send *coords* :set-rleg-new-coords (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate #f(100 0 0)))
   ;; (send *coords* :set-lleg-new-coords (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(100 0 0)))
   ;; (send-pose-and-move-on-foot :time 5000 :send? t :fix-contact? nil :look-at-object? t :wait? nil :fix-hand? nil :only-move-foot? t)
-  (heave-with-sensor 200 200 1 :first-lift 200))  
+  (heave-with-sensor 200 200 1 :first-lift 200))
 
 
 
 (defun remove-left()
-  (reach-auto :send? t :pos-shift 290 :adjust? nil :ik1? nil :larm-shift #f(0 -10 0) :rarm-shift #f(0 10 0) :fix-contact? 2 :reaching-offset (list #f(-50 -0 0) #f(-50 0 0)))
+  (send *ri* :move-gripper :arms 1.0 :wait t)
+  (reach-auto :send? t :pos-shift 290 :adjust? nil :ik1? nil :larm-shift #f(100 120 0) :rarm-shift #f(100 120 0) :fix-contact? 2 :reaching-offset (list #f(-50 -0 0) #f(-50 0 0)))
   (send *ri* :stop-reference-force-updater :larm)
   (send *ri* :set-ref-force (float-vector 0 0 (* 9.8 2.5 +1)) 2000 :larm)
   (send *ri* :wait-interpolation-seq)
+  (heave-with-sensor 10 200 2 :first-lift (list 10 100) :apply-external-force? t)
+
+  (send *ri* :start-reference-force-updater :larm)
+  ;; (send *ri* :set-ref-force (float-vector 0 0 (* 9.8 2.5 +1)) 2000 :larm)
+  ;; (heave-with-sensor 10 200 1 :first-lift (list 10 200) :adj)
   )
   

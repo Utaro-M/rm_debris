@@ -307,7 +307,7 @@
     )
   ;;04 make picture for thesis
    (progn (setq bxr (make-cube 200 200 250 )) (setq bxl (make-cube 200 200 250 )) (send bxr :set-color #f(0 0 1 0.5)) (send bxl :set-color #f(0 0 1 0.5))  (send bxr :newcoords (make-coords :coords (send *robot* :rarm :end-coords :copy-worldcoords))) (send bxl :newcoords (make-coords :coords (send *robot* :larm :end-coords :copy-worldcoords))) )
-  (objects (append (list *robot* *rarm-coords* *larm-coords*  bxr bxl;; (send *ik-param* :get-object) 
+  (objects (append (list *robot* *rarm-coords* *larm-coords*  ;;bxr bxl;; (send *ik-param* :get-object) 
                          ) *env-list*  (if avoid-collision? (list *obst*))
                    ))
 

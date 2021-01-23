@@ -5,7 +5,7 @@
 (ros::roseus "get_stick_pose")
 
 (setq stick-coords nil)
-(defun get-stick-pose()
+(defun get-stick-pose( &key (shift #f(0 0 0)) (rot-z 240))
   (setq stick-boxes (one-shot-subscribe "/stick_pose/euclidean_clustering_decomposer/boxes" jsk_recognition_msgs::BoundingBoxArray :timeout 5000))
   (format t "stick_boxes = ~A~%" stick-boxes)
   (setq stick-coords nil)
@@ -26,17 +26,21 @@
         (setq *stick-coords* (instance arrow-object :init))
         (setq *stick-coords-rotated* (instance arrow-object :init))
         (send *stick-coords* :newcoords (make-coords :pos (elt stick-pos-list idx) :rot (quaternion2matrix (elt stick-ori-list idx))))
-        (setq stick-coords-rotated (send (send (send *stick-coords* :copy-worldcoords) :rotate (deg2rad 90) :y :local) :rotate (deg2rad 260) :z :local))
+        (setq stick-coords-rotated (send (send (send *stick-coords* :copy-worldcoords) :rotate (deg2rad 90) :y :local) :rotate (deg2rad rot-z) :z :local))
         (format t "stick-coords-rotated = ~A~%" stick-coords-rotated)
 
-        (send *stick-coords-rotated* :newcoords (send (send stick-coords-rotated :translate #f(-40 20 200) :local) :translate #f(-60 0 0) :world))
+        (send *stick-coords-rotated* :newcoords (send (send stick-coords-rotated :translate (v+ #f(-40 20 200) shift) :local) :translate #f(-60 0 0) :world))
+        ;;左足の位置分補正？
+        (setq lleg-com-dist (v- (send *robot* :lleg :end-coords :worldpos) (midpoint 0.5 (send *robot* :lleg :end-coords :worldpos) (send *robot* :rleg :end-coords :worldpos))))
+        (setq *stick-coords* (send *stick-coords* :translate (scale -1 lleg-com-dist) :world))
+        (setq *stick-coords-rotated* (send *stick-coords-rotated* :translate (scale -1 lleg-com-dist) :world))
+        
         (format t "stick_coords = ~A~%" *stick-coords*)
         (setq origin-coords (make-coords))
         (objects (list *stick-coords* *stick-coords-rotated* origin-coords))
-        (setq stick_coords (send *stick-coords-rotated* :copy-worldcoords)))
+        (setq stick_coords (send *stick-coords-rotated* :copy-worldcoords))))
     stick_coords
   )
-  
 
 ;; (send *irtviewer* :draw-objects)
 ;; (x::window-main-one)
