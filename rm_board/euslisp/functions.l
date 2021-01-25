@@ -46,10 +46,10 @@
     (send *ri* :set-st-param :emergency-check-mode 0)
     (send *ri* :start-st))
 
-  (setq wei 0)
-  (mapcar #'(lambda (vertice) (setq wei (+ wei (send  vertice :weight)))) (send *robot* :links))
-  (send *ik-param* :set-rleg-wrench-offset (float-vector 0 0 (* 0.01 (/ wei 2)) 0 0 0))
-  (send *ik-param* :set-lleg-wrench-offset (float-vector 0 0 (* 0.01 (/ wei 2)) 0 0 0))
+  ;; (setq wei 0)
+  ;; (mapcar #'(lambda (vertice) (setq wei (+ wei (send  vertice :weight)))) (send *robot* :links))
+  ;; (send *ik-param* :set-rleg-wrench-offset (float-vector 0 0 (* 0.01 (/ wei 2)) 0 0 0))
+  ;; (send *ik-param* :set-lleg-wrench-offset (float-vector 0 0 (* 0.01 (/ wei 2)) 0 0 0))
   (format t "prepare-simulator~%")
   )
 
@@ -78,10 +78,10 @@
     (send *ri* :start-st)))
   (send *ri* :set-log-maxlength (* 500 300))
   (setq movetime 12000)
-  (setq wei 0)
-  (mapcar #'(lambda (vertice) (setq wei (+ wei (send  vertice :weight)))) (send *robot* :links))
-  (send *ik-param* :set-rleg-wrench-offset (float-vector 0 0 (* 0.01 (/ wei 2)) 0 0 0))
-  (send *ik-param* :set-lleg-wrench-offset (float-vector 0 0 (* 0.01 (/ wei 2)) 0 0 0))
+  ;; (setq wei 0)
+  ;; (mapcar #'(lambda (vertice) (setq wei (+ wei (send  vertice :weight)))) (send *robot* :links))
+  ;; (send *ik-param* :set-rleg-wrench-offset (float-vector 0 0 (* 0.01 (/ wei 2)) 0 0 0))
+  ;; (send *ik-param* :set-lleg-wrench-offset (float-vector 0 0 (* 0.01 (/ wei 2)) 0 0 0))
   (format t "prepare-real-machine~%")
   )
 
@@ -746,7 +746,11 @@
   ;; (send *robot* :fix-leg-to-coords (make-coords))
   (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
   (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
-  
+
+  (if flag-simulator
+      (send *robot* :head-neck-p :joint-angle 40)
+    (send *robot* :head-neck-p :joint-angle 10)
+    )
   (if only-upper?
       (progn
         (setq reset-pose-upper #f(0.0 0.0 0.0 0.0 30.0 0.0 55.0 -20.0 -15.0 -100.0 -25.0 0.0 -45.0 0.0 55.0 20.0 15.0 -100.0 25.0 0.0 -45.0))
@@ -759,11 +763,10 @@
 	  (progn
 	    (print "tilt torso")
 	    (send *robot* :torso-waist-p :joint-angle 10)
-	    (send *robot* :head-neck-p :joint-angle 5)))
+	    ;; (send *robot* :head-neck-p :joint-angle 5)
+	    (send *robot* :head-neck-p :joint-angle 20)
+	    ))
       (start-coords)))
-  (if flag-simulator
-      (send *robot* :head-neck-p :joint-angle 40)
-    (send *robot* :head-neck-p :joint-angle 10))
   (if send?
       (progn
 	(send-pose movetime :force-move flag-simulator :look-at-object? nil)
@@ -990,9 +993,10 @@
 (ros::advertise "/larm_target" geometry_msgs::PointStamped 1)
 (ros::advertise "/rarm_target" geometry_msgs::PointStamped 1)
 (defun auto-set-reaching-targets
-    (&key (pos-shift 300) (larm-shift #f(-30 0 0)) (rarm-shift #f(-30 0 0)) (rot-z 20) (center-pos #f(0 0 0)) (axis 0) (edge-axis 1))
+    (&key (pos-shift 300) (larm-shift #f(-30 0 0)) (rarm-shift #f(-30 0 0)) (rot-z 20) (rot-x 0) (center-pos #f(0 0 0)) (axis 0) (edge-axis 1))
   ;; (setq ret (get-target-pose)) ;;0124 coment
   (setq ret (get-target-pose :axis axis :edge-axis edge-axis)) ;;
+
   (setq x-vec (elt ret 0))
   (setq y-vec (elt ret 1))
   (setq z-vec (elt ret 2))
@@ -1044,6 +1048,10 @@
   ;;少し回転
   (setq larm-coords (send larm-coords :rotate (deg2rad (- 0 rot-z)) :z))
   (setq rarm-coords (send rarm-coords :rotate (deg2rad rot-z) :z))
+  ;;for remove left 
+  (setq larm-coords (send larm-coords :rotate (deg2rad (- 0 rot-x)) :x))
+  (setq rarm-coords (send rarm-coords :rotate (deg2rad rot-x) :x))
+  
   (format t "ik larm-coords = ~A~%" larm-coords)
   (format t "ik rarm-coords = ~A~%" rarm-coords)
     (format t "ik rarm-shift = ~A~%" rarm-shift)  
@@ -1188,6 +1196,8 @@
      (fix-hand? nil)
      (rot-z 0)
      (first-lift (list 100 100))
+     (l-omega #f(0 1 0))
+     (r-omega #f(0 1 0))
      )
   (reset-coords)
   (setq normal-vec-diff #f(0 0 0))
@@ -1242,8 +1252,8 @@
     ;;new version 0107
     (setq l-move-dir  (normalize-vector (v+ normal-vec #f(0.1 0 0))))
     (setq r-move-dir  (normalize-vector (v+ normal-vec #f(0.1 0 0))))
-    (setq l-theta-next (deg2rad 4))
-    (setq r-theta-next (deg2rad 4))
+    (setq l-theta-next (deg2rad 10))
+    (setq r-theta-next (deg2rad 10))
 
     (setq l-pos-diff normal-vec)
     (setq r-pos-diff normal-vec)
@@ -1281,8 +1291,13 @@
     ;; (setq r-theta-next 0.0)
     ;; (setq larm-coords (make-coords :pos (v+ (send *robot* :larm :end-coords :worldpos) (scale l-unit l-move-dir)) :rot (rotate-matrix (send (elt coords-list 0) :rot) (* -2.0 l-theta-next) :z  nil)))
     ;; (setq rarm-coords (make-coords :pos (v+ (send *robot* :rarm :end-coords :worldpos) (scale r-unit r-move-dir)) :rot (rotate-matrix (send (elt coords-list 1) :rot) (*  2.0 r-theta-next) :z  nil)))
-    (setq larm-coords (make-coords :pos (v+ (send *robot* :larm :end-coords :worldpos) (scale l-unit l-move-dir)) :rot (rotate-matrix (send *robot* :larm :end-coords :worldrot) (* -0.5 l-theta-next) :z  nil)))
-    (setq rarm-coords (make-coords :pos (v+ (send *robot* :rarm :end-coords :worldpos) (scale r-unit r-move-dir)) :rot (rotate-matrix (send *robot* :rarm :end-coords :worldrot) (*  0.5 r-theta-next) :z  nil)))
+
+    ;;0123 modify
+    ;; (setq larm-coords (make-coords :pos (v+ (send *robot* :larm :end-coords :worldpos) (scale l-unit l-move-dir)) :rot (rotate-matrix (send *robot* :larm :end-coords :worldrot) (* -0.5 l-theta-next) :z  nil)))
+    ;; (setq rarm-coords (make-coords :pos (v+ (send *robot* :rarm :end-coords :worldpos) (scale r-unit r-move-dir)) :rot (rotate-matrix (send *robot* :rarm :end-coords :worldrot) (*  0.5 r-theta-next) :z  nil)))
+
+    (setq larm-coords (make-coords :pos (v+ (send *robot* :larm :end-coords :worldpos) (scale l-unit l-move-dir)) :rot (m* (send *robot* :larm :end-coords :worldrot) (rotation-matrix (*  0.5 l-theta-next) l-omega ))))
+    (setq rarm-coords (make-coords :pos (v+ (send *robot* :rarm :end-coords :worldpos) (scale r-unit r-move-dir)) :rot (m* (send *robot* :rarm :end-coords :worldrot) (rotation-matrix (*  0.5 r-theta-next) r-omega ))))
 
     ;; (setq larm-coords (send (send *robot* :larm :end-coords :copy-worldcoords) :translate (scale l-unit l-move-dir) :world)) ;; :rot (rotate-matrix (send *robot* :larm :end-coords :worldrot) (* -2.0 l-theta-next) :z  nil)))
     ;; (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate  (scale r-unit r-move-dir) :world)) ;; :rot (rotate-matrix (send *robot* :rarm :end-coords :worldrot) (*  2.0 r-theta-next) :z  nil)))
@@ -1325,8 +1340,10 @@
           ))
           ;; (send *ik-param* :set-rarm-wrench  (make-array 6 :element-type float-vector :initial-contents (scale -1 rarm-force) :initial-element 0))
     ;; (send *ik-param* :set-larm-wrench  (make-array 6 :element-type float-vector :initial-contents (scale -1 larm-force) :initial-element 0))
-          (send *ik-param* :set-rarm-wrench  (make-array 6 :element-type float-vector :initial-contents (scale +1 rarm-force) :initial-element 0))
-          (send *ik-param* :set-larm-wrench  (make-array 6 :element-type float-vector :initial-contents (scale +1 larm-force) :initial-element 0))    
+    (setq rarm-force #f(0 0 -40))
+    (setq larm-force #f(0 0 -40))
+    (send *ik-param* :set-rarm-wrench  (make-array 6 :element-type float-vector :initial-contents (scale +1 rarm-force) :initial-element 0))
+    (send *ik-param* :set-larm-wrench  (make-array 6 :element-type float-vector :initial-contents (scale +1 larm-force) :initial-element 0))    
           ;; ))
     (send *coords* :set-rarm-target-coords rarm-coords)
     (send *coords* :set-larm-target-coords larm-coords)
@@ -1346,7 +1363,7 @@
 
     ;; (send *ik-param* :set-rleg-wrench #f(0 0 0 0 0 0))
     ;; (send *ik-param* :set-lleg-wrench #f(0 0 0 0 0 0))
-    (setq ret (ik-opt rarm-coords larm-coords  :fix-contact? fix-contact?  :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift  :kin-task-value-thre 0.15 :eom-trans-task-value-thre 11 :heave? heave?))
+    (setq ret (ik-opt rarm-coords larm-coords  :fix-contact? fix-contact?  :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift  :kin-task-value-thre 0.15 :eom-trans-task-value-thre 30 :heave? heave?))
     (send *robot-env* :dissoc-root-virtual)
     ;;とき直し
     (if (equal ret nil)
@@ -1360,14 +1377,14 @@
           ;; (setq half-wrench (scale 0.5 (v+ (send *ik-param* :get-rarm-wrench) (send *ik-param* :get-larm-wrench))))
           ;; (send *ik-param* :set-rleg-wrench   (v+ (send *ik-param* :get-rleg-wrench-offset) half-wrench))
           ;; (send *ik-param* :set-lleg-wrench   (v+ (send *ik-param* :get-lleg-wrench-offset) half-wrench))
-	  (send *ik-param* :set-rarm-wrench  (make-array 6 :element-type float-vector :initial-contents (scale -1 rarm-force) :initial-element 0))
-      (send *ik-param* :set-larm-wrench  (make-array 6 :element-type float-vector :initial-contents (scale -1 larm-force) :initial-element 0))
+	  (send *ik-param* :set-rarm-wrench  (make-array 6 :element-type float-vector :initial-contents (scale 1 rarm-force) :initial-element 0))
+      (send *ik-param* :set-larm-wrench  (make-array 6 :element-type float-vector :initial-contents (scale 1 larm-force) :initial-element 0))
 	  (setq half-wrench (scale 0.5 (v+ (send *ik-param* :get-rarm-wrench) (send *ik-param* :get-larm-wrench))))
 	  (send *ik-param* :set-rleg-wrench   (v+ (send *ik-param* :get-rleg-wrench-offset) (scale -1 half-wrench)))
 	  (send *ik-param* :set-lleg-wrench   (v+ (send *ik-param* :get-lleg-wrench-offset) (scale -1 half-wrench)))
 
           ;; (setq ret (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision?  :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :arm (if (equal target "board") arm "rarm")  :kin-task-value-thre 0.15 :eom-trans-task-value-thre 0.15))
-	  (setq ret (ik-opt rarm-coords larm-coords  :fix-contact? fix-contact?  :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift  :kin-task-value-thre 0.15 :eom-trans-task-value-thre 11 :heave? heave?))
+	  (setq ret (ik-opt rarm-coords larm-coords  :fix-contact? fix-contact?  :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift  :kin-task-value-thre 0.15 :eom-trans-task-value-thre 30 :heave? heave?))
           (send *robot-env* :dissoc-root-virtual)))
     ;; (send *robot* :head-neck-p :joint-angle -40)
     (format t "ret ik = ~A~%" ret)
@@ -1493,18 +1510,19 @@
 (defun reach-auto
     (&key  (fix-contact? nil) (send? t) (target "board") (pos-shift 280) (one-hand? nil) (adjust? t) (ik1? t) (ik2? t) (ik3? nil) (only-move-foot? t) (larm-shift #f(0 -30 0)) (rarm-shift #f(0 40 0))
            (kin-task-value-thre 0.01) (eom-rot-task-value-thre 0.01) (eom-rot-trans-value-thre 0.01)
-           (larm-force #f(0 0 -40))
-           (rarm-force #f(0 0 -40))
-           (wait? t) (reset? t) (apply-external-force? t) (avoid-collision? t)
-           (rleg-pos-shift #f(90 -30 0))
-           (lleg-pos-shift #f(90 30 0))
-           (look-at-object? t)
-           (fix-hand? nil)
-           (reaching-offset (list #f(-100 -0 0) #f(-100 0 0)))  ;;right left
-           (arm "larm")
-           (rot-z 20)
-           (shift-stick #f(0 0 -200 ))
-           (move-left? nil))
+            (larm-force #f(0 0 -40))
+            (rarm-force #f(0 0 -40))
+            (wait? t) (reset? t) (apply-external-force? t) (avoid-collision? t)
+            (rleg-pos-shift #f(90 -30 0))
+            (lleg-pos-shift #f(90 30 0))
+            (look-at-object? t)
+            (fix-hand? nil)
+            (reaching-offset (list #f(-100 -0 0) #f(-100 0 0)))  ;;right left
+            (arm "larm")
+            (rot-z 20)
+            (rot-x 0)
+            (shift-stick #f(0 0 -200 ))
+	    (move-left? nil))
 
   (reset-coords)
   (if (equal target "board")
@@ -1677,7 +1695,7 @@
           (progn
             (setq stick-coords (get-stick-pose :shift shift-stick))
             (setq coords-list (list stick-coords stick-coords))))
-        
+ 
         ;;平面が見つからない時
         ;; (setq neck-angle (send *robot* :head-neck-p :joint-angle))
         ;; (while (and (not coords-list) (< -40 neck-angle ))

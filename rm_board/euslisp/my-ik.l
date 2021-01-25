@@ -108,6 +108,7 @@
   ;; (send (send *robot* :joint "LLEG_JOINT2") :min-angle -70)
   ;; (send (send *robot* :joint "HEAD_JOINT1") :max-angle 18)
 
+  (send (send *robot* :joint "HEAD_JOINT0") :max-angle 34)
   (send (send *robot* :joint "CHEST_JOINT0") :min-angle -0.5)
   (send (send *robot* :joint "CHEST_JOINT0") :max-angle 0.5)
   
@@ -311,9 +312,11 @@
     )
   ;;04 make picture for thesis
    (progn (setq bxr (make-cube 200 200 250 )) (setq bxl (make-cube 200 200 250 )) (send bxr :set-color #f(0 0 1 0.5)) (send bxl :set-color #f(0 0 1 0.5))  (send bxr :newcoords (make-coords :coords (send *robot* :rarm :end-coords :copy-worldcoords))) (send bxl :newcoords (make-coords :coords (send *robot* :larm :end-coords :copy-worldcoords))) )
-  (objects (append (list *robot* *rarm-coords* *larm-coords*  ;;bxr bxl;; (send *ik-param* :get-object) 
-                         ) *env-list*  (if avoid-collision? (list *obst*))
-                   ))
+  ;; (objects (append (list *robot* *rarm-coords* *larm-coords*  ;;bxr bxl;; (send *ik-param* :get-object) 
+  ;;                        ) *env-list*  (if avoid-collision? (list *obst*))
+  ;; 			   ))
+  (objects (append (list *robot* *rarm-coords* *larm-coords*  (if avoid-collision? *obst*)) *env-list*)
+                   )
 
   (setq *instant-config-task*
         (instance instant-configuration-task :init
