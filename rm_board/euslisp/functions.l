@@ -746,7 +746,11 @@
   ;; (send *robot* :fix-leg-to-coords (make-coords))
   (setq rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
   (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
-  
+
+  (if flag-simulator
+      (send *robot* :head-neck-p :joint-angle 40)
+    (send *robot* :head-neck-p :joint-angle 10)
+    )
   (if only-upper?
       (progn
         (setq reset-pose-upper #f(0.0 0.0 0.0 0.0 30.0 0.0 55.0 -20.0 -15.0 -100.0 -25.0 0.0 -45.0 0.0 55.0 20.0 15.0 -100.0 25.0 0.0 -45.0))
@@ -759,11 +763,10 @@
 	  (progn
 	    (print "tilt torso")
 	    (send *robot* :torso-waist-p :joint-angle 10)
-	    (send *robot* :head-neck-p :joint-angle 5)))
+	    ;; (send *robot* :head-neck-p :joint-angle 5)
+	    (send *robot* :head-neck-p :joint-angle 20)
+	    ))
       (start-coords)))
-  (if flag-simulator
-      (send *robot* :head-neck-p :joint-angle 40)
-    (send *robot* :head-neck-p :joint-angle 10))
   (if send?
       (progn
 	(send-pose movetime :force-move flag-simulator :look-at-object? nil)
@@ -990,7 +993,7 @@
 (ros::advertise "/larm_target" geometry_msgs::PointStamped 1)
 (ros::advertise "/rarm_target" geometry_msgs::PointStamped 1)
 (defun auto-set-reaching-targets
-    (&key (pos-shift 300) (larm-shift #f(-30 0 0)) (rarm-shift #f(-30 0 0)) (rot-z 20) (center-pos #f(0 0 0)))
+    (&key (pos-shift 300) (larm-shift #f(-30 0 0)) (rarm-shift #f(-30 0 0)) (rot-z 20) (rot-x 0) (center-pos #f(0 0 0)) )
 
   ;; (setq cu (make_plane))
   ;; (if (not cu)
@@ -1052,6 +1055,10 @@
   ;;少し回転
   (setq larm-coords (send larm-coords :rotate (deg2rad (- 0 rot-z)) :z))
   (setq rarm-coords (send rarm-coords :rotate (deg2rad rot-z) :z))
+  ;;for remove left 
+  (setq larm-coords (send larm-coords :rotate (deg2rad (- 0 rot-x)) :x))
+  (setq rarm-coords (send rarm-coords :rotate (deg2rad rot-x) :x))
+  
   (format t "ik larm-coords = ~A~%" larm-coords)
   (format t "ik rarm-coords = ~A~%" rarm-coords)
     (format t "ik rarm-shift = ~A~%" rarm-shift)  
@@ -1520,6 +1527,7 @@
             (reaching-offset (list #f(-100 -0 0) #f(-100 0 0)))  ;;right left
             (arm "larm")
             (rot-z 20)
+	    (rot-x 0)
             (shift-stick #f(0 0 -200 ))
 	    (move-left? nil))
 
@@ -1678,7 +1686,7 @@
         (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
         (setq waist-pos (send (car (send *robot* :links)) :worldpos))
         (if (equal target "board")
-            (setq coords-list (auto-set-reaching-targets :pos-shift pos-shift :larm-shift larm-shift  :rarm-shift rarm-shift :rot-z rot-z :center-pos (if ik1? center-pos-from-auto-set-reaching-targets waist-pos)
+            (setq coords-list (auto-set-reaching-targets :pos-shift pos-shift :larm-shift larm-shift  :rarm-shift rarm-shift :rot-z rot-z :rot-x rot-x :center-pos (if ik1? center-pos-from-auto-set-reaching-targets waist-pos)
                                                      ))
             (progn
               (setq stick-coords (get-stick-pose :shift shift-stick))
