@@ -129,10 +129,14 @@
   
   ;; (send (send *robot* :joint "RLEG_JOINT3") :min-angle 64)
   ;; (send (send *robot* :joint "LLEG_JOINT3") :min-angle 64)
-  (send (send *robot* :joint "RLEG_JOINT3") :min-angle 70)
-  (send (send *robot* :joint "LLEG_JOINT3") :min-angle 70)
+  ;; (send (send *robot* :joint "RLEG_JOINT3") :min-angle 70)
+  ;; (send (send *robot* :joint "LLEG_JOINT3") :min-angle 70)
+
+  ;;for move-left one hand
+  (send (send *robot* :joint "RLEG_JOINT3") :min-angle 90)
+  (send (send *robot* :joint "LLEG_JOINT3") :min-angle 90)
   
-  
+
   (send (send *robot* :joint "RARM_JOINT0") :min-angle 0)
   (send (send *robot* :joint "RARM_JOINT0") :max-angle 40)
   (send (send *robot* :joint "LARM_JOINT0") :min-angle -40)
@@ -175,7 +179,7 @@
   (send (send *robot* :joint "RARM_JOINT5") :max-angle 70)
 
   (send (send *robot* :joint "RARM_JOINT7") :min-angle -60)
-  (send (send *robot* :joint "LARM_JOINT7") :min-angle -60)
+  ;; (send (send *robot* :joint "LARM_JOINT7") :min-angle -60)
   )
 
 ;;reachとかに使ってるやつ
@@ -184,6 +188,7 @@
      larm-coords 
      &key (arm "both")
      (heave? nil)
+     (obst? t)
      (optimize-torque? (send *ik-param* :get-optimize-torque?))
      (avoid-collision? (send *ik-param* :get-avoid-collision?))
      (apply-external-force? (send *ik-param* :get-apply-external-force?))
@@ -217,6 +222,7 @@
      &allow-other-keys
      )
   (let ((inner-width (* 0.45 (abs (- (elt (send *robot* :lleg :end-coords :worldpos) 1) (elt (send *robot* :rleg :end-coords :worldpos) 1))))))
+    (format t "~%~%~%arm    ~A~%~%~%" arm)
   (format t "external wrench-list=~A~%" external-wrench-list)
   (send *coords* :set-pre-angle-vector (send *robot* :angle-vector))
   (send *coords* :set-rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
@@ -469,11 +475,18 @@
                   (if avoid-collision?
                       ;; (list 
                        ;; (flatten (mapcar #'(lambda (l) (list l *obst*)) (flatten (send *robot-env* :robot :legs :links))))
-                       (append (mapcar #'(lambda (l) (list l *obst*)) (flatten (send *robot-env* :robot :legs :links)))
-                       (list (list (send *robot* :link "LLEG_LINK2") (send *robot* :link "LARM_LINK7")))
+		      (append (if obst? (mapcar #'(lambda (l) (list l *obst*)) (flatten (send *robot-env* :robot :legs :links))))
+			      ;; (mapcar #'(lambda (l) (list l (send *robot* :link "CHEST_LINK1"))) (flatten (send *robot-env* :robot :larm :links)))
+			      ;; (mapcar #'(lambda (l) (list l (send *robot* :link "HEAD_LINK1"))) (flatten (send *robot-env* :robot :arms :links)))
+			       (list (list (send *robot* :link "LLEG_LINK2") (send *robot* :link "LARM_LINK7")))
+			       ;; (list (list (send *robot* :link "CHEST_LINK1") (send *robot* :link "LARM_LINK3")))
+			       ;; (list (list (send *robot* :link "CHEST_LINK1") (send *robot* :link "LARM_LINK5")))
+			       (list (list (send *robot* :link "CHEST_LINK1") (send *robot* :link "LARM_LINK6")))
+			       (list (list (send *robot* :link "LLEG_LINK3") (send *robot* :link "LARM_LINK6")))
                        ;; (list (send *robot* :link "LLEG_LINK1") (send *robot* :link "LARM_LINK6"))
                        (list (list (send *robot* :link "RLEG_LINK2") (send *robot* :link "RARM_LINK7")))
 		       (list (list (send *robot* :link "RLEG_LINK2") (send *robot* :link "LLEG_LINK2")))
+		       
                        ;; (list (send *robot* :link "RLEG_LINK1") (send *robot* :link "RARM_LINK6"))
                        ;; (list (send *robot* :link "LLEG_LINK1") (send *robot* :link "LARM_LINK7"))
                        ;; (list (send *robot* :link "RLEG_LINK1") (send *robot* :link "RARM_LINK7"))

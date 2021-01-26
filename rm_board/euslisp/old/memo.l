@@ -837,3 +837,5 @@ rf-list
 f-diff-list
 (41.579 23.2762 5.69357)
 
+reach-auto :send? t :adjust? nil :ik1? nil :move-left? t :fix-contact? nil :pull? nil :reaching-offset (list #f(-60 0 0) #f(-60 0 0)))
+  (heave-with-sensor -15 300 1 :first-lift (list 10 300) :apply-external-force? t :send? t :l-omega #f(1 0 0) :r-omega #f(1 0 0) :arm "rarm" :fix-contact? nil :rleg-pos-shift #f(0 -20 0) :lleg-pos-shift #f(0 -20 0)))  
