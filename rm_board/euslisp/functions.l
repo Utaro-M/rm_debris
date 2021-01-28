@@ -1586,7 +1586,7 @@
       (setq axis 0)
       (setq edge-axis 1)
       ))
-  
+  (setq pos-shift 230) ;;remove-left-flat-onehand
   (format t "set-unique-kin-scale? =~A~%" set-unique-kin-scale?)
   (format t "center-nearhands =~A ~%" center-nearhands)
   
