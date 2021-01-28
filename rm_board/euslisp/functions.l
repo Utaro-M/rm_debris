@@ -1280,8 +1280,8 @@
           ;;     (setq l-omega (scale -1 l-omega)))
           ;; (if (< (elt r-omega 1) 0)
           ;;     (setq r-omega (scale -1 r-omega)))
-	  (format t "~%~%normal-vec-save = ~A~%" normal-vec-save)
-	  (format t "l-pos-diff          = ~A~%" l-pos-diff)
+          (format t "~%~%normal-vec-save = ~A~%" normal-vec-save)
+          (format t "l-pos-diff          = ~A~%" l-pos-diff)
           (format t "r-pos-diff          = ~A~%" r-pos-diff)
           (format t "l-omega = ~A~%" (normalize-vector l-omega))
           (format t "r-omega = ~A~%" (normalize-vector r-omega))
@@ -1300,6 +1300,10 @@
           ))
     (format t "r-move-dir = ~A~%" r-move-dir)
     (format t "l-move-dir = ~A~%~%" l-move-dir)
+
+    (setq lnum-pre (send (one-shot-subscribe "/larm/num" std_msgs::Int32 :timeout 5000) :data)
+          rnum-pre (send (one-shot-subscribe "/rarm/num" std_msgs::Int32 :timeout 5000) :data))
+
     ;;test
     ;; (setq l-theta-next 0.0)
     ;; (setq r-theta-next 0.0)
@@ -1428,10 +1432,10 @@
     ;; (move-hand :rarm (scale -1 (elt reaching-offset 1)) :send? nil)
     (send *coords* :set-rleg-new-coords (send *robot* :rleg :end-coords :copy-worldcoords))
     (send *coords* :set-lleg-new-coords (send *robot* :lleg :end-coords :copy-worldcoords))
-    (send-pose-and-move-on-foot :time 5000 :send? send? :fix-contact? fix-contact? :look-at-object? look-at-object? :wait? wait? :fix-hand? fix-hand?)
+    (send-pose-and-move-on-foot :time 5000 :send? send? :fix-contact? fix-contact? :look-at-object? look-at-object? :wait? (not check?) :fix-hand? fix-hand?)
     ;; (send *robot* :head-neck-p :joint-angle -40)
     ;; (send *ri* :angle-vector (send *robot* :angle-vector) 4000)
-    (if check? 
+    (if check?
         (progn
           (setq thre-list (list (* 0.8 (abs (elt (send *ik-param* :get-rarm-wrench) 2))) (* 0.8 (abs (elt (send *ik-param* :get-larm-wrench) 2))))) ;;rarm larm
           (setq drop-flag (check-force-pcl :working? t :thre-list thre-list))
@@ -1475,10 +1479,19 @@
             (progn
               (format t "~%stop~%~%")
               (send *ri* :stop-motion)
+              (my-init-pose :tilt? nil :wait? t)
               (move-on-foot (send *robot* :rleg :end-coords :copy-worldcoords) (send *robot* :lleg :end-coords :copy-worldcoords) (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate #f(-100 0 0) :world) (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(-100 0 0) :world))
+              (reach-auto :send? send? :pos-shift 310 :adjust? nil :ik1? nil :larm-shift #f(0 -10 0) :rarm-shift #f(0 10 0) :fix-contact? 2 :reaching-offset (list #f(-50 -0 0) #f(-50 0 0)) :rot-z 5)
               )))
 	  ;; ))
           ))
+    (setq lnum-after (send (one-shot-subscribe "/larm/num" std_msgs::Int32 :timeout 5000) :data)
+          rnum-after (send (one-shot-subscribe "/rarm/num" std_msgs::Int32 :timeout 5000) :data))
+    (if (< thre-lnum (- lnum-pre lnum-after))
+        (move-hand :larm #f(300 0 0) :send? send?))
+    
+    (if (< thre-rnum (- rnum-pre rnum-after))
+        (move-hand :rarm #f(300 0 0) :send? send?))
     ;; (setq ret-arm-save ret-arm)
     (setq normal-vec-save normal-vec)
     (setq l-unit-save l-unit)
