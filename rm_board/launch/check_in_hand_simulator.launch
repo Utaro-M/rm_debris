@@ -9,7 +9,8 @@
   <arg name="SELF_FILTER_PARAM" default="/home/utaro/research/rm_debris/rm_board/models/self_filter_param_sim.yaml"/>  
   <arg name="manager" default="plane_extraction_manager" />
   <!-- <rosparam param="/use_sim_time">true</rosparam> -->
-  <node pkg="count_points" name="count_points" type="count_points.py" output="screen" />
+  <!-- <node pkg="count_points" name="count_points" type="count_points.py" output="screen" /> -->
+  <node pkg="rm_debris_vision" name="count_points" type="count_points.py" output="screen" />
 
   <node pkg="pr2_navigation_self_filter" type="self_filter"
         name="self_filter" output="screen">

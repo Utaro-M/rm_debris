@@ -1212,6 +1212,8 @@
      (r-omega #f(0 1 0))
      (arm "both")
      (x-plus #f(0.1 0 0))
+     (thre-lnum 1000)
+     (thre-rnum 1000)
      )
   (reset-coords)
   (setq normal-vec-diff #f(0 0 0))
@@ -1303,7 +1305,7 @@
 
     (setq lnum-pre (send (one-shot-subscribe "/larm/num" std_msgs::Int32 :timeout 5000) :data)
           rnum-pre (send (one-shot-subscribe "/rarm/num" std_msgs::Int32 :timeout 5000) :data))
-
+(print "ok")
     ;;test
     ;; (setq l-theta-next 0.0)
     ;; (setq r-theta-next 0.0)
@@ -1434,9 +1436,13 @@
     (send *coords* :set-lleg-new-coords (send *robot* :lleg :end-coords :copy-worldcoords))
     (send-pose-and-move-on-foot :time 5000 :send? send? :fix-contact? fix-contact? :look-at-object? look-at-object? :wait? (not check?) :fix-hand? fix-hand?)
     ;; (send *robot* :head-neck-p :joint-angle -40)
-    ;; (send *ri* :angle-vector (send *robot* :angle-vector) 4000)
+;; (send *ri* :angle-vector (send *robot* :angle-vector) 4000)
+
     (if check?
         (progn
+          (setq lnum-thre (* 0.5 (send (one-shot-subscribe "/larm/num" std_msgs::Int32 :timeout 5000) :data))
+                rnum-thre (* 0.5 (send (one-shot-subscribe "/rarm/num" std_msgs::Int32 :timeout 5000) :data)))
+          (set-cp-thre lnum-thre rnum-thre)
           (setq thre-list (list (* 0.8 (abs (elt (send *ik-param* :get-rarm-wrench) 2))) (* 0.8 (abs (elt (send *ik-param* :get-larm-wrench) 2))))) ;;rarm larm
           (setq drop-flag (check-force-pcl :working? t :thre-list thre-list))
           (setq pos-shift 230)
@@ -1487,10 +1493,11 @@
           ))
     (setq lnum-after (send (one-shot-subscribe "/larm/num" std_msgs::Int32 :timeout 5000) :data)
           rnum-after (send (one-shot-subscribe "/rarm/num" std_msgs::Int32 :timeout 5000) :data))
-    (if (< thre-lnum (- lnum-pre lnum-after))
+    (format t "lnum-diff = ~A~%" (- lnum-pre lnum-after))
+    (format t "rnum-diff = ~A~%" (- rnum-pre rnum-after))
+    (if (< thre-lnum (abs (- lnum-pre lnum-after)))
         (move-hand :larm #f(300 0 0) :send? send?))
-    
-    (if (< thre-rnum (- rnum-pre rnum-after))
+    (if (< thre-rnum (abs (- rnum-pre rnum-after)))
         (move-hand :rarm #f(300 0 0) :send? send?))
     ;; (setq ret-arm-save ret-arm)
     (setq normal-vec-save normal-vec)
