@@ -16,10 +16,23 @@
   <rosparam param="/use_sim_time">true</rosparam>
   <!-- <node pkg="count_points" name="count_points" type="count_points.py" output="screen" /> -->
 
+  <!-- <node pkg="pr2_navigation_self_filter" type="self_filter" -->
+  <!--       name="self_filter" output="screen"> -->
+  <!--   <remap from="cloud_in"  to="$(arg input_cloud)" /> -->
+  <!--   <remap from="cloud_out" to="~/filtered_cloud" /> -->
+  <!--   <rosparam command="load" file="$(arg SELF_FILTER_PARAM)" /> -->
+  <!-- </node> -->
   <node pkg="pr2_navigation_self_filter" type="self_filter"
-        name="self_filter" output="screen">
-    <remap from="cloud_in"  to="$(arg input_cloud)" />
-    <!-- <remap from="cloud_in"  to="extract_indices_larm/output" />     -->
+        name="self_filter_l" output="screen">
+    <!-- <remap from="cloud_in"  to="$(arg input_cloud)" /> -->
+    <remap from="cloud_in"  to="/in_hand_point/extract_indices_larm/output" />
+    <remap from="cloud_out" to="~/filtered_cloud" />
+    <rosparam command="load" file="$(arg SELF_FILTER_PARAM)" />
+  </node>
+    <node pkg="pr2_navigation_self_filter" type="self_filter"
+        name="self_filter_r" output="screen">
+    <!-- <remap from="cloud_in"  to="$(arg input_cloud)" /> -->
+    <remap from="cloud_in"  to="/in_hand_point/extract_indices_rarm/output" />    
     <remap from="cloud_out" to="~/filtered_cloud" />
     <rosparam command="load" file="$(arg SELF_FILTER_PARAM)" />
   </node>
@@ -42,7 +55,8 @@
     <node name="attention_clipper_larm"
           pkg="nodelet" type="nodelet"
           args="load jsk_pcl/AttentionClipper $(arg manager)">
-      <remap from="~input/points" to="$(arg filtered_cloud)" />
+      <!-- <remap from="~input/points" to="$(arg filtered_cloud)" /> -->
+      <remap from="~input/points" to="/self_filter_l/filtered_cloud" />
       <!-- <remap from="~input/points"  to="$(arg input_cloud)" />   -->    
       <remap from="~input/box_array" to="bounding_box_array_publisher_larm/output" />
       <rosparam>
@@ -73,8 +87,9 @@
     <node name="attention_clipper_rarm"
           pkg="nodelet" type="nodelet"
           args="load jsk_pcl/AttentionClipper $(arg manager)">
-      <remap from="~input/points" to="$(arg filtered_cloud)" />
-      <!-- <remap from="~input/points"  to="$(arg input_cloud)" />   -->          
+      <!-- <remap from="~input/points" to="$(arg filtered_cloud)" /> -->
+      <!-- <remap from="~input/points"  to="$(arg input_cloud)" />   -->
+      <remap from="~input/points" to="/self_filter_r/filtered_cloud" />
       <remap from="~input/box_array" to="bounding_box_array_publisher_rarm/output" />
       <rosparam>
         use_multiple_attention: true
