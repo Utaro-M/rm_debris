@@ -9,8 +9,9 @@
   <arg name="filtered_cloud"
        default="/self_filter/filtered_cloud" />
 
-  <arg name="SELF_FILTER_PARAM" default="/home/leus/catkin_ws/jaxon_tutorial/src/matsuura_rm_debris/rm_board/models/self_filter_param.yaml"/>
-  <!-- <arg name="SELF_FILTER_PARAM" default="/home/utaro/research/rm_debris/rm_board/models/self_filter_param_sim.yaml"/>   -->
+  <!-- <arg name="SELF_FILTER_PARAM" default="/home/leus/catkin_ws/jaxon_tutorial/src/matsuura_rm_debris/rm_board/models/self_filter_param.yaml"/> -->
+  <!-- <arg name="SELF_FILTER_PARAM" default="/home/utaro/research/rm_debris/rm_board/models/self_filter_param_sim.yaml"/>  -->
+  <arg name="SELF_FILTER_PARAM" default="/home/utaro/research/rm_debris/rm_board/models/self_filter_param.yaml"/>
 
   <arg name="manager" default="check_in_hand_manager" />
   <rosparam param="/use_sim_time">true</rosparam>
@@ -19,7 +20,7 @@
   <node pkg="pr2_navigation_self_filter" type="self_filter"
         name="self_filter" output="screen">
     <remap from="cloud_in"  to="$(arg input_cloud)" />
-    <!-- <remap from="cloud_in"  to="extract_indices_larm/output" />     -->
+    <!-- <remap from="cloud_in"  to="/in_hand_points/extract_indices_larm/output" /> -->
     <remap from="cloud_out" to="~/filtered_cloud" />
     <rosparam command="load" file="$(arg SELF_FILTER_PARAM)" />
   </node>
