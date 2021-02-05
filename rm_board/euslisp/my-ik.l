@@ -274,7 +274,8 @@
     (if heave?
 	(send *obst* :translate (v+ (scale 0.5 (v+ (send rarm-coords :worldpos) (send larm-coords :worldpos))) #f(-30 0 -400)))
       (send *obst* :translate (v+ (scale 0.5 (v+ (send rarm-coords :worldpos) (send larm-coords :worldpos))) #f(0 0 -400))))
-    (send *obst* :set-color (float-vector 1 0 0) 0.5)
+    ;; (send *obst* :set-color (float-vector 1 0 0) 0.5)
+        (send *obst* :set-color (float-vector 0 1 1) 0.5)
     )
   ;; setup robot
   (setup-jaxon_red-ik-opt :only-kinematics? only-kinematics? )
@@ -321,9 +322,11 @@
   ;; (objects (append (list *robot* *rarm-coords* *larm-coords*  ;;bxr bxl;; (send *ik-param* :get-object) 
   ;;                        ) *env-list*  (if avoid-collision? (list *obst*))
   ;; 			   ))
-  (objects (append (list *robot* *rarm-coords* *larm-coords*  (if avoid-collision? *obst*)) *env-list*)
+  ;; (objects (append (list *robot* *rarm-coords* *larm-coords*  (if avoid-collision? *obst*)) *env-list*)
+  ;;                  )
+  ;; (objects  (append (list (send *ik-param* :get-object) (if avoid-collision? *obst*)) *env-list*))
+  (objects (append (list  *robot*  ) )
                    )
-
   (setq *instant-config-task*
         (instance instant-configuration-task :init
                   :robot-env *robot-env*
@@ -1600,7 +1603,7 @@
     (send *irtviewer* :draw-floor 500)
     (send *irtviewer* :floor-color (float-vector 0 0 0))
     )
-  (objects (append (list *robot*  *ground-larm*) *env-list*  (if avoid-collision? (list *obst* *obst-side*))
+  (objects (append (list *robot* *ground-larm*) *env-list*  (if avoid-collision? (list *obst* *obst-side*))
                    ))
 
   (setq *instant-config-task*

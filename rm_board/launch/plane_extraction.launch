@@ -400,10 +400,10 @@
   <node name="bounding_box_array_publisher"
         pkg="jsk_recognition_utils" type="bounding_box_array_publisher.py">
     <rosparam>
-      frame_id: odom
+      frame_id: lleg_end_coords
       boxes:
-         - position: [1, 0, 1.25]
-           dimension: [3, 1.5, 2]
+         - position: [1, 0, 1]
+           dimension: [3, 1.5, 1]
     </rosparam>
    </node>
 
@@ -450,7 +450,7 @@
           args="load jsk_pcl_utils/TfTransformCloud line_segment_manager">
       <remap from="~input" to="extract_indices/output" />
       <rosparam>
-        target_frame_id: odom
+        target_frame_id: lleg_end_coords
       </rosparam>
   </node>
   

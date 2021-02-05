@@ -687,3 +687,7 @@
   ;; (heave-with-sensor 15 600 3 :first-lift (list 10 300) :apply-external-force? t :send? t :l-omega #f(1 0 0) :r-omega #f(1 0 0))
   (heave-with-sensor -60 600 3 :first-lift (list 50 200) :apply-external-force? t :send? t :l-omega #f(1 0 0) :r-omega #f(1 0 0) :x-plus #f(0 0 0) :arm "rarm")
 )
+
+(defun remove-long-stick()
+  (reach-auto :target "stick" :send? t :ik1? nil :ik2? t :adjust? nil)
+  (move-hand :rarm #f(0 0 300) :time 4000 :frame :local))

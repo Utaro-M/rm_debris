@@ -839,3 +839,29 @@ f-diff-list
 
 reach-auto :send? t :adjust? nil :ik1? nil :move-left? t :fix-contact? nil :pull? nil :reaching-offset (list #f(-60 0 0) #f(-60 0 0)))
   (heave-with-sensor -15 300 1 :first-lift (list 10 300) :apply-external-force? t :send? t :l-omega #f(1 0 0) :r-omega #f(1 0 0) :arm "rarm" :fix-contact? nil :rleg-pos-shift #f(0 -20 0) :lleg-pos-shift #f(0 -20 0)))  
+
+~/prog/euslib/demo/nozawa/hrpsys-test/test-st-state-estimate-data.l
+;; Plot offset force
+(defun plot-off-force-transform
+  (&key (axis :x) (rs-list *rs-list*) (limbs (get-limbs-in-force-sensor-order *robot*)) (sensors '(:rhsensor :lhsensor))
+        (additional-title "eefm"))
+  (let* ((state-data
+          (mapcar #'(lambda (l sensor)
+                      (mapcar #'(lambda (x)
+                                  (send *robot* :angle-vector (send x :angle-vector))
+                                  (send *robot* :fix-leg-to-coords (make-coords))
+                                  (send  (send *robot* (read-from-string (format nil "~A"  sensor)) :copy-worldcoords) :rotate-vector
+                                         (send x :get (read-from-string (format nil "~A-off-force-vector" l))))
+                                  ) rs-list))
+                  limbs sensors)))
+    (graph-view-with-time-axis
+     state-data rs-list
+     :axis axis :additional-title (format nil "RMFO offset force ~A" additional-title)
+     :keylist (mapcar #'(lambda (l) (format nil "~A force" l)) limbs)
+     :ylabel "Off Force [N]"
+     )
+    ))
+
+
+;;load log-tools
+;;prepare-plot

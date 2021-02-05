@@ -102,7 +102,9 @@
 	;;   )
 	(print "look at object")
 	;; (send *robot* :angle-vector (send *robot* :head :look-at (midpoint 0.5 (send (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate #f(150 -640 0) :local) :worldpos) (send (send (send *robot* :larm :end-coords :copy-worldcoords) :translate #f(150 640 0) :local) :worldpos))))
-	(send *robot* :angle-vector (send *robot* :head :look-at (send (send (send (car (send *robot* :links)) :copy-worldcoords) :translate #f(1000 0 600)) :worldpos)))
+    (if flag-simulator
+        (setq look-dir #f(600 0 200))
+      (send *robot* :angle-vector (send *robot* :head :look-at (send (send (send (car (send *robot* :links)) :copy-worldcoords) :translate #f(1000 0 600)) :worldpos))))
         ))
   (objects)
   ;; (x::window-main-one)
@@ -1555,9 +1557,9 @@
             (arm "larm")
             (rot-z 20)
             (rot-x 0)
-	    (rot-y 0)
-            (shift-stick #f(0 0 -200 ))
-	    (move-left? nil))
+            (rot-y 0)
+            (shift-stick #f(40 0 -150 ))
+            (move-left? nil))
 
   (reset-coords)
   (if (equal target "board")
@@ -1605,6 +1607,13 @@
       (setq set-unique-kin-scale? t)
       (setq axis 0)
       (setq edge-axis 1)
+      (send *ik-param* :set-kin-scale-list (list
+                         ;; 1.0
+                         ;; 1.0
+                         (list 1 1 1 1 1 1)
+                         (list 1 1 1 1 1 1)
+                         (list 1 1 1 1 1 0.1)
+                         0.0))
       ))
   (setq pos-shift 230) ;;remove-left-flat-onehand
   (format t "set-unique-kin-scale? =~A~%" set-unique-kin-scale?)
