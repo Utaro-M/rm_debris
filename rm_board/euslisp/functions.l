@@ -7,6 +7,7 @@
 (load "./my-ik.l")
 (load "./stick-pose.l")
 (load "./functions-without-ri.l")
+(load "client/change_count_points_thre.l")
 ;; (load "./client/predict_k.l" )
 ;; (load "./client/make_plane_for_opt.l" )
 ;; (load "./old/predict_from_multi_pose.l")

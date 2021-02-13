@@ -26,7 +26,7 @@
     (send req :clip_point_req_r :y (* 0.001 (elt box-position 1)))
     (send req :clip_point_req_r :z (* 0.001 (elt box-position 2)))
     
-    (format t "clip box center point = (~A ,~A ,~A)~%" (elt box-position 0) (elt box-position 1) (elt box-position 2))
+    ;; (format t "clip box center point = (~A ,~A ,~A)~%" (elt box-position 0) (elt box-position 1) (elt box-position 2))
 
     
     (setq box-position (elt box-position-list 1)
@@ -45,9 +45,9 @@
     (send req :clip_point_req_l :y (* 0.001 (elt box-position 1)))
     (send req :clip_point_req_l :z (* 0.001 (elt box-position 2)))
 
-    (format t "clip box size         = (~A ,~A ,~A)~%" (elt size-vector 0) (elt size-vector 1) (elt size-vector 2))
-    (format t "clip box tilt         = (~A ,~A ,~A)~%" (elt tilt-vector 0) (elt tilt-vector 1) (elt tilt-vector 2))  
-    (format t "clip box center point = (~A ,~A ,~A)~%" (elt box-position 0) (elt box-position 1) (elt box-position 2))
+    ;; (format t "clip box size         = (~A ,~A ,~A)~%" (elt size-vector 0) (elt size-vector 1) (elt size-vector 2))
+    ;; (format t "clip box tilt         = (~A ,~A ,~A)~%" (elt tilt-vector 0) (elt tilt-vector 1) (elt tilt-vector 2))  
+    ;; (format t "clip box center point = (~A ,~A ,~A)~%" (elt box-position 0) (elt box-position 1) (elt box-position 2))
     ;; (format t "clip box center point = (~A ,~A ,~A)~%" (send res :clip_point_r :x) (send res :clip_point_r :y) (send res :clip_point_ :z))
     (setq res (ros::service-call "clip_covered_area" req t))
 )
@@ -80,9 +80,15 @@
     (setq *box-coords-r* (instance arrow-object :init))
     (send *box-coords-r* :newcoords box-coords-r)
     (objects (list prism-l prism-r *robot* *box-coords-l* *box-coords-r*))
-    (format t "position =~A~%" (send *box-coords* :worldpos))
+    (print "right")
+    (format t "position r=~A~%" (send *box-coords-r* :worldpos))
+    (format t "size-vetor =~A~%" (float-vector 0.3 0.3 (- (* 0.001 (send line-r :length)) 0.2)))
+    (format t "tilt-vetor =~A~%" (elt (rpy-angle rot-r) 0))
+    (print "left")    
+    (format t "position l=~A~%" (send *box-coords-l* :worldpos))
     (format t "size-vetor =~A~%" (float-vector 0.3 0.3 (- (* 0.001 (send line-l :length)) 0.2)))
-    (format t "tilt-vetor =~A~%" (elt (rpy-angle rot-mat) 0))
+    (format t "tilt-vetor =~A~%" (elt (rpy-angle rot-l) 0))
+
     (send_box_size :box-position-list (list (send *box-coords-r* :worldpos) (send *box-coords-l* :worldpos)) :size-vector-list (list (float-vector (- (* 0.001 (send line-r :length)) 0.4) 0.05 0.05 ) (float-vector (- (* 0.001 (send line-l :length)) 0.4) 0.05 0.05 )) :tilt-vector-list (list (elt (rpy-angle rot-r) 0) (elt (rpy-angle rot-l) 0)))
     )
   )
