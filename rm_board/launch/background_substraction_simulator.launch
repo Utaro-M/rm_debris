@@ -1,0 +1,184 @@
+  <!-- (add-external-force :link "body" :robot "box1-2" :force #f(0 0 50) :tm 0.1) -->
+    <!-- <arg name="rosbag_file" default="/home/utaro/.ros/backgroud_subtraction_2020-11-12-19-51-10.bag  -\-loop " /> -->
+  <!-- <arg name="rosbag_file" default="/home/utaro/.ros/backgroud_subtraction_2020-11-12-19-32-58.bag  -\-loop " /> -->
+  <!-- <arg name="rosbag_file" default="/home/utaro/.ros/backgroud_subtraction_with_virtualcamera_2020-11-13-15-47-40.bag  -\-loop " /> -->
+  <!-- <arg name="rosbag_file" default="/home/utaro/.ros/backgroud_subtraction_no_virtualcamera_2020-11-13-15-45-38.bag  -\-clock -\-loop " /> -->
+  <!-- <arg name="rosbag_file" default="/home/utaro/.ros/backgroud_subtraction_no_virtualcamera_2020-11-13-16-08-54.bag  -\-clock -\-loop " /> -->
+  <!-- <arg name="rosbag_file" default="/home/utaro/.ros/backgroud_subtraction_no_virtualcamera_with_info_2020-11-14-21-54-02.bag  -\-clock -\-loop " /> -->
+  <!-- <node name="rosbag_play" -->
+  <!--       pkg="rosbag" type="play" -->
+  <!--       args="$(arg rosbag_file)" /> -->
+<launch>  
+  <arg name="input_cloud"
+       default="/rs_l515/depth_registered/points" />
+       <!-- default="/multisense_local/organized_image_points2_color" /> -->
+  <arg name="create_manager" default="true" />
+  <arg name="manager" default="camera_nodelet_manager" />
+  <arg name="transformed_cloud"
+       default="transform_org_cloud/output" />
+       <!-- default="/plane_extraction/transform_org_cloud/output" /> -->
+  <arg name="filtered_cloud"
+       default="extract_indices/output" />
+  <arg name="static_camera_info"
+       default="/static_virtual_camera/camera_info" />
+  
+  <!-- 固定してん -->
+  <rosparam param="/use_sim_time">true</rosparam>
+  <node pkg="rm_debris_vision" name="static_virtual_camera" type="static_virtual_camera.py" output="screen" />
+  <node pkg="tf" type="static_transform_publisher" name="virtual_camera_broadcaster" args="0.2 0 1.0 0.612372 -0.612372 0.353553 -0.353553 odom static_virtual_camera 100" unless="false" />  <!-- -0.5 0.5 -0.5 0.5 -->
+  <!-- <node pkg="tf" type="static_transform_publisher" name="virtual_camera_broadcaster" args="0.2 0 1.0 0.612372 -0.612372 0.353553 -0.353553 left_camera_optical_frame static_virtual_camera 100" unless="false" />  <!-\- -0.5 0.5 -0.5 0.5 -\->   -->
+  
+  <group ns="background_subtraction">
+    <node if="$(arg create_manager)"
+          pkg="nodelet" type="nodelet" name="camera_nodelet_manager"
+          args="manager" output="screen"/>
+
+    <node name="transform_org_cloud"
+          pkg="nodelet" type="nodelet"
+          args="load jsk_pcl_utils/TfTransformCloud $(arg manager)">
+      <remap from="~input" to="$(arg input_cloud)" />
+      <rosparam>
+        target_frame_id: odom
+      </rosparam>
+    </node>
+
+    <!-- get image from static virtual camera -->
+    <node name="depth_image_creator"
+          pkg="nodelet" type="nodelet"
+          args="load jsk_pcl/DepthImageCreator $(arg manager)">
+      <remap from="~input" to="$(arg transformed_cloud)" />
+      <!-- <remap from="~input" to="$(arg input_cloud)" /> -->
+      <remap from="~info" to="$(arg static_camera_info)" />
+      <rosparam>
+        <!-- tf_duration: 0.1 -->
+        organize_cloud: true
+        use_asynchronous: true
+        use_approximate: false
+        max_queue_size: 2
+      </rosparam>
+    </node>
+    
+    <!-- 動いているところだけ抽出 -->
+    <node name="bg_subtraction"
+          pkg="nodelet" type="nodelet"
+          args="load jsk_perception/BackgroundSubstraction  $(arg manager)"> 
+      <remap from="~image" to="depth_image_creator/output_image" />
+      <!-- <remap from="~image" to="/passthrough_x/output" /> -->
+      <!-- <remap from="~input/mask" to="/apply_mask_image/output" /> -->
+      <rosparam>
+        nmixtures : 5
+      </rosparam>
+    </node>
+
+    <!-- remove noise -->
+    <!-- 収縮の後に膨張 -->
+
+    <!-- 収縮 -->
+    <node name="erode_mask_image"
+          pkg="nodelet" type="nodelet"
+          args="load jsk_perception/ErodeMaskImage $(arg manager)">
+      <remap from="~input" to="bg_subtraction/output" />
+      <rosparam>
+        method: 0
+        size: 1
+      </rosparam>
+    </node>
+    <!-- 膨張 -->
+    <node name="dilate_mask_image"
+          pkg="nodelet" type="nodelet"
+          args="load jsk_perception/DilateMaskImage $(arg manager)">
+      <remap from="~input" to="erode_mask_image/output" />
+      <remap from="~output" to="filtered_bgs_output" />
+      <rosparam>
+        method: 0
+        size: 4
+      </rosparam>
+    </node>
+
+    <!-- マスク画像の結果と点群を結びつけて、点のインダイスを出力する -->
+    <!-- <arg name="camera" value="/multisense_local" /> -->
+    <node pkg="nodelet" type="nodelet"
+          name="mask_image_filter"
+          args="load jsk_pcl/MaskImageFilter $(arg manager)"
+          output="screen" clear_params="true">
+      
+      <param name="~negative" value="false" />
+      <!-- <remap from="~input" to="$(arg processed_pcl2)" /> -->
+      <remap from="~input" to="depth_image_creator/output_cloud" />
+      <!-- <remap from="~input" to="$(arg passthrough_org_pcl2)" /> -->
+      <!-- <remap from="~input/mask" to="/apply_mask_image/output" /> -->
+      <!-- <remap from="~input/mask" to="background_subtraction/output" /> -->
+      <!-- <remap from="~input/mask" to="dilate_mask_image/output" /> -->
+      <remap from="~input/mask" to="filtered_bgs_output" />
+      <remap from="~input/camera_info" to="$(arg static_camera_info)" />
+    </node>
+
+    <!-- インダイスを使って該当点群を抽出 -->
+    <node pkg="nodelet" type="nodelet"
+          name="extract_indices"
+          args="load jsk_pcl/ExtractIndices $(arg manager)"
+          output="screen" clear_params="true">
+      <!-- <remap from="~input" to="$(arg processed_pcl2)" /> -->
+      <remap from="~input" to="depth_image_creator/output_cloud" />    
+      <!-- <remap from="~input" to="$(arg passthrough_org_pcl2)" /> -->
+      <remap from="~indices" to="mask_image_filter/output" />
+      <rosparam>
+        approximate_sync: true
+        keep_organized: true
+        max_queue_size: 10
+      </rosparam>
+    </node>
+    
+    <node name="multi_plane_extraction"
+          pkg="nodelet" type="nodelet"
+          args="load jsk_pcl/MultiPlaneExtraction  $(arg manager)">
+      <!-- <remap from="~input" to="/kinect_head/depth_registered/points"/>-->
+      <!-- <remap from="~input" to="depth_image_creator/output_cloud"/> -->
+      <!-- <remap from="~input" to="$(arg multisense_org_pcl2)"/> -->
+      <remap from="~input" to="/extract_indices/output"/>
+      <!-- <remap from="~indices" to="organized_multi_plane_segmentation/output_refined"/> -->
+      <!-- <remap from="~input_polygons" to="organized_multi_plane_segmentation/output_refined_polygon"/> -->
+      <!-- <remap from="~input_coefficients" to="organized_multi_plane_segmentation/output_refined_coefficients"/> -->
+      <remap from="~indices" to="multi_plane_sac_segmentation/output_refined"/>
+      <remap from="~input_polygons" to="multi_plane_sac_segmentation/output_refined_polygon"/>
+      <remap from="~input_coefficients" to="multi_plane_sac_segmentation/output_refined_coefficients"/>
+      <rosparam>
+        keep_organized: false
+        use_indices: true
+        use_coefficients: true
+        min_height: -0.3
+        max_height: 0.3
+      </rosparam>
+    </node>
+    
+    
+    <!-- クラスタリング -->
+   <node pkg="nodelet" type="nodelet"
+          name="clustering"
+          args="load jsk_pcl/EuclideanClustering $(arg manager)"
+          output="screen" clear_params="true">
+      <remap from="~input" to="/extract_indices/output" />
+      <rosparam>
+        tolerance: 0.15
+        min_size: 300
+      </rosparam>
+    </node>
+
+    <node pkg="nodelet" type="nodelet"
+          name="cluster_decomposer"
+          args="load jsk_pcl/ClusterPointIndicesDecomposer $(arg manager)"
+          output="screen" clear_params="true">
+      <remap from="~input" to="/extract_indices/output" />
+      <remap from="~target" to="/clustering/output" />
+      <rosparam>
+        min_size: 300
+      </rosparam>
+    </node>
+  </group>
+
+  <node name="rviz"
+        pkg="rviz" type="rviz"
+        args="-d /home/utaro/research/rm_debris/rm_board/display/background_subtraction.rviz"/>
+  
+</launch>
+

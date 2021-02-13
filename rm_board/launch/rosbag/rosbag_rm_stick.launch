@@ -1,0 +1,16 @@
+<launch>
+  <arg name="bagfile"
+       default="l515_search_top_board"/>
+  <node name="rosbag_record"
+	pkg="rosbag" type="record"
+	args="-o /home/utaro/research/rm_debris/rm_board/ros_bag/$(arg bagfile).bag
+	      -b 0
+          /multisense_local/organized_image_points2_color
+          /multisense_local/left/image_rect_color
+          /stick_pose/euclidean_clustering_decomposer/boxes
+          /stick_pose/bounding_box_array_publisher/output
+	      /tf
+	      /tf_static"
+	output="screen">
+  </node>
+</launch>
