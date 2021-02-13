@@ -775,3 +775,93 @@ ver2
 
 ;;tilted pose
 reach-auto :send? nil :adjust? nil :fix-contact? nil :pos-shift 280 :ik2? nil :ik3? nil
+
+
+;;
+"force vector through filter and average = #f(-15.225 -9.00004 7.33008)"
+"force vector through filter and average = #f(-4.34633 36.5878 -47.9027)"
+init-lcoords = #<coordinates #X7f56bf93e8f0  2.849e-14 8.105e-15 1.421e-14 / 1.384e-17 -1.084e-18 2.776e-17>
+init-rcoords = #<coordinates #X7f56bf93e098  16.215 -370.183 -0.002 / -0.041 -5.999e-07 4.696e-06>
+next-lcoords = #<coordinates #X7f57852c1b08  190.253 62.217 -0.022 / -0.072 1.139e-07 2.250e-06>
+next-rcoords = #<coordinates #X7f56bdfeaff8  204.87 -446.04 -0.019 / 0.027 7.562e-07 -1.726e-06>
+
+
+;;0110
+#f(-12.3487 -8.99059 -56.3237 93.5956 -39.3806 9.43667 10.9637 5.39824 -55.41 94.9267 -41.6176 -5.79678 2.89957 30.0 -2.67419 7.5447 -5.0 37.0 20.3756 -41.7093 -12.6859 -76.8937 46.9698 -15.2244 18.1064 -37.0 8.88096 28.7258 7.02275 -72.0492 -51.3543 18.9711 19.8344)
+
+#f(-4.7808 -3.42782 -46.6759 88.2204 -42.9961 3.54708 0.202229 7.90216 -44.0985 87.2326 -44.6018 -7.90443 -5.62325 15.3424 6.59208 -11.9182 26.0 37.0 18.3776 -18.8251 -2.03448 -73.4568 52.5777 -16.0317 25.796 -37.0 27.4065 36.1098 7.72492 -70.4441 -42.8394 15.1899 10.9918)
+
+;;
+robot lcoords = #<coordinates #X7f6c394e9ff8  1.092e-17 -1.293e-14 0.0 / 3.465e-18 -1.820e-19 -1.388e-17>
+robot rcoords = #<coordinates #X7f6c394e98a8  -59.735 -321.362 -0.007 / 0.021 9.093e-07 1.857e-06>
+robot angle-vector = #f(0.845168 -4.76947 -39.7486 76.4653 -40.7972 4.69775 0.428295 5.99958 -45.3741 76.0349 -34.7505 -6.01463 -1.82797 7.89905 -5.87246 4.67899 1.83123 37.0 10.28 -27.6137 -0.426646 -64.7098 50.3253 -4.42444 15.1117 -37.0 23.5686 28.2448 6.40036 -65.7202 -40.0836 13.8851 15.4743)
+
+
+
+#f(-1.704 -6.44234 -42.038 88.5287 -47.1159 6.46033 0.05511 5.10885 -45.2001 88.979 -44.4028 -5.10899 1.13229 11.6047 -7.23663 2.69917 0.824779 37.0 26.4666 -34.0665 -4.80595 -73.4077 43.7561 -8.55578 13.5856 -37.0 25.2936 19.536 4.02469 -77.5973 -48.1484 12.0398 25.3355)
+
+;;111 12:41 ipad2
+init-lcoords = #<coordinates #X7f6c52c91cf0  5.435e-14 4.446e-14 -1.421e-13 / 6.797e-17 2.195e-16 1.388e-17>
+init-rcoords = #<coordinates #X7f6c52c91b88  -210.556 -375.72 0.021 / 0.319 -1.113e-05 -3.014e-06>
+next-lcoords = #<coordinates #X7f6a586ef310  37.009 3.933 -0.024 / -0.035 -2.027e-06 1.375e-07>
+next-rcoords = #<coordinates #X7f6a587035c0  -34.33 -367.14 0.063 / 0.139 -1.420e-06 -1.671e-05
+
+;;0113
+send *ri* :set-auto-balancer-param :default-zmp-offsets (list #f(20 20 0.0) #f(20 -20 0.0) #f(0.0 0.0 0.0) #f(0.0 0.0 0.0))
+send (send (send *ri* :get-auto-balancer-param) :default_zmp_offsets) :data
+;;debag zmp
+(progn (send *ri* :start-log) (unix:sleep 5) (debag-func) (unix::sleep 10) (save-log :log-dir "matsuura/log"))
+
+
+;;calib memo -28363
+
+
+;;0119 for thesis
+;;progn (setq pl (car (make_plane))) (setq bxr (make-cube 200 200 250 )) (setq bxl (make-cube 200 200 250 )) (send bxr :set-color #f(0 0 1 0.5)) (send bxl :set-color #f(0 0 1 0.5))  (send bxr :newcoords (make-coords :coords (send *robot* :rarm :end-coords :copy-worldcoords))) (send bxl :newcoords (make-coords :coords (send *robot* :larm :end-coords :copy-worldcoords))) (objects (list *robot* bxr bxl pl))
+my-init-pose :tilt? t :send? t
+reach-auto :send? t :pos-shift 290 :adjust? nil :ik1? nil :larm-shift #f(0 -10 0) :rarm-shift #f(0 10 0) :fix-contact? 2 :reaching-offset (list #f(-50 -0 0) #f(-50 0 0))
+heave-with-sensor 180 180 1 :first-lift 180
+heave-with-sensor 180 180 1 :first-lift 180
+change-arm-auto-without-plane :send? t
+
+
+
+;;
+#f(-1.704 -6.44234 -42.038 88.5287 -47.1159 6.46033 0.05511 5.10885 -45.2001 88.979 -44.4028 -5.10899 1.13229 11.6047 -7.23663 2.87177 20.4036 36.9533 25.5122 -32.6341 -3.3714 -69.7557 44.6898 -11.5719 12.3395 -37.0 25.2936 19.536 4.02469 -77.5973 -48.1484 12.0398 25.3355)
+
+
+lf-list
+(#f(2.26256 2.16654 0.947671) #f(-8.37207 -35.9553 -10.9239) #f(-13.4621 -35.4817 -24.9708))
+rf-list
+(#f(-12.5943 23.0024 -40.6314) #f(-12.8415 27.3765 -34.2001) #f(-13.8794 29.2119 -30.6644))
+f-diff-list
+(41.579 23.2762 5.69357)
+
+reach-auto :send? t :adjust? nil :ik1? nil :move-left? t :fix-contact? nil :pull? nil :reaching-offset (list #f(-60 0 0) #f(-60 0 0)))
+  (heave-with-sensor -15 300 1 :first-lift (list 10 300) :apply-external-force? t :send? t :l-omega #f(1 0 0) :r-omega #f(1 0 0) :arm "rarm" :fix-contact? nil :rleg-pos-shift #f(0 -20 0) :lleg-pos-shift #f(0 -20 0)))  
+
+~/prog/euslib/demo/nozawa/hrpsys-test/test-st-state-estimate-data.l
+;; Plot offset force
+(defun plot-off-force-transform
+  (&key (axis :x) (rs-list *rs-list*) (limbs (get-limbs-in-force-sensor-order *robot*)) (sensors '(:rhsensor :lhsensor))
+        (additional-title "eefm"))
+  (let* ((state-data
+          (mapcar #'(lambda (l sensor)
+                      (mapcar #'(lambda (x)
+                                  (send *robot* :angle-vector (send x :angle-vector))
+                                  (send *robot* :fix-leg-to-coords (make-coords))
+                                  (send  (send *robot* (read-from-string (format nil "~A"  sensor)) :copy-worldcoords) :rotate-vector
+                                         (send x :get (read-from-string (format nil "~A-off-force-vector" l))))
+                                  ) rs-list))
+                  limbs sensors)))
+    (graph-view-with-time-axis
+     state-data rs-list
+     :axis axis :additional-title (format nil "RMFO offset force ~A" additional-title)
+     :keylist (mapcar #'(lambda (l) (format nil "~A force" l)) limbs)
+     :ylabel "Off Force [N]"
+     )
+    ))
+
+
+;;load log-tools
+;;prepare-plot

@@ -7,16 +7,8 @@ Panels:
         - /Global Options1
         - /Status1
         - /PointCloud21
-        - /PointCloud22
-        - /PointCloud23
-        - /Polygon1
-        - /PolygonArray1
-        - /Image1
-        - /BoundingBox1
-        - /PointStamped1
-        - /PointStamped2
-        - /PointStamped3
-        - /PointStamped4
+        - /BoundingBoxArray1
+        - /BoundingBoxArray2
       Splitter Ratio: 0.5
     Tree Height: 1023
   - Class: rviz/Selection
@@ -193,7 +185,7 @@ Visualization Manager:
     - Class: jsk_rviz_plugin/BoundingBoxArray
       Enabled: true
       Name: BoundingBoxArray
-      Topic: /plane_extraction/attention_clipper/output/box_array
+      Topic: /stick_pose/euclidean_clustering_decomposer/boxes
       Unreliable: false
       Value: true
       alpha: 0.800000011920929
@@ -501,6 +493,18 @@ Visualization Manager:
       Topic: /normal_end
       Unreliable: false
       Value: true
+    - Class: jsk_rviz_plugin/BoundingBoxArray
+      Enabled: true
+      Name: BoundingBoxArray
+      Topic: /stick_pose/bounding_box_array_publisher/output
+      Unreliable: false
+      Value: true
+      alpha: 0.800000011920929
+      color: 25; 255; 0
+      coloring: Auto
+      line width: 0.004999999888241291
+      only edge: true
+      show coords: false
   Enabled: true
   Global Options:
     Background Color: 48; 48; 48
@@ -544,10 +548,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 0.38539919257164
+      Pitch: 0.02539929747581482
       Target Frame: <Fixed Frame>
       Value: Orbit (rviz)
-      Yaw: 4.565406799316406
+      Yaw: 5.105410575866699
     Saved: ~
 Window Geometry:
   Displays:
