@@ -1,6 +1,6 @@
 #!/usr/bin/env roseus
 (ros::load-ros-manifest "rm_debris_vision")
-(ros::roseus "ochange_hand_covered_check_area_client")
+(ros::roseus "change_hand_covered_check_area_client")
 (ros::wait-for-service "clip_covered_area")
 ;;right left
 (defun send_box_size (&key (box-position-list (list #f(100 100 100) #f(100 100 100) )) (size-vector-list (list #f(1 1 1) #f(1 1 1))) (tilt-vector-list (list #f(1 1 1) #f(1 1 1))))

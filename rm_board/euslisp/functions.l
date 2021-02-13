@@ -8,6 +8,7 @@
 (load "./stick-pose.l")
 (load "./functions-without-ri.l")
 (load "client/change_count_points_thre.l")
+(load "change_clip_box_client_hand_covered_check.l" )
 ;; (load "./client/predict_k.l" )
 ;; (load "./client/make_plane_for_opt.l" )
 ;; (load "./old/predict_from_multi_pose.l")
@@ -215,21 +216,21 @@
       (progn 
         (if (not fix-contact?)
             (progn ;;踏み出しあり
-	      (if use-zmp-weight-map?
-		  (send *ri* :set-gait-generator-param :zmp-weight-map (float-vector rleg-ratio lleg-ratio 1 1)))
+              (if use-zmp-weight-map?
+                  (send *ri* :set-gait-generator-param :zmp-weight-map (float-vector rleg-ratio lleg-ratio 1 1)))
               (move-on-foot rleg-coords lleg-coords rleg-coords-new lleg-coords-new :wait? wait? :fix-hand? fix-hand?) ;;wait? t なら踏み出し後、姿勢変更　wait? t なら姿勢変更同時 踏み出しの分だけ手を引く
               (if (not only-move-foot?)
-                (progn ;;姿勢も変更
+                  (progn ;;姿勢も変更
                     (if (not wait?)
                         (progn ;;姿勢変更同時 踏み出しの分だけ手を引く
                           (unix:usleep (round (* 400000 (send (send *ri* :get-gait-generator-param) :default_step_time))))
                           (setq movetime-tmp (* 2000 (send (send *ri* :get-gait-generator-param) :default_step_time)))
                           (setq force-move-tmp t)
-			  (send *robot* :angle-vector (send *coords* :get-pre-angle-vector))
+                          (send *robot* :angle-vector (send *coords* :get-pre-angle-vector))
                           (setq diff (v- (midpoint 0.5 (send rleg-coords-new :worldpos) (send lleg-coords-new :worldpos)) (midpoint 0.5 (send rleg-coords :worldpos) (send lleg-coords :worldpos))))
                           (move-hand :rarm (scale -1 diff) :send? nil :frame :world)
                           (move-hand :larm (scale -1 diff) :send? nil :frame :world)
-			  (format t "pull hands ~A~% "(scale -1 diff))
+                          (format t "pull hands ~A~% "(scale -1 diff))
                           (send-pose movetime-tmp :force-move force-move-tmp :look-at-object? look-at-object? :wait? t)
                           (send *robot* :angle-vector (send *coords* :get-latest-angle-vector))
                           )
@@ -242,9 +243,9 @@
                 ))
           (progn
             (setq force-move-tmp flag-simulator) ;;踏み出しなし
-            (send-pose time :force-move force-move-tmp :look-at-object? look-at-object? :wait? t)))
-          ))
-        )
+            (send-pose time :force-move force-move-tmp :look-at-object? look-at-object? :wait? wait?)))
+        ))
+  )
 
 (defun reach
     (&key (fix-contact? nil)
@@ -467,7 +468,7 @@
         rarm-f-pre  (low-pass-online "force" "off" :rarm :times 10 :sleep 100 :flag nil)
         larm-f-pre  (low-pass-online "force" "off" :larm :times 10 :sleep 100 :flag nil)
         angle-pre (send *ri* :state :angle-vector)
-        flag 0)
+        holding-flag '(0 0))
 
   (if working?
       (format t "~%~%check while working~%")
@@ -496,46 +497,63 @@
           ;;       (send *robot* :angle-vector (send *coords* :get-pre-angle-vector))
           ;;       (send *robot* :move-coords (send *coords* :lleg-contact-coords) (send *robot* :lleg :end-coords)))
             (send-pose-and-move-on-foot :time movetime :send? t :fix-contact? fix-contact? :look-at-object? t :wait? t :fix-hand? nil))
-          )
+      )
+
+    ;;force 
     (format t "~%~%")
     (setq rarm-f  (low-pass-online "force" "off" :rarm :times 10 :sleep 100 :flag nil))
     (setq larm-f  (low-pass-online "force" "off" :larm :times 10 :sleep 100 :flag nil))
-    (setq flag 0)
+    (setq holding-flag-force (list 0 0))
     ;;絶対値バージョン
-    (setq rarm-f-dif (abs (elt (v- rarm-f rarm-f-pre) 2)))
-    (setq larm-f-dif (abs (elt (v- larm-f larm-f-pre) 2)))  ;;0122 commnt in
-    ;; (setq rarm-f-dif (abs (norm (v- rarm-f rarm-f-pre))))
-    ;; (setq larm-f-dif (abs (norm (v- larm-f larm-f-pre)))) ;;0122 comment out
-    ;; (setq rarm-f-dif (elt (v- rarm-f rarm-f-pre) 2))
-    ;; (setq larm-f-dif (elt (v- larm-f larm-f-pre) 2))
+    ;; (setq rarm-f-dif (abs (elt (v- rarm-f rarm-f-pre) 2)))
+    ;; (setq larm-f-dif (abs (elt (v- larm-f larm-f-pre) 2)))  ;;0122 comment in
+    (setq rarm-f-dif (elt (v- rarm-f rarm-f-pre) 2))
+    (setq larm-f-dif (elt (v- larm-f larm-f-pre) 2));;0213 comment in
     (setq drop (list nil nil))
     (format t "rarm-f-dif       = ~A~%" rarm-f-dif)
     (format t "larm-f-dif       = ~A~%" larm-f-dif)
 
-    ;;drop判定 ;;へんこうする
-    (if (>  larm-f-dif (* +1 (elt thre-list 1)))
-	(progn
-	  (print "larm force dif too large")
-	  (setq flag (+ flag 1))))
+    ;;rarm
     (if (>  rarm-f-dif (* +1 (elt thre-list 0)))
-	(progn
-	  (print "rarm force dif too large")
-	  (setq flag (+ flag 2))))
-    (setq flag-pcl (check-pcl))
-    (format t "flags force pcl = ~A ~A ~%" flag flag-pcl)
-    (if (or (not (= 0 flag-pcl))  (not (= flag 0)))
-        (if (= flag-pcl 0)
-            (print "holding")
-          (progn
-            (cond 
-             ((= flag-pcl 1)
-              (print "drop larm"))
-             ((= flag-pcl 2)
-              (print "drop rarm"))
-             ((= flag-pcl 3)
-              (print "drop both arm")))
-            (return-from check-force-pcl flag-pcl))))
-      
+        (progn
+          (print "rarm force dif too large")
+          (setf (car holding-flag-force) 0 ))
+      (progn
+          (setf (car holding-flag-force) 1)))
+    ;;larm
+    (if (>  larm-f-dif (* +1 (elt thre-list 1)))
+      (progn
+        (print "larm force dif too large")
+        (setf (cadr holding-flag-force) 0))
+        (progn
+          (setf (cadr holding-flag-force) 1)))
+
+    ;;point cloud
+    (setq holding-flag-pcl (check-pcl))
+    (format t "flags force pcl = ~A ~A ~%" holding-flag-force holding-flag-pcl)
+
+    ;;drop判定 '(? ?) ?<- 0 or 1
+    ;;rarm
+    (if (= (car holding-flag-pcl) 2) ;;coverのときは力判定、それ以外は視覚判定
+        (progn
+          (print "rarm covered")
+          (setf (car holding-flag) (car holding-flag-force)))
+      (progn
+        (print "rarm not covered")
+          (setf (car holding-flag) (car holding-flag-pcl))))
+    ;;larm
+    (if (= (cadr holding-flag-pcl) 2) ;;coverのときは力判定、それ以外は視覚判定
+        (progn
+          (print "larm covered")
+          (setf (cadr holding-flag) (cadr holding-flag-force)))
+      (progn
+        (print "larm not covered")
+        (setf (cadr holding-flag) (cadr holding-flag-pcl))))
+
+    ;何方かの手が外れていたら関数を抜ける
+    (if (not (equal holding-flag '(1 1)))
+        (return-from check-force-pcl holding-flag))
+    
     (if working?
         (progn
           ;;動作終了判定
@@ -545,7 +563,7 @@
           (if (< angle-vector-dif 0.5)
               (progn
                 (print "finish")
-                (setq flag 10)
+                ;; (setq holding-flag (list 10 10))
                 (return angle-vector-dif))
             )
           (setq rarm-f-pre rarm-f)
@@ -553,10 +571,10 @@
     
     (setq angle-pre (send *ri* :state :angle-vector))
     
-    (unix:usleep sleep-time)
+    ;; (unix:usleep (- sleep-time 10000))
     )
-  (format t "flag = ~A~%" flag)
-  flag
+  (format t "holding flag = ~A~%" holding-flag)
+  holding-flag
   )
 ;; (setq drop_flag_larm (instance std_msgs::Bool :init))
 ;; (setq drop_flag_rarm (instance std_msgs::Bool :init))
@@ -568,41 +586,55 @@
 ;;output flag   0 ::both arms holding , 1 ::larm drop , 2 ::rarm drop , 3 ::both arms drop, 10 ::finish smoothly
 (defun check-pcl()
   (let*
-      (;; (drop_flag_larm (one-shot-subscribe "/drop_flag_larm" std_msgs::Bool :timeout 3000))
-       ;; (drop_flag_rarm (one-shot-subscribe "/drop_flag_rarm" std_msgs::Bool :timeout 3000))
-       (drop_flag_list (one-shot-subscribe "/drop_flag_list" std_msgs::Int32MultiArray :timeout 5000))
+      ((holding_flag_list (one-shot-subscribe "/drop_flag_list" std_msgs::Int32MultiArray :timeout 5000))
        (flag 0))
     ;; (format t "drop_flag_list =~A~%" drop_flag_list)
-    (if drop_flag_list
+    (if holding_flag_list
         (progn
-          (print "get drop_flag_list")
-          (setq drop_flag_larm (elt (send drop_flag_list :data) 0))
-          (setq drop_flag_rarm (elt (send drop_flag_list :data) 1)))
-      (print "use old drop_flag_list"))
-    ;; (format t "get larm points = ~A~%" (send drop_flag_larm :data))
-    ;; (format t "get rarm points = ~A~%" (send drop_flag_rarm :data))    
-    ;; (if (not (send drop_flag_larm :data))
-    ;;     (setq flag 1))
-    ;; (if (not (send drop_flag_rarm :data))
-    ;;     (setq flag 2))
-    ;; (if (and (not (send drop_flag_larm :data)) (not (send drop_flag_rarm :data)))
-    ;;     (setq flag 3))
+          ;; (print "get holding_flag_list")
+          (setq holding_flag_larm (elt (send holding_flag_list :data) 0))
+          (setq holding_flag_rarm (elt (send holding_flag_list :data) 1))
+          (setq cover_flag_larm (elt (send holding_flag_list :data) 2))
+          (setq cover_flag_rarm (elt (send holding_flag_list :data) 3)))
+      (print "use old holding_flag_list"))
     
-    (format t "get larm points = ~A~%" drop_flag_larm )
-    (format t "get rarm points = ~A~%" drop_flag_rarm )
-    (if (= drop_flag_larm 0)
-        (progn
-          (print "larm drop")
-          (setq flag 1)))
-    (if (= drop_flag_rarm 0)
-        (progn
-          (print "rarm drop")
-          (setq flag 2)))
-    (if (and (= drop_flag_larm 0) (= drop_flag_rarm 0))
-        (progn
-          (print "both arms drop")
-          (setq flag 3)))
-    flag)
+    (format t "get rarm holding flag = ~A~%" holding_flag_rarm )
+    (format t "get larm holding flag = ~A~%" holding_flag_larm )    
+    (format t "get rarm cover flag = ~A~%" cover_flag_rarm )
+    (format t "get larm cover flag = ~A~%" cover_flag_larm )    
+
+    (if (= cover_flag_rarm 0)    
+        (if (= holding_flag_rarm 1)
+            (progn
+              (print "larm holding")
+              (setq flag-r 1))
+          (progn
+            (print "rarm drop")
+            (setq flag-r 0)))
+      (progn
+        (print "rarm covered")
+        (setq flag-r 2)))
+
+    (if (= cover_flag_larm 0)
+        (if (= holding_flag_larm 1)
+            (progn
+              (print "larm holding")
+              (setq flag-l 1))
+          (progn
+            (print "larm drop")
+            (setq flag-l 0)))
+      (progn
+            (print "larm covered")
+            (setq flag-l 2)))    
+    
+    ;; (if (and (= holding_flag_larm 0) (= holding_flag_rarm 0))
+    ;;     (progn
+    ;;       (print "both arms drop")
+    ;;       (setq flag-l 0)
+    ;; (setq flag-l 0)))
+    ;; flag)
+    )
+    (list flag-r flag-l)
   )
 
 
@@ -1309,22 +1341,11 @@
 
     (setq lnum-pre (send (one-shot-subscribe "/larm/num" std_msgs::Int32 :timeout 5000) :data)
           rnum-pre (send (one-shot-subscribe "/rarm/num" std_msgs::Int32 :timeout 5000) :data))
-(print "ok")
-    ;;test
-    ;; (setq l-theta-next 0.0)
-    ;; (setq r-theta-next 0.0)
-    ;; (setq larm-coords (make-coords :pos (v+ (send *robot* :larm :end-coords :worldpos) (scale l-unit l-move-dir)) :rot (rotate-matrix (send (elt coords-list 0) :rot) (* -2.0 l-theta-next) :z  nil)))
-    ;; (setq rarm-coords (make-coords :pos (v+ (send *robot* :rarm :end-coords :worldpos) (scale r-unit r-move-dir)) :rot (rotate-matrix (send (elt coords-list 1) :rot) (*  2.0 r-theta-next) :z  nil)))
-
-    ;;0123 modify
-    ;; (setq larm-coords (make-coords :pos (v+ (send *robot* :larm :end-coords :worldpos) (scale l-unit l-move-dir)) :rot (rotate-matrix (send *robot* :larm :end-coords :worldrot) (* -0.5 l-theta-next) :z  nil)))
-    ;; (setq rarm-coords (make-coords :pos (v+ (send *robot* :rarm :end-coords :worldpos) (scale r-unit r-move-dir)) :rot (rotate-matrix (send *robot* :rarm :end-coords :worldrot) (*  0.5 r-theta-next) :z  nil)))
+    (print "ok")
 
     (setq larm-coords (make-coords :pos (v+ (send *robot* :larm :end-coords :worldpos) (scale l-unit l-move-dir)) :rot (m* (send *robot* :larm :end-coords :worldrot) (rotation-matrix (*  0.5 l-theta-next) l-omega ))))
     (setq rarm-coords (make-coords :pos (v+ (send *robot* :rarm :end-coords :worldpos) (scale r-unit r-move-dir)) :rot (m* (send *robot* :rarm :end-coords :worldrot) (rotation-matrix (*  0.5 r-theta-next) r-omega ))))
 
-    ;; (setq larm-coords (send (send *robot* :larm :end-coords :copy-worldcoords) :translate (scale l-unit l-move-dir) :world)) ;; :rot (rotate-matrix (send *robot* :larm :end-coords :worldrot) (* -2.0 l-theta-next) :z  nil)))
-    ;; (setq rarm-coords (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate  (scale r-unit r-move-dir) :world)) ;; :rot (rotate-matrix (send *robot* :rarm :end-coords :worldrot) (*  2.0 r-theta-next) :z  nil)))
     (format t "larm-coords     = ~A~%" (send *robot* :larm :end-coords :copy-worldcoords))
     (format t "rarm-coords     = ~A~%" (send *robot* :rarm :end-coords :copy-worldcoords))
     (format t "larm-coords next= ~A~%" larm-coords)
@@ -1409,7 +1430,7 @@
 
           ;; (setq ret (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision?  :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :arm (if (equal target "board") arm "rarm")  :kin-task-value-thre 0.15 :eom-trans-task-value-thre 0.15))
 	  (setq ret (ik-opt rarm-coords larm-coords  :fix-contact? fix-contact?  :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift  :kin-task-value-thre 0.15 :eom-trans-task-value-thre 30 :heave? heave? :arm arm))
-          (send *robot-env* :dissoc-root-virtual)))
+      (send *robot-env* :dissoc-root-virtual)))
     ;; (send *robot* :head-neck-p :joint-angle -40)
     (format t "ret ik = ~A~%" ret)
     (setq com (elt fc 1))
@@ -1441,60 +1462,19 @@
     (send-pose-and-move-on-foot :time 5000 :send? send? :fix-contact? fix-contact? :look-at-object? look-at-object? :wait? (not check?) :fix-hand? fix-hand?)
     ;; (send *robot* :head-neck-p :joint-angle -40)
 ;; (send *ri* :angle-vector (send *robot* :angle-vector) 4000)
-
+    (print "inininiininninininininini")
     (if check?
         (progn
-          (setq lnum-thre (* 0.5 (send (one-shot-subscribe "/larm/num" std_msgs::Int32 :timeout 5000) :data))
-                rnum-thre (* 0.5 (send (one-shot-subscribe "/rarm/num" std_msgs::Int32 :timeout 5000) :data)))
+          ;; (setq lnum-thre (* 0.5 (send (one-shot-subscribe "/larm/num" std_msgs::Int32 :timeout 5000) :data))
+          ;;       rnum-thre (* 0.5 (send (one-shot-subscribe "/rarm/num" std_msgs::Int32 :timeout 5000) :data)))
+          (setq lnum-thre (/ (send (one-shot-subscribe "/larm/num" std_msgs::Int32 :timeout 5000) :data) 2)
+                rnum-thre (/ (send (one-shot-subscribe "/rarm/num" std_msgs::Int32 :timeout 5000) :data) 2))          
           (set-cp-thre lnum-thre rnum-thre)
           (setq thre-list (list (* 0.8 (abs (elt (send *ik-param* :get-rarm-wrench) 2))) (* 0.8 (abs (elt (send *ik-param* :get-larm-wrench) 2))))) ;;rarm larm
-          (setq drop-flag (check-force-pcl :working? t :thre-list thre-list))
-          (setq pos-shift 230)
-          (reset-coords)
-          ;; (if (y-or-n-p "check ?")
-          ;;     (progn
-          (cond
-           ((or (= drop-flag 1) (= drop-flag 2))
-            (progn
-              (send *ri* :stop-motion)
-              (format t "~%stop~%~%")              
-              ;; (setq fc (make_plane))
-              (setq coords-list (auto-set-reaching-targets :pos-shift pos-shift :larm-shift #f(0 0 0) :rarm-shift #f(0 0 0) :rot-z rot-z))
-              (if (= drop-flag 1)
-                  (progn
-                    ;; (setq ret-larm (get-target-pose fc)) ;; "larm"))
-                    ;; (setq larm-coords (make-coords :pos (elt ret-larm 0) :rpy (elt (rpy-angle (elt ret-larm 1)) 0)))
-                    (setq larm-coords (elt coords-list 0))
-                    (setq larm-coords (send larm-coords :rotate (deg2rad -20) :z))
-                    (move-hand :larm #f(-150 0 0) :send? t)
-                    (send *ri* :move-gripper :larm 0 :wait t)
-                    (move-hand :larm (v- (send larm-coords :worldpos) (send *robot* :larm :end-coords :worldpos)) :send? t :frame :world)                    )
-                (progn
-                  (setq rarm-coords (elt coords-list 1))
-                  (setq rarm-coords (send rarm-coords :rotate (deg2rad -20) :z))
-                  (move-hand :rarm #f(-150 0 0) :send? t)
-		  (send *ri* :move-gripper :rarm 0 :wait t)
-                  (move-hand :rarm (v- (send rarm-coords :worldpos) (send *robot* :rarm :end-coords :worldpos)) :send? t :frame :world)
-                  ;; (setq ret-rarm (get-target-pose fc)) ;; "rarm"))
-                  ;; (setq rarm-coords (make-coords :pos (elt ret-rarm 0) :rpy (elt (rpy-angle (elt ret-rarm 1)) 0)))
-                  ;; (setq rarm-coords (send rarm-coords :rotate (deg2rad 20) :z))
-                  ))
-              ;; (ik-opt rarm-coords larm-coords :only-kinematics nil  :optimize-torque? nil :fix-contact? 2 :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? t :rleg-pos-shift #f(0 0 0) :lleg-pos-shift #f(0 0 0))
-              ;; (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact? :fix-hand? fix-hand?)
-              ))
-           ((= drop-flag 0)
-            (progn
-              ))
-           ((= drop-flag 3)
-            (progn
-              (format t "~%stop~%~%")
-              (send *ri* :stop-motion)
-              (my-init-pose :tilt? nil :wait? t)
-              (move-on-foot (send *robot* :rleg :end-coords :copy-worldcoords) (send *robot* :lleg :end-coords :copy-worldcoords) (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate #f(-100 0 0) :world) (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(-100 0 0) :world))
-              (reach-auto :send? send? :pos-shift 310 :adjust? nil :ik1? nil :larm-shift #f(0 -10 0) :rarm-shift #f(0 10 0) :fix-contact? 2 :reaching-offset (list #f(-50 -0 0) #f(-50 0 0)) :rot-z 5)
-              )))
-	  ;; ))
-          ))
+          (check-func :working? t :thre-list thre-list)
+          )
+      )
+    
     (setq lnum-after (send (one-shot-subscribe "/larm/num" std_msgs::Int32 :timeout 5000) :data)
           rnum-after (send (one-shot-subscribe "/rarm/num" std_msgs::Int32 :timeout 5000) :data))
     (format t "lnum-diff = ~A~%" (- lnum-pre lnum-after))
@@ -1523,9 +1503,46 @@
     (format t "~%~%~%~%~%")
     ;; (setq ret-rarm-save ret-rarm)
     )
+)
+
+;;holding check function 0213
+(defun check-func(&key (working? t) (thre-list '(-10 -10)))
+  (setq holding-flag (check-force-pcl :working? working? :thre-list thre-list))
+  (setq pos-shift 230)
+  (reset-coords)
+  
+  (if (equal holding-flag '(1 1))
+      (progn
+        (print "holding")
+        (return-from check-func nil))
+    (progn
+      (send *ri* :stop-motion)
+      (format t "~%stop~%~%")
+      (setq coords-list (auto-set-reaching-targets :pos-shift pos-shift :larm-shift #f(0 0 0) :rarm-shift #f(0 0 0) :rot-z 0))
+      (cond
+       ((equal holding-flag '(0 1)) ;;rarmが外れている
+        (setq rarm-coords (elt coords-list 1))
+        (setq rarm-coords (send rarm-coords :rotate (deg2rad -20) :z))
+        (move-hand :rarm #f(-150 0 0) :send? t)
+        (send *ri* :move-gripper :rarm 0 :wait t)
+        (move-hand :rarm (v- (send rarm-coords :worldpos) (send *robot* :rarm :end-coords :worldpos)) :send? t :frame :world)
+        )
+
+       ((equal holding-flag '(1 0)) ;;larmが外れている
+        (setq larm-coords (elt coords-list 0))
+        (setq larm-coords (send larm-coords :rotate (deg2rad -20) :z))
+        (move-hand :larm #f(-150 0 0) :send? t)
+        (send *ri* :move-gripper :larm 0 :wait t)
+        (move-hand :larm (v- (send larm-coords :worldpos) (send *robot* :larm :end-coords :worldpos)) :send? t :frame :world))
+ 
+       ((equal holding-flag '(0 0))
+        (my-init-pose :tilt? nil :wait? t)
+        (move-on-foot (send *robot* :rleg :end-coords :copy-worldcoords) (send *robot* :lleg :end-coords :copy-worldcoords) (send (send *robot* :rleg :end-coords :copy-worldcoords) :translate #f(-100 0 0) :world) (send (send *robot* :lleg :end-coords :copy-worldcoords) :translate #f(-100 0 0) :world))
+        (reach-auto :send? send? :pos-shift 310 :adjust? nil :ik1? nil :larm-shift #f(0 -10 0) :rarm-shift #f(0 10 0) :fix-contact? 2 :reaching-offset (list #f(-50 -0 0) #f(-50 0 0)) :rot-z 5))
+       )
+      ))
   )
-
-
+    
 ;;rerach targets 確認用
 ;; (defun test-reach-prepare()
 (defun reach-auto-prepare()
