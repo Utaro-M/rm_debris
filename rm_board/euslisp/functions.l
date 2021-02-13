@@ -35,6 +35,7 @@
   (setq movetime 4000)
   (send *ri* :start-auto-balancer :limbs (list :lleg :rleg :larm :rarm))
   ;; (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 500)
+  (send *ri* :start-impedance :arms :m-p 100 :d-p 10000 :k-p 400 :k-r 200) ;;0116  
   (send *ri* :set-log-maxlength (* 500 90))
   (send *ri* :set-reference-force-updater-param :arms :motion-dir #f(0 0 -1) :p-gain 0.01 :update-time-ratio 0.3 :frame "world")
   (send *ri* :start-reference-force-updater :arms)
@@ -1553,12 +1554,12 @@
             (lleg-pos-shift #f(90 30 0))
             (look-at-object? t)
             (fix-hand? nil)
-            (reaching-offset (list #f(-100 -0 0) #f(-100 0 0)))  ;;right left
+            (reaching-offset (list #f(-120 -0 0) #f(-120 0 0)))  ;;right left
             (arm "larm")
             (rot-z 20)
             (rot-x 0)
             (rot-y 0)
-            (shift-stick #f(40 0 -150 ))
+            (shift-stick #f(30 20 -40))
             (move-left? nil))
 
   (reset-coords)
@@ -1603,7 +1604,9 @@
     (progn
       (setq stick-coords (get-stick-pose :shift shift-stick))
       (setq center-nearhands (send stick-coords :worldpos))
-      (setq shift-standing-pos 50)
+      (setq shift-standing-pos 300)
+      (if adjust?
+          (send *ri* :go-pos (* 0.001 (- (elt center-nearhands 0) 600))  0 0))
       (setq set-unique-kin-scale? t)
       (setq axis 0)
       (setq edge-axis 1)
@@ -1630,14 +1633,23 @@
   ;;板の目の前に移動
   (if adjust?
       (progn
+        (format t "~A~%" shift-standing-pos)
         (format t "(- (elt center-nearhands 1) (elt center-pos 1)) =~A~%" (* 0.5 (- (elt center-nearhands 1) (elt center-pos 1))))
-        (setq rleg-coords-new (send (send rleg-coords :copy-worldcoords) :translate (float-vector 0 (* 0.5 (+ shift-standing-pos (- (elt center-nearhands 1) (elt center-pos 1)))) 0)))
-        (setq lleg-coords-new (send (send lleg-coords :copy-worldcoords) :translate (float-vector 0 (* 0.5 (+ shift-standing-pos (- (elt center-nearhands 1) (elt center-pos 1)))) 0)))
+        (setq rleg-coords-new (send (send rleg-coords :copy-worldcoords) :translate (float-vector 0 (+ shift-standing-pos (* 0.5 (- (elt center-nearhands 1) (elt center-pos 1)))) 0)))
+        (setq lleg-coords-new (send (send lleg-coords :copy-worldcoords) :translate (float-vector 0 (+ shift-standing-pos (* 0.5 (- (elt center-nearhands 1) (elt center-pos 1)))) 0)))
         (move-on-foot rleg-coords lleg-coords rleg-coords-new lleg-coords-new :wait? t)
         (format t "lleg-coords = ~A~%" (send *robot* :lleg :end-coords :copy-worldcoords))
         (format t "rleg-coords = ~A~%" (send *robot* :rleg :end-coords :copy-worldcoords))
+        
         ))
   (unix::sleep 2)
+
+  (send *ik-param* :set-rarm-wrench  (make-array 6 :element-type float-vector :initial-contents rarm-force :initial-element 0))
+  (send *ik-param* :set-larm-wrench  (make-array 6 :element-type float-vector :initial-contents larm-force :initial-element 0))
+  (setq half-wrench (scale 0.5 (v+ (send *ik-param* :get-rarm-wrench) (send *ik-param* :get-larm-wrench))))
+  (send *ik-param* :set-rleg-wrench   (v+ (send *ik-param* :get-rleg-wrench-offset) half-wrench))
+  (send *ik-param* :set-lleg-wrench   (v+ (send *ik-param* :get-lleg-wrench-offset) half-wrench))
+  
   (reset-coords)
   (if ik1?
       (progn
@@ -1684,11 +1696,11 @@
         ;; (setq fix-contact? nil)
         ;;手先力適当
 
-        (send *ik-param* :set-rarm-wrench  (make-array 6 :element-type float-vector :initial-contents rarm-force :initial-element 0))
-        (send *ik-param* :set-larm-wrench  (make-array 6 :element-type float-vector :initial-contents larm-force :initial-element 0))
-        (setq half-wrench (scale 0.5 (v+ (send *ik-param* :get-rarm-wrench) (send *ik-param* :get-larm-wrench))))
-        (send *ik-param* :set-rleg-wrench   (v+ (send *ik-param* :get-rleg-wrench-offset) half-wrench))
-        (send *ik-param* :set-lleg-wrench   (v+ (send *ik-param* :get-lleg-wrench-offset) half-wrench))
+        ;; (send *ik-param* :set-rarm-wrench  (make-array 6 :element-type float-vector :initial-contents rarm-force :initial-element 0))
+        ;; (send *ik-param* :set-larm-wrench  (make-array 6 :element-type float-vector :initial-contents larm-force :initial-element 0))
+        ;; (setq half-wrench (scale 0.5 (v+ (send *ik-param* :get-rarm-wrench) (send *ik-param* :get-larm-wrench))))
+        ;; (send *ik-param* :set-rleg-wrench   (v+ (send *ik-param* :get-rleg-wrench-offset) half-wrench))
+        ;; (send *ik-param* :set-lleg-wrench   (v+ (send *ik-param* :get-lleg-wrench-offset) half-wrench))
 
         (send *coords* :set-pre-angle-vector (send *robot* :angle-vector))
         (setq ret (ik-opt (elt coords-list 1) (elt coords-list 0) :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :arm (if (equal target "board") arm "rarm")  :set-unique-kin-scale? set-unique-kin-scale? :obst? nil))
@@ -1769,9 +1781,10 @@
         (send *coords* :set-rleg-new-coords (send *robot* :rleg :end-coords :copy-worldcoords))
         (send *coords* :set-lleg-new-coords (send *robot* :lleg :end-coords :copy-worldcoords))
 	(if pull?
-	    (progn	
+	    (progn
 	      (move-hand :rarm (scale +1 (elt reaching-offset 0)) :send? nil)
-	      (move-hand :larm (scale +1 (elt reaching-offset 1)) :send? nil)
+          (if (equal target "board")         
+              (move-hand :larm (scale +1 (elt reaching-offset 1)) :send? nil))
 	      (send-pose-and-move-on-foot :send? send? :fix-contact? fix-contact? :fix-hand? fix-hand? :look-at-object? nil)
 	))
         ;; (if send?
@@ -1785,9 +1798,8 @@
         (send *robot* :angle-vector angle-vec)
         (send *coords* :set-pre-angle-vector (send *robot* :angle-vector))
         (format t "change pose~%")
-        (send-pose-and-move-on-foot :time 10000 :send? send? :fix-contact? fix-contact?  :fix-hand? fix-hand? :look-at-object? look-at-object?)
+        (send-pose-and-move-on-foot :time 8000 :send? send? :fix-contact? fix-contact?  :fix-hand? fix-hand? :look-at-object? look-at-object?)
         ))
-
 
   (if ik3?
       (progn
