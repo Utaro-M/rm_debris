@@ -7,8 +7,8 @@
 (load "./my-ik.l")
 (load "./stick-pose.l")
 (load "./functions-without-ri.l")
-(load "client/change_count_points_thre.l")
-(load "client/change_clip_box_client_hand_covered_check.l" )
+;; (load "client/change_count_points_thre.l")
+;; (load "client/change_clip_box_client_hand_covered_check.l" )
 ;; (load "./client/predict_k.l" )
 ;; (load "./client/make_plane_for_opt.l" )
 ;; (load "./old/predict_from_multi_pose.l")
@@ -1033,7 +1033,7 @@
     (list x-vec y-vec z-vec center-nearhands longest-len pos-centroid)
     ;; (list x-vec y-vec z-vec pos-centroid longest-len pos-centroid)    ;;big board
     )
-
+  
 ;;掴みに行く目標座標　微調整
 ;;pos-shift=0 にして返る返り値のうちどちらの手を使うかを選べば良い
 (ros::roseus "hand_targets")
@@ -1143,6 +1143,100 @@
     (ros::publish "/rarm_target" rarm-pos-pub)
     )
   (list larm-coords rarm-coords pos)
+  )
+
+;;0214
+;;rarm-point,larm-point のそれぞれから近いエッジを見つけてedge-pos,edge-vecを用いて位置、姿勢を計算する
+;;エッジはmin-lenより長いものを選ぶ
+(defun auto-set-reaching-targets-each-hand(&key (pos-shift 340) (loop-num 2) (rot-z 20) (larm-shift #f(-30 0 0)) (rarm-shift #f(-30 0 0)) (min-len 40))
+  (let*
+      ((rarm-point (v+ (send (send *robot* :link "RARM_LINK1") :worldpos) (float-vector 400 (* -1 (/ pos-shift 2)) -500)))
+       (*rarm-point* (instance arrow-object :init))
+       (larm-point (v+ (send (send *robot* :link "LARM_LINK1") :worldpos) (float-vector 400 (/ pos-shift 2) -500)))
+       (*larm-point* (instance arrow-object :init)))
+
+    (send *rarm-point* :newcoords (make-coords :pos rarm-point))
+    (send *larm-point* :newcoords (make-coords :pos larm-point))
+    (setq plane-normal-sum #f(0 0 0)
+          rarm-edge-vec-sum #f(0 0 0)
+          larm-edge-vec-sum #f(0 0 0)
+          rarm-edge-pos-sum #f(0 0 0)
+          larm-edge-pos-sum #f(0 0 0))
+    
+    (dotimes (i loop-num)
+      (setq fc (make_plane))
+      (setq small-distance-lis (get-min-val (mapcar #'(lambda(v) (list (send v :distance rarm-point) (send v :length) v)) (send (car fc) :edges)) 12)
+            ;; rarm-edge-tmp (cadr (car small-distance-lis))
+            length-t-nil-list (mapcar #'(lambda(l) (< min-len (elt l 1) )) small-distance-lis) 
+            rarm-edge-tmp (elt (elt small-distance-lis (- (length small-distance-lis) (length (member t length-t-nil-list)))) 2)
+            rarm-edge-vec-tmp (normalize-vector (send rarm-edge-tmp :direction))
+            rarm-edge-pos-tmp (send rarm-edge-tmp :point (if (and (< 0 (send rarm-edge-tmp :foot rarm-point)) (< (send rarm-edge-tmp :foot rarm-point) 1)) (send rarm-edge-tmp :foot rarm-point) 0.5)))
+      (setq small-distance-lis (get-min-val (mapcar #'(lambda(v) (list (send v :distance larm-point) (send v :length) v)) (send (car fc) :edges)) 12)
+            ;; larm-edge-tmp (cadr (car small-distance-lis))
+            length-t-nil-list (mapcar #'(lambda(l) (< min-len (elt l 1) )) small-distance-lis)
+            larm-edge-tmp (elt (elt small-distance-lis (- (length small-distance-lis) (length (member t length-t-nil-list)))) 2)
+            larm-edge-vec-tmp (normalize-vector (send larm-edge-tmp :direction))
+            larm-edge-pos-tmp (send larm-edge-tmp :point (if (and (< 0 (send larm-edge-tmp :foot larm-point)) (< (send larm-edge-tmp :foot larm-point) 1)) (send larm-edge-tmp :foot larm-point) 0.5)))
+      (setq plane-normal-tmp (elt fc 2))
+
+      ;;for average
+      (setq plane-normal-sum (v+ plane-normal-sum (if (< 0 (elt plane-normal-tmp 2)) plane-normal-tmp (scale -1 plane-normal-tmp)))
+            rarm-edge-vec-sum (v+ rarm-edge-vec-sum (if (< 0 (elt rarm-edge-vec-tmp 1)) rarm-edge-vec-tmp (scale -1 rarm-edge-vec-tmp))) ;;方向調整
+            larm-edge-vec-sum (v+ larm-edge-vec-sum (if (< (elt larm-edge-vec-tmp 1) 0) larm-edge-vec-tmp (scale -1 larm-edge-vec-tmp)))
+            rarm-edge-pos-sum (v+ rarm-edge-pos-sum rarm-edge-pos-tmp)
+            larm-edge-pos-sum (v+ larm-edge-pos-sum larm-edge-pos-tmp)
+            ))
+
+    ;;average
+    (setq plane-normal (scale (/ 1.0 loop-num) plane-normal-sum)
+            rarm-edge (scale (/ 1.0 loop-num) rarm-edge-vec-sum)
+            larm-edge (scale (/ 1.0 loop-num) larm-edge-vec-sum)
+            rarm-pos (scale (/ 1.0 loop-num) rarm-edge-pos-sum)
+            larm-pos (scale (/ 1.0 loop-num) larm-edge-pos-sum))
+      
+    (setq y-vec-larm plane-normal
+          y-vec-rarm  (scale -1 plane-normal)
+          z-vec-rarm  rarm-edge
+          z-vec-larm  larm-edge
+          x-vec-rarm  (normalize-vector (v* z-vec-rarm y-vec))
+          x-vec-larm  (normalize-vector (v* y-vec z-vec-larm)))
+      
+      (setq rot-rarm (transpose
+                      (matrix x-vec-rarm y-vec-rarm z-vec-rarm)))
+      (setq rarm-coords (make-coords :pos rarm-pos :rpy (elt (rpy-angle rot-rarm)  0)))
+      (setq rarm-coords (send rarm-coords :translate rarm-shift :local))
+      
+      (setq rot-larm (transpose
+                      (matrix x-vec-larm y-vec-larm z-vec-larm)))
+      (setq larm-coords (make-coords :pos larm-pos :rpy (elt (rpy-angle rot-larm)  0)))
+      (setq larm-coords (send larm-coords :translate larm-shift :local))
+
+      (setq *rarm-coords*  (instance arrow-object :init))
+      (send *rarm-coords* :newcoords rarm-coords)
+      (setq *larm-coords*  (instance arrow-object :init))
+      (send *larm-coords* :newcoords larm-coords)
+      (setq *normal-line* (make-line (v+ com #f(0 0 0))
+                                   (v+ com (scale 300 plane-normal))))
+      (objects (list (car fc) *larm-coords* *rarm-coords* *normal-line* *rarm-point* *larm-point* rarm-edge-tmp larm-edge-tmp))
+
+   ;; rviz visualize reaching point 
+      (progn
+        (setq larm-pos-pub (instance geometry_msgs::PointStamped :init))
+        (setq rarm-pos-pub (instance geometry_msgs::PointStamped :init))
+        (setq l-point (send larm-coords :worldpos))
+        (setq r-point (send rarm-coords :worldpos))
+        (send larm-pos-pub :header :stamp (ros::time-now))
+        (send larm-pos-pub :header :frame_id "lleg_end_coords")
+        (send larm-pos-pub :point :x (* 0.001 (elt l-point 0))) (send larm-pos-pub :point :y (* 0.001 (elt l-point 1))) (send larm-pos-pub :point :z (* 0.001 (elt l-point 2)))
+        (send rarm-pos-pub :header :stamp (ros::time-now))
+        (send rarm-pos-pub :header :frame_id "lleg_end_coords")
+        (send rarm-pos-pub :point :x (* 0.001 (elt r-point 0))) (send rarm-pos-pub :point :y (* 0.001 (elt r-point 1))) (send rarm-pos-pub :point :z (* 0.001 (elt r-point 2)))
+        (format t "l-point = ~A~%" l-point)
+        (ros::publish "/larm_target" larm-pos-pub)
+        (ros::publish "/rarm_target" rarm-pos-pub)
+        )
+      (list x-vec-rarm y-vec-rarm z-vec-rarm (send rarm-coords :worldpos) x-vec-larm y-vec-larm z-vec-larm (send larm-coords :worldpos))
+      )
   )
 
 (defun get-half-plane(obj &key (cut-rate 0.5))
