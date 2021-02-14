@@ -6,7 +6,9 @@
   <arg name="filtered_cloud"
        default="/self_filter/filtered_cloud" />
   <!-- <arg name="SELF_FILTER_PARAM" default="/home/leus/catkin_ws/jaxon_tutorial/src/matsuura_rm_debris/rm_board/models/self_filter_param.yaml"/> -->
-  <arg name="SELF_FILTER_PARAM" default="/home/utaro/research/rm_debris/rm_board/models/self_filter_param_sim.yaml"/>  
+  <arg name="SELF_FILTER_PARAM" default="/home/utaro/research/rm_debris/rm_board/models/self_filter_param_sim.yaml"/>
+  <arg name="camera_info"
+       default="/multisense_local/left/camera_info" />  
   <arg name="manager" default="plane_extraction_manager" />
   <!-- <rosparam param="/use_sim_time">true</rosparam> -->
   <!-- <node pkg="count_points" name="count_points" type="count_points.py" output="screen" /> -->
@@ -103,7 +105,8 @@
           pkg="nodelet" type="nodelet"
           args="load jsk_pcl/AttentionClipper $(arg manager)">
       <remap from="~input/points" to="$(arg input_cloud)" />
-      <remap from="~input/box_array" to="bounding_box_publisher_cover_larm/output" />
+      <!-- <remap from="~input/box_array" to="bounding_box_publisher_cover_larm/output" /> -->
+      <remap from="~input/box" to="bounding_box_publisher_cover_larm/output" />      
       <rosparam>
         use_multiple_attention: true
       </rosparam>
@@ -137,7 +140,8 @@
           pkg="nodelet" type="nodelet"
           args="load jsk_pcl/AttentionClipper $(arg manager)">
       <remap from="~input/points" to="$(arg input_cloud)" />
-      <remap from="~input/box_array" to="bounding_box_publisher_cover_rarm/output" />
+      <!-- <remap from="~input/box_array" to="bounding_box_publisher_cover_rarm/output" /> -->
+      <remap from="~input/box" to="bounding_box_publisher_cover_rarm/output" />      
       <rosparam>
         use_multiple_attention: true
       </rosparam>
@@ -151,8 +155,44 @@
       <rosparam>
         keep_organized: true
       </rosparam>
-    </node>    
+    </node>
   </group>
+  <node name="robot_to_mask_image_rarm"
+        pkg="nodelet" type="nodelet"
+        args="standalone jsk_perception/RobotToMaskImage">
+    <!-- args="load jsk_perception/RobotToMaskImage "> -->
+    <remap from="~input/camera_info" to="$(arg camera_info)"/>
+    <rosparam>
+      robot_description: "JAXON_RED"
+      self_see_links:
+      <!-- - name: RARM_LINK7   -->
+      - name: RARM_FINGER0
+      - name: RARM_FINGER1
+      <!-- jikki -->
+      <!-- - name: R_thk_finger1 -->
+      <!-- - name: R_thk_finger2 -->
+      <!-- - name: R_thk_palm -->
+      self_see_default_padding: 0.1
+    </rosparam>
+  </node>
+
+  <node name="robot_to_mask_image_larm"
+        pkg="nodelet" type="nodelet"
+        args="standalone jsk_perception/RobotToMaskImage">
+    <remap from="~input/camera_info" to="$(arg camera_info)"/>
+    <rosparam>
+      robot_description: "JAXON_RED"
+      self_see_links:
+      <!-- - name: LARM_LINK7   -->
+      - name: LARM_FINGER0
+      - name: LARM_FINGER1
+      <!-- jikki -->
+      <!-- - name: L_thk_finger1 -->
+      <!-- - name: L_thk_finger2 -->
+      <!-- - name: L_thk_palm -->
+      self_see_default_padding: 0.1
+    </rosparam>
+  </node>  
   
     <!-- <node name="rviz" -->
     <!--       pkg="rviz" type="rviz" -->

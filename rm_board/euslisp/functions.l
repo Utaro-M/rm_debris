@@ -8,7 +8,7 @@
 (load "./stick-pose.l")
 (load "./functions-without-ri.l")
 (load "client/change_count_points_thre.l")
-(load "change_clip_box_client_hand_covered_check.l" )
+(load "client/change_clip_box_client_hand_covered_check.l" )
 ;; (load "./client/predict_k.l" )
 ;; (load "./client/make_plane_for_opt.l" )
 ;; (load "./old/predict_from_multi_pose.l")
@@ -534,7 +534,7 @@
 
     ;;drop判定 '(? ?) ?<- 0 or 1
     ;;rarm
-    (if (= (car holding-flag-pcl) 2) ;;coverのときは力判定、それ以外は視覚判定
+    (if (or (= (car holding-flag-pcl) 2) (= (car holding-flag-pcl) 3)) ;;coverもしくは視野外のときは力判定、それ以外は視覚判定
         (progn
           (print "rarm covered")
           (setf (car holding-flag) (car holding-flag-force)))
@@ -542,7 +542,7 @@
         (print "rarm not covered")
           (setf (car holding-flag) (car holding-flag-pcl))))
     ;;larm
-    (if (= (cadr holding-flag-pcl) 2) ;;coverのときは力判定、それ以外は視覚判定
+    (if (or (= (cadr holding-flag-pcl) 2) (= (cadr holding-flag-pcl) 3)) ;;coverもしくは視野外のときは力判定、それ以外は視覚判定
         (progn
           (print "larm covered")
           (setf (cadr holding-flag) (cadr holding-flag-force)))
@@ -592,40 +592,51 @@
     (if holding_flag_list
         (progn
           ;; (print "get holding_flag_list")
-          (setq holding_flag_larm (elt (send holding_flag_list :data) 0))
-          (setq holding_flag_rarm (elt (send holding_flag_list :data) 1))
-          (setq cover_flag_larm (elt (send holding_flag_list :data) 2))
-          (setq cover_flag_rarm (elt (send holding_flag_list :data) 3)))
+          (setq holding_flag_rarm (elt (send holding_flag_list :data) 0))
+          (setq holding_flag_larm (elt (send holding_flag_list :data) 1))
+          (setq cover_flag_rarm (elt (send holding_flag_list :data) 2))
+          (setq cover_flag_larm (elt (send holding_flag_list :data) 3))
+          (setq invision_flag_rarm (elt (send holding_flag_list :data) 4))
+          (setq invision_flag_larm (elt (send holding_flag_list :data) 5)))
       (print "use old holding_flag_list"))
     
     (format t "get rarm holding flag = ~A~%" holding_flag_rarm )
     (format t "get larm holding flag = ~A~%" holding_flag_larm )    
     (format t "get rarm cover flag = ~A~%" cover_flag_rarm )
-    (format t "get larm cover flag = ~A~%" cover_flag_larm )    
+    (format t "get larm cover flag = ~A~%" cover_flag_larm )
 
-    (if (= cover_flag_rarm 0)    
-        (if (= holding_flag_rarm 1)
+    (if (= invision_flag_rarm 1) ;;in vision
+        (if (= cover_flag_rarm 0)
+            (progn                   ;;covered
+              (print "rarm covered")
+              (setq flag-r 2))            
+          (if (= holding_flag_rarm 1)　;;not covere
             (progn
               (print "larm holding")
               (setq flag-r 1))
-          (progn
-            (print "rarm drop")
-            (setq flag-r 0)))
-      (progn
-        (print "rarm covered")
-        (setq flag-r 2)))
-
-    (if (= cover_flag_larm 0)
-        (if (= holding_flag_larm 1)
             (progn
-              (print "larm holding")
-              (setq flag-l 1))
-          (progn
-            (print "larm drop")
-            (setq flag-l 0)))
-      (progn
-            (print "larm covered")
-            (setq flag-l 2)))    
+              (print "rarm drop")
+              (setq flag-r 0))))          
+      (progn                     ;;out of vision
+        (print "rarm out of vision")
+        (setq flag-r 3)))
+    
+      
+    (if (= invision_flag_larm 1) ;;in vision
+        (if (= cover_flag_larm 1)
+            (progn;; covered
+              (print "larm covered")
+              (setq flag-l 2))
+          (if (= holding_flag_larm 1) ;;not covered
+              (progn
+                (print "larm holding")
+                (setq flag-l 1))
+            (progn
+              (print "larm drop")
+              (setq flag-l 0))))          
+      (progn                  ;;out of vision
+        (print "larm out of vision")
+        (setq flag-l 3)))
     
     ;; (if (and (= holding_flag_larm 0) (= holding_flag_rarm 0))
     ;;     (progn
