@@ -37,6 +37,6 @@
           <!-- - name: L_thk_palm -->
         self_see_default_padding: 0.1
       </rosparam>
-    </node>    
+    </node>
 
 </launch>

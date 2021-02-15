@@ -7,7 +7,7 @@
 (load "./my-ik.l")
 (load "./stick-pose.l")
 (load "./functions-without-ri.l")
-;; (load "client/change_count_points_thre.l")
+(load "client/change_count_points_thre.l")
 ;; (load "client/change_clip_box_client_hand_covered_check.l" )
 ;; (load "./client/predict_k.l" )
 ;; (load "./client/make_plane_for_opt.l" )
@@ -1148,7 +1148,8 @@
 ;;0214
 ;;rarm-point,larm-point のそれぞれから近いエッジを見つけてedge-pos,edge-vecを用いて位置、姿勢を計算する
 ;;エッジはmin-lenより長いものを選ぶ
-(defun auto-set-reaching-targets-each-hand(&key (pos-shift 340) (loop-num 2) (rot-z 20) (larm-shift #f(-30 0 0)) (rarm-shift #f(-30 0 0)) (min-len 40))
+;;return larm rarm centroid
+(defun auto-set-reaching-targets-each-hand(&key (pos-shift 600) (loop-num 2) (rot-x 0) (rot-y 0) (rot-z 20) (larm-shift #f(-30 0 0)) (rarm-shift #f(-30 0 0)) (min-len 40))
   (let*
       ((rarm-point (v+ (send (send *robot* :link "RARM_LINK1") :worldpos) (float-vector 400 (* -1 (/ pos-shift 2)) -500)))
        (*rarm-point* (instance arrow-object :init))
@@ -1198,18 +1199,24 @@
           y-vec-rarm  (scale -1 plane-normal)
           z-vec-rarm  rarm-edge
           z-vec-larm  larm-edge
-          x-vec-rarm  (normalize-vector (v* z-vec-rarm y-vec))
-          x-vec-larm  (normalize-vector (v* y-vec z-vec-larm)))
+          x-vec-rarm  (normalize-vector (v* y-vec-rarm z-vec-rarm))
+          x-vec-larm  (normalize-vector (v* y-vec-larm z-vec-larm)))
       
       (setq rot-rarm (transpose
                       (matrix x-vec-rarm y-vec-rarm z-vec-rarm)))
       (setq rarm-coords (make-coords :pos rarm-pos :rpy (elt (rpy-angle rot-rarm)  0)))
       (setq rarm-coords (send rarm-coords :translate rarm-shift :local))
+      (setq rarm-coords (send rarm-coords :rotate (deg2rad rot-z) :z))
+      (setq rarm-coords (send rarm-coords :rotate (deg2rad rot-x) :x))
+      (setq rarm-coords (send rarm-coords :rotate (deg2rad rot-y) :y))
       
       (setq rot-larm (transpose
                       (matrix x-vec-larm y-vec-larm z-vec-larm)))
       (setq larm-coords (make-coords :pos larm-pos :rpy (elt (rpy-angle rot-larm)  0)))
       (setq larm-coords (send larm-coords :translate larm-shift :local))
+      (setq larm-coords (send larm-coords :rotate (deg2rad (- 0 rot-z)) :z))
+      (setq larm-coords (send larm-coords :rotate (deg2rad (- 0 rot-x)) :x))
+      (setq larm-coords (send larm-coords :rotate (deg2rad (- 0 rot-y)) :y))
 
       (setq *rarm-coords*  (instance arrow-object :init))
       (send *rarm-coords* :newcoords rarm-coords)
@@ -1236,6 +1243,7 @@
         (ros::publish "/rarm_target" rarm-pos-pub)
         )
       (list x-vec-rarm y-vec-rarm z-vec-rarm (send rarm-coords :worldpos) x-vec-larm y-vec-larm z-vec-larm (send larm-coords :worldpos))
+      (list larm-coords rarm-coords (send (car fc) :centroid))
       )
   )
 
@@ -1623,7 +1631,8 @@
     (progn
       (send *ri* :stop-motion)
       (format t "~%stop~%~%")
-      (setq coords-list (auto-set-reaching-targets :pos-shift pos-shift :larm-shift #f(0 0 0) :rarm-shift #f(0 0 0) :rot-z 0))
+      ;; (setq coords-list (auto-set-reaching-targets :pos-shift pos-shift :larm-shift #f(0 0 0) :rarm-shift #f(0 0 0) :rot-z 0))
+      (setq coords-list (auto-set-reaching-targets-each-hand :pos-shift pos-shift :larm-shift #f(0 0 0) :rarm-shift #f(0 0 0) :rot-z 0))
       (cond
        ((equal holding-flag '(0 1)) ;;rarmが外れている
         (setq rarm-coords (elt coords-list 1))
@@ -1778,7 +1787,8 @@
       (progn
         ;;1回目は板のエッジそのままの位置にリーチング出来る立ち位置を決める
         (if (equal target "board")
-            (setq coords-list (auto-set-reaching-targets :pos-shift pos-shift :larm-shift larm-shift :rarm-shift rarm-shift :rot-z rot-z :axis axis :edge-axis edge-axis :rot-y rot-y :rot-x rot-x))
+            ;; (setq coords-list (auto-set-reaching-targets :pos-shift pos-shift :larm-shift larm-shift :rarm-shift rarm-shift :rot-z rot-z :axis axis :edge-axis edge-axis :rot-y rot-y :rot-x rot-x))
+          (setq coords-list (auto-set-reaching-targets-each-hand :pos-shift (* 2 pos-shift) :larm-shift larm-shift :rarm-shift rarm-shift :rot-z rot-z :rot-y rot-y :rot-x rot-x))
           (setq coords-list (list stick-coords stick-coords #f(0 0 0))))
 
         ;; (send *robot* :angle-vector (send *ri* :state :angle-vector))
@@ -1788,7 +1798,8 @@
         (while (and (not coords-list) (< neck-angle 20))
           (setq neck-angle (+ neck-angle 5))
           (if (equal target "board")
-              (setq coords-list (auto-set-reaching-targets :pos-shift pos-shift :larm-shift larm-shift :rarm-shift rarm-shift :rot-z rot-z :axis axis :edge-axis edge-axis :rot-y rot-y :rot-x rot-x))
+            ;; (setq coords-list (auto-set-reaching-targets :pos-shift pos-shift :larm-shift larm-shift :rarm-shift rarm-shift :rot-z rot-z :axis axis :edge-axis edge-axis :rot-y rot-y :rot-x rot-x))
+          (setq coords-list (auto-set-reaching-targets-each-hand :pos-shift (* 2 pos-shift) :larm-shift larm-shift :rarm-shift rarm-shift :rot-z rot-z :rot-y rot-y :rot-x rot-x))
             (progn
               (setq stick-coords (get-stick-pose :shift shift-stick))
               (setq coords-list (list stick-coords stick-coords #f(0 0 0)))))
@@ -1869,8 +1880,10 @@
         (setq lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
         (setq waist-pos (send (car (send *robot* :links)) :worldpos))
         (if (equal target "board")
-            (setq coords-list (auto-set-reaching-targets :pos-shift pos-shift :larm-shift larm-shift  :rarm-shift rarm-shift :rot-z rot-z :center-pos (if ik1? center-pos-from-auto-set-reaching-targets waist-pos) :axis axis :edge-axis edge-axis :rot-y rot-y :rot-x rot-x
-                                                         ))
+            ;; (setq coords-list (auto-set-reaching-targets :pos-shift pos-shift :larm-shift larm-shift  :rarm-shift rarm-shift :rot-z rot-z :center-pos (if ik1? center-pos-from-auto-set-reaching-targets waist-pos) :axis axis :edge-axis edge-axis :rot-y rot-y :rot-x rot-x))
+            (setq coords-list (auto-set-reaching-targets-each-hand :pos-shift (* 2 pos-shift) :larm-shift larm-shift  :rarm-shift rarm-shift :rot-z rot-z ;; :center-pos (if ik1? center-pos-from-auto-set-reaching-targets waist-pos) :axis axis :edge-axis edge-axis
+                                                         :rot-y rot-y :rot-x rot-x))
+
           (progn
             (setq stick-coords (get-stick-pose :shift shift-stick))
             (setq coords-list (list stick-coords stick-coords))))
@@ -1931,7 +1944,8 @@
         ;;IK 3  少し手前からターゲットへ手をのばす
         (if (equal target "board")
             (progn
-              (setq coords-list (auto-set-reaching-targets :pos-shift pos-shift :larm-shift larm-shift :rarm-shift rarm-shift :rot-z rot-z :axis axis :edge-axis edge-axis :rot-y rot-y :rot-x rot-x))
+              ;; (setq coords-list (auto-set-reaching-targets :pos-shift pos-shift :larm-shift larm-shift :rarm-shift rarm-shift :rot-z rot-z :axis axis :edge-axis edge-axis :rot-y rot-y :rot-x rot-x))
+              (setq coords-list (auto-set-reaching-targets-each-hand :pos-shift pos-shift :larm-shift larm-shift :rarm-shift rarm-shift :rot-z rot-z :rot-y rot-y :rot-x rot-x))              
               (send *coords* :set-pre-angle-vector (send *robot* :angle-vector))
               (setq ret (ik-opt  (elt coords-list 1) (elt coords-list 0) :only-kinematics nil  :optimize-torque? nil :fix-contact? fix-contact? :avoid-collision? avoid-collision? :apply-external-force? apply-external-force? :wait? wait? :rleg-pos-shift rleg-pos-shift :lleg-pos-shift lleg-pos-shift :arm (if (equal target "board") arm "rarm")  :set-unique-kin-scale? set-unique-kin-scale? :reset? t))
               (send *robot-env* :dissoc-root-virtual)
