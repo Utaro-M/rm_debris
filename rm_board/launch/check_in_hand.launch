@@ -14,8 +14,8 @@
 
   <arg name="manager" default="check_in_hand_manager" />
   <!-- <rosparam param="/use_sim_time">true</rosparam> -->
-  <node pkg="count_points" name="count_points" type="count_points.py" output="screen" />
-
+  <!-- <node pkg="count_points" name="count_points" type="count_points.py" output="screen" /> -->
+  <node pkg="rm_debris_vision" name="count_points" type="count_points.py" output="screen" />
   <node pkg="pr2_navigation_self_filter" type="self_filter"
         name="self_filter" output="screen">
     <remap from="cloud_in"  to="$(arg input_cloud)" />
@@ -92,7 +92,6 @@
         keep_organized: true
       </rosparam>
     </node>
-
   </group>
   
     <!-- <node name="rviz" -->

@@ -865,3 +865,22 @@ reach-auto :send? t :adjust? nil :ik1? nil :move-left? t :fix-contact? nil :pull
 
 ;;load log-tools
 ;;prepare-plot
+
+
+(progn (setq line-vec (v- (send (send *robot* :larm :end-coords) :worldpos) (send (car (send *robot* :cameras)) :worldpos))) (setq li (make-line (send (car (send *robot* :cameras)) :worldpos) (send (send *robot* :larm :end-coords) :worldpos))) (setq pri (make-prism '( #f(10 0 0) #f(10 10 0) #f(0 10 0) #f(0 0 0)) line-vec )) (send pri :translate (send (car (send *robot* :cameras)) :worldpos)) (send pri :set-color #f(0 0 1)) (objects (list pri *robot*))
+
+(setq rot-mat (transpose (matrix (normalize-vector line-vec) (normalize-vector (send li :point (send li :foot #f(0 0 0)))) (v* (normalize-vector line-vec) (normalize-vector (send li :point (send li :foot #f(0 0 0))))))))
+(setq box-coords (make-coords :pos (send li :point 0.5) :rot rot-mat)) (setq *box-coords* (instance arrow-object :init)) (send *box-coords* :newcoords box-coords) (objects (list pri *robot* *box-coords*)) (format t "position =~A~%" (send *box-coords* :worldpos)) (format t "size-vetor =~A~%" (float-vector 0.3 0.3 (- (* 0.001 (send li :length)) 0.2))) (format t "tilt-vetor =~A~%" (elt (rpy-angle rot-mat) 0)) (send_box_size :box-position (send *box-coords* :worldpos) :size-vector (float-vector 0.3 0.3 (- (* 0.001 (send li :length)) 0.2)) :tilt-vector (elt (rpy-angle rot-mat) 0)))
+
+;hand covered check
+(progn (setq line-vec (v- (send (send *robot* :larm :end-coords) :worldpos) (send (car (send *robot* :cameras)) :worldpos))) (setq li (make-line (send (car (send *robot* :cameras)) :worldpos) (send (send *robot* :larm :end-coords) :worldpos))) (setq pri (make-prism '( #f(10 0 0) #f(10 10 0) #f(0 10 0) #f(0 0 0)) line-vec )) (send pri :translate (send (car (send *robot* :cameras)) :worldpos)) (send pri :set-color #f(0 0 1)) (objects (list pri *robot*))
+
+(setq rot-mat (transpose (matrix (normalize-vector line-vec) (normalize-vector (send li :point (send li :foot #f(0 0 0)))) (v* (normalize-vector line-vec) (normalize-vector (send li :point (send li :foot #f(0 0 0))))))))
+(setq box-coords (make-coords :pos (send li :point 0.5) :rot rot-mat)) (setq *box-coords* (instance arrow-object :init)) (send *box-coords* :newcoords box-coords) (objects (list pri *robot* *box-coords*)) (format t "position =~A~%" (send *box-coords* :worldpos)) (format t "size-vetor =~A~%" (float-vector 0.3 0.3 (- (* 0.001 (send li :length)) 0.2))) (format t "tilt-vetor =~A~%" (elt (rpy-angle rot-mat) 0)) (send_box_size :box-position (send *box-coords* :worldpos) :size-vector (float-vector (- (* 0.001 (send li :length)) 0.5) 0.1 0.1 ) :tilt-vector (elt (rpy-angle rot-mat) 0)))
+
+
+;;0214
+send (car (send (car fc) :faces :prism :top)) :intersect-line (cadr (send (car (send (car fc) :faces :prism :top)) :centroid))(send *robot* :rarm :end-coords :worldpos)
+
+手先から最も近いエッジ
+progn (setq fc (make_plane)) (setq small-distance-lis (get-min-val (mapcar #'(lambda(v) (list (send v :distance (send *robot* :rarm :end-coords :worldpos)) v)) (send (car fc) :edges)) 10)) (objects (list *robot* (cadr (car small-distance-lis))))
