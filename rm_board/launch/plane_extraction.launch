@@ -138,7 +138,7 @@
         frame_id: lleg_end_coords
         boxes:
         - position: [1, 0, 1]
-        dimension: [3, 1.5, 1]
+          dimension: [3, 1.5, 1]
       </rosparam>
     </node>
 

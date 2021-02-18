@@ -50,23 +50,37 @@
 
     
     <!-- rarm -->
-    <node name="bounding_box_array_publisher_rarm"
-          pkg="jsk_recognition_utils" type="bounding_box_array_publisher.py">
+    <!-- <node name="bounding_box_array_publisher_rarm" -->
+    <!--       pkg="jsk_recognition_utils" type="bounding_box_array_publisher.py"> -->
+    <!--   <rosparam> -->
+    <!--     frame_id: rarm_end_coords -->
+    <!--     boxes: -->
+    <!--     - position: [0.05, 0, 0] -->
+    <!--       dimension: [0.2, 0.25, 0.2] -->
+    <!--   </rosparam> -->
+    <!-- </node> -->
+
+    <node name="bounding_box_publisher_rarm"
+          pkg="topic_publisher" type="pub_box.py">
       <rosparam>
         frame_id: rarm_end_coords
-        boxes:
-        - position: [0.05, 0, 0]
-          dimension: [0.2, 0.25, 0.2]
+        x: 0.05
+        y: 0
+        z: 0
+        w: 0.2
+        d: 0.2
+        h: 0.25
       </rosparam>
     </node>
-
+    
     <node name="attention_clipper_rarm"
           pkg="nodelet" type="nodelet"
           args="load jsk_pcl/AttentionClipper $(arg manager)">
       <remap from="~input/points" to="$(arg filtered_cloud)" />
-      <remap from="~input/box_array" to="bounding_box_array_publisher_rarm/output" />
+      <!-- <remap from="~input/box_array" to="bounding_box_array_publisher_rarm/output" /> -->
+      <remap from="~input/box" to="bounding_box_publisher_rarm/output" />
       <rosparam>
-        use_multiple_attention: true
+        use_multiple_attention: false <!-- true -->
       </rosparam>
     </node>
 
@@ -82,23 +96,37 @@
 
     
     <!-- larm -->
-    <node name="bounding_box_array_publisher_larm"
-          pkg="jsk_recognition_utils" type="bounding_box_array_publisher.py">
+    <!-- <node name="bounding_box_array_publisher_larm" -->
+    <!--       pkg="jsk_recognition_utils" type="bounding_box_array_publisher.py"> -->
+    <!--   <rosparam> -->
+    <!--     frame_id: larm_end_coords -->
+    <!--     boxes: -->
+    <!--     - position: [0.05, 0, 0] -->
+    <!--       dimension: [0.2, 0.25, 0.2] -->
+    <!--   </rosparam> -->
+    <!-- </node> -->
+
+    <node name="bounding_box_publisher_larm"
+          pkg="topic_publisher" type="pub_box.py">
       <rosparam>
         frame_id: larm_end_coords
-        boxes:
-        - position: [0.05, 0, 0]
-          dimension: [0.2, 0.25, 0.2]
+        x: 0.05
+        y: 0
+        z: 0
+        w: 0.2
+        d: 0.2
+        h: 0.25
       </rosparam>
     </node>
-
+    
     <node name="attention_clipper_larm"
           pkg="nodelet" type="nodelet"
           args="load jsk_pcl/AttentionClipper $(arg manager)">
       <remap from="~input/points" to="$(arg filtered_cloud)" />
-      <remap from="~input/box_array" to="bounding_box_array_publisher_larm/output" />
+      <!-- <remap from="~input/box_array" to="bounding_box_array_publisher_larm/output" /> -->
+      <remap from="~input/box" to="bounding_box_publisher_larm/output" />
       <rosparam>
-        use_multiple_attention: true
+        use_multiple_attention: false
       </rosparam>
     </node>
 
@@ -135,7 +163,7 @@
       <!-- <remap from="~input/box_array" to="bounding_box_publisher_cover_rarm/output" /> -->
       <remap from="~input/box" to="bounding_box_publisher_cover_rarm/output" />      
       <rosparam>
-        use_multiple_attention: true
+        use_multiple_attention: false
       </rosparam>
     </node>
     
@@ -169,9 +197,9 @@
           args="load jsk_pcl/AttentionClipper $(arg manager)">
       <remap from="~input/points" to="$(arg input_cloud)" />
       <!-- <remap from="~input/box_array" to="bounding_box_publisher_cover_larm/output" /> -->
-      <remap from="~input/box" to="bounding_box_publisher_cover_larm/output" />      
+      <remap from="~input/box" to="bounding_box_publisher_cover_larm/output" />
       <rosparam>
-        use_multiple_attention: true
+        use_multiple_attention: false
       </rosparam>
     </node>
 

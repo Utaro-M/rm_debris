@@ -693,7 +693,8 @@
   (move-hand :rarm #f(0 0 300) :time 4000 :frame :local))
 
 (defun remove-multi-stick()
-  (reach-auto :target "stick" :send? t :ik1? nil :ik2? t :adjust? t :shift-stick #f(30 0 -40))
+  ;; (reach-auto :target "stick" :send? t :ik1? nil :ik2? t :adjust? t :shift-stick #f(30 0 -40))
+    (reach-auto :target "stick" :send? t :ik1? nil :ik2? t :adjust? t :shift-stick #f(0 0 -40))
   ;; (reach-auto :target "stick" :send? t :ik1? nil :ik2? t :adjust? t :shift-stick #f(30 0 -40) :rarm-force #f(0 0 -20) :larm-force #f(0 0 0))
   (move-hand :rarm #f(0 0 200) :time 4000 :frame :local)
   (send *robot* :reset-manip-pose)
