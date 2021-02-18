@@ -7,9 +7,9 @@
 (load "./my-ik.l")
 (load "./stick-pose.l")
 (load "./functions-without-ri.l")
-(load "client/change_count_points_thre.l")
+;; (load "client/change_count_points_thre.l")
 ;; (load "client/change_clip_box_client_hand_covered_check.l" )
-;; (load "./client/predict_k.l" )
+(load "./client/predict_k.l" )
 ;; (load "./client/make_plane_for_opt.l" )
 ;; (load "./old/predict_from_multi_pose.l")
 ;; (require "../../euslisp/save-log.l")
@@ -2216,7 +2216,7 @@
   )
 
 (defun predict-k-dim3
-    (&key (dir-list (list #f(0 0 1) #f(0 0 -1) #f(1 0 0) #f(-1 0 0) #f(0 1 0) #f(0 -1 0))) (force-scl 10) (pose-scl 30) (use-force? t) (send? nil) (frame :local) (movetime-tmp 3000))
+    (&key (dir-list (list #f(0 0 1) #f(0 0 -1) #f(1 0 0) #f(-1 0 0) #f(0 1 0) #f(0 -1 0))) (force-scl 10) (pose-scl 30) (move-by-force? nil) (use-force? t) (send? nil) (frame :local) (movetime-tmp 3000))
   (setq row (length dir-list))
   (setq dim 3)
   (setq wrench-mat (make-matrix row dim))
@@ -2241,30 +2241,33 @@
       (setq r-coords (send *robot* :rarm :end-coords :copy-worldcoords))
       (send r-coords :draw-on :flush nil :size 300 :color #f(0 0 1))
       (format t "r-coords *ri*=~A~%" r-coords)
-      (if use-force?
-	  (progn 
-	    (send *ri* :set-ref-force (scale force-scl (elt dir-list i)) 2000 :rarm)
-	    (format t "dir =~A~% " (elt dir-list i))
-	    (print "set ref force")
-	    (setq r-f (low-pass-online "force" "off" :rarm :times 100 :sleep 100000 :flag nil))
-	;; (unix::sleep 1)
-	    (setq vec (float-vector (elt r-f 0) (elt r-f 1) (elt r-f 2) )))
-	(progn
-	  (setq move-ref (scale pose-scl (elt dir-list i)))
-	  (format t "move =~A~% " move-ref)
-	  (move-hand :rarm move-ref :time movetime-tmp :frame frame)
-	  ;;ik opt version
-	  ;; (send *coords* :set-rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
-	  ;; (send *coords* :set-lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
-	  ;; (send *coords* :set-pre-angle-vector (send *robot* :angle-vector))
-	  ;; (setq ret (ik-opt (send (send r-coords :copy-worldcoords) :translate move-ref :world) (send *robot* :larm :end-coords :copy-worldcoords) :arm "rarm" :only-kinematics nil  :optimize-torque? nil :fix-contact? 2 :avoid-collision? nil :apply-external-force? nil :wait? t  :set-unique-kin-scale? t :kin-scale-list (list 1 1 1 0) :kin-task-value-thre 0.15 :eom-rot-task-value-thre 10) )
-	  ;; (send *robot-env* :dissoc-root-virtual)
-	  ;; (send-pose-and-move-on-foot :send? send? :fix-contact? 2 :fix-hand? nil :time 4000)
-	  (format t "move =~A~% " move-ref)
-	  ;; (format t "r-coords move-hand *robot* =~A~%" (send *robot* :rarm :end-coords :copy-worldcoords))
-	  (objects (list *robot*))
-	  (unix::sleep 1)))
-	
+      (send *ri* :remove-force-sensor-offset-rmfo-arms)
+      (unix::sleep 1)
+      (print "rmfo")
+      (if move-by-force?
+          (progn 
+            (send *ri* :set-ref-force (scale force-scl (elt dir-list i)) 2000 :rarm)
+            (format t "dir =~A~% " (elt dir-list i))
+            (print "set ref force")            
+            )
+        (progn
+          (setq move-ref (scale pose-scl (elt dir-list i)))
+          (format t "move =~A~% " move-ref)
+          (move-hand :rarm move-ref :time movetime-tmp :frame frame)
+          ;;ik opt version
+          ;; (send *coords* :set-rleg-coords (send *robot* :rleg :end-coords :copy-worldcoords))
+          ;; (send *coords* :set-lleg-coords (send *robot* :lleg :end-coords :copy-worldcoords))
+          ;; (send *coords* :set-pre-angle-vector (send *robot* :angle-vector))
+          ;; (setq ret (ik-opt (send (send r-coords :copy-worldcoords) :translate move-ref :world) (send *robot* :larm :end-coords :copy-worldcoords) :arm "rarm" :only-kinematics nil  :optimize-torque? nil :fix-contact? 2 :avoid-collision? nil :apply-external-force? nil :wait? t  :set-unique-kin-scale? t :kin-scale-list (list 1 1 1 0) :kin-task-value-thre 0.15 :eom-rot-task-value-thre 10) )
+          ;; (send *robot-env* :dissoc-root-virtual)
+          ;; (send-pose-and-move-on-foot :send? send? :fix-contact? 2 :fix-hand? nil :time 4000)
+          (format t "move =~A~% " move-ref)
+          ;; (format t "r-coords move-hand *robot* =~A~%" (send *robot* :rarm :end-coords :copy-worldcoords))
+          (objects (list *robot*))
+          (unix::sleep 1)))
+
+      (setq r-f (low-pass-online "force" "off" :rarm :times 100 :sleep 100000 :flag nil))
+
       (send *robot* :angle-vector (send *ri* :state :angle-vector))
       (send *robot* :move-coords (make-coords :pos #f(0 100 0)) (send *robot* :lleg :end-coords :copy-worldcoords))
       (objects (list *robot*))
@@ -2281,19 +2284,20 @@
       
       (progn (setf (aref pose-mat i 0) (elt dif-pos 0)) (setf (aref pose-mat i 1) (elt dif-pos 1)) (setf (aref pose-mat i 2) (elt dif-pos 2)))
       (if use-force?
-	  (dotimes (j dim)
-	    (setf (aref wrench-mat i j) (elt r-f j))))
+          (dotimes (j dim)
+            (setf (aref wrench-mat i j) (elt r-f j))))
       (format t "reset pose  ~%")
       (send *robot* :angle-vector pre-pose)
       (send *robot* :move-coords (make-coords :pos #f(0 100 0)) (send *robot* :lleg :end-coords))
-      (if use-force?
-	  (send *ri* :set-ref-force #f(0 0 0) 2000 :rarm)
-	(progn
-	  ;; (send *coords* :set-pre-angle-vector (send *robot* :angle-vector))
-	  ;; (setq ret (ik-opt (send r-coords-new :translate (scale -1 move-ref) :world) (send *robot* :larm :end-coords :copy-worldcoords) :arm "rarm" :only-kinematics nil  :optimize-torque? nil :fix-contact? 2 :avoid-collision? nil :apply-external-force? nil :wait? t  :set-unique-kin-scale? nil :kin-task-value-thre 0.15 :eom-rot-task-value-thre 10))
-	  ;; (send *robot-env* :dissoc-root-virtual)
-	  ;; (send-pose-and-move-on-foot :send? send? :fix-contact? 2 :fix-hand? nil :time 4000)))
-	  ))
+      (if move-by-force?
+          (send *ri* :set-ref-force #f(0 0 0) 2000 :rarm)
+        (progn
+          ;; (send *coords* :set-pre-angle-vector (send *robot* :angle-vector))
+          ;; (setq ret (ik-opt (send r-coords-new :translate (scale -1 move-ref) :world) (send *robot* :larm :end-coords :copy-worldcoords) :arm "rarm" :only-kinematics nil  :optimize-torque? nil :fix-contact? 2 :avoid-collision? nil :apply-external-force? nil :wait? t  :set-unique-kin-scale? nil :kin-task-value-thre 0.15 :eom-rot-task-value-thre 10))
+          ;; (send *robot-env* :dissoc-root-virtual)
+          ;; (send-pose-and-move-on-foot :send? send? :fix-contact? 2 :fix-hand? nil :time 4000)))
+          (move-hand :rarm (scale -1 move-ref) :time movetime-tmp :frame frame)
+          ))
       ;; (send *ri* :angle-vector (send *robot* :angle-vector) movetime-tmp)
       (send-pose-and-move-on-foot :send? send? :fix-contact? t :fix-hand? nil :time movetime-tmp :wait? t)
       (objects (list *robot*))
@@ -2303,11 +2307,11 @@
   (setq pose-mat-T (transpose pose-mat))
   (if use-force?
       (progn
-	(setq wrench-mat-T (transpose wrench-mat))
-	(setq k-mat (m* wrench-mat-T (pseudo-inverse pose-mat-T)))
-	(setq movable-vector (pred-k k-mat :wrench-mat wrench-mat-T :pose-mat pose-mat-T :use-force? use-force?)))
+        (setq wrench-mat-T (transpose wrench-mat))
+        (setq k-mat (m* wrench-mat-T (pseudo-inverse pose-mat-T)))
+        (setq movable-vector (pred-k :mat k-mat :wrench-mat wrench-mat-T :pose-mat pose-mat-T :use-force? use-force?)))
     (progn
-      (setq movable-vector (pred-k :pose-mat pose-mat-T :use-force? use-force?))))
+      (setq movable-vector (pred-k :mat k-mat :pose-mat pose-mat-T :use-force? use-force?))))
   ;; (setq min-vector (elt (elt  eign-eignvector-list 1) 2))
   movable-vector
   )
