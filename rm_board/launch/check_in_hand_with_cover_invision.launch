@@ -64,12 +64,17 @@
           pkg="topic_publisher" type="pub_box.py">
       <rosparam>
         frame_id: rarm_end_coords
-        x: 0.05
+        <!-- x: 0.05 -->
+        <!-- x: 0.1  -->
+        x: 0.08
         y: 0
         z: 0
-        w: 0.2
-        d: 0.2
+        <!-- w: 0.2 -->
+        <!-- d: 0.2 -->
+        w: 0.15        
+        d: 0.15
         h: 0.25
+        <!-- h: 0.2        -->
       </rosparam>
     </node>
     
@@ -110,12 +115,17 @@
           pkg="topic_publisher" type="pub_box.py">
       <rosparam>
         frame_id: larm_end_coords
-        x: 0.05
+        <!-- x: 0.05 -->
+        <!-- x: 0.1 -->
+        x: 0.08
         y: 0
         z: 0
-        w: 0.2
-        d: 0.2
+        <!-- w: 0.2 -->
+        <!-- d: 0.2 -->
+        w: 0.15        
+        d: 0.15
         h: 0.25
+        <!-- h: 0.2  -->       
       </rosparam>
     </node>
     

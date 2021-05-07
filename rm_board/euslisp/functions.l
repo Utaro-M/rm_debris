@@ -7,8 +7,8 @@
 (load "./my-ik.l")
 (load "./stick-pose.l")
 (load "./functions-without-ri.l")
-(load "client/change_count_points_thre.l")
-(load "client/change_clip_area_client.l" )
+;; (load "client/change_count_points_thre.l")
+;; (load "client/change_clip_area_client.l" )
 ;; (load "./client/predict_k.l" )
 ;; (load "./client/make_plane_for_opt.l" )
 ;; (load "./old/predict_from_multi_pose.l")
@@ -48,7 +48,6 @@
     (send *ri* :stop-st)
     (send *ri* :set-st-param :emergency-check-mode 0)
     (send *ri* :start-st))
-
   ;; (setq wei 0)
   ;; (mapcar #'(lambda (vertice) (setq wei (+ wei (send  vertice :weight)))) (send *robot* :links))
   ;; (send *ik-param* :set-rleg-wrench-offset (float-vector 0 0 (* 0.01 (/ wei 2)) 0 0 0))
@@ -1344,6 +1343,34 @@
   (reach :rarm-coords rarm-coords :larm-coords larm-coords :send? t :avoid-collision? t :apply-external-force? t :rleg-pos-shift #f(0 -100 -10) :lleg-pos-shift #f(0 100 -10) :look-at-object? t)
   )
 
+(defun decide-move-dir(normal-vec-save normal-vec l-pos-diff r-pos-diff)
+  (let* ((l-omega (v* normal-vec-save l-pos-diff))
+         (r-omega (v* normal-vec-save r-pos-diff))
+         (l-theta (abs (asin (/ (norm l-omega) (* (norm normal-vec-save) (norm l-pos-diff)))))) ;;rad
+         (r-theta (abs (asin (/ (norm r-omega) (* (norm normal-vec-save) (norm r-pos-diff))))))
+         (l-theta-next (* (/ l-unit l-unit-save) l-theta))
+         (r-theta-next (* (/ r-unit r-unit-save) r-theta))
+         (l-rot-mat (rotation-matrix l-theta-next l-omega))
+         (r-rot-mat (rotation-matrix r-theta-next r-omega))
+         (l-move-dir (transform l-rot-mat normal-vec))
+         (r-move-dir (transform r-rot-mat normal-vec))
+         )
+    (format t "~%~%normal-vec-save = ~A~%" normal-vec-save)
+    (format t "l-pos-diff          = ~A~%" l-pos-diff)
+    (format t "r-pos-diff          = ~A~%" r-pos-diff)
+    (format t "l-omega = ~A~%" (normalize-vector l-omega))
+    (format t "r-omega = ~A~%" (normalize-vector r-omega))
+    
+    (format t "r-theta deg      = ~A~%" (rad2deg r-theta))
+    (format t "l-theta deg      = ~A~%" (rad2deg l-theta))    
+    (format t "r-theta-next deg = ~A~%" (rad2deg r-theta-next))
+    (format t "l-theta-next deg = ~A~%" (rad2deg l-theta-next))
+    (format t "r-move-dir = ~A~%" r-move-dir)
+    (format t "l-move-dir = ~A~%~%" l-move-dir)
+    
+    (list l-move-dir r-move-dir (rotation-matrix (*  0.5 l-theta-next) l-omega) (rotation-matrix (*  0.5 r-theta-next) r-omega ))
+    ))
+
 (ros::advertise "/normal_start" geometry_msgs::PointStamped 1)
 (ros::advertise "/normal_end" geometry_msgs::PointStamped 1)
 
@@ -1379,7 +1406,7 @@
   (format t "r-act-coords-save init =~A~%" r-act-coords-save)
 
   ;;平面が見つからない時
-  (setq neck-angle     (send *robot* :head-neck-p :joint-angle))
+  (setq neck-angle  (send *robot* :head-neck-p :joint-angle))
   (while (not (make_plane))
     (setq neck-angle (+ neck-angle 5))
     (format t "look down angle = ~A~%" neck-angle)
@@ -1428,39 +1455,19 @@
      
     (if (< 0 i)
         (progn
-          (setq l-omega (v* normal-vec-save l-pos-diff))
-          (setq r-omega (v* normal-vec-save r-pos-diff))
-          ;; (if (< (elt l-omega 1) 0)
-          ;;     (setq l-omega (scale -1 l-omega)))
-          ;; (if (< (elt r-omega 1) 0)
-          ;;     (setq r-omega (scale -1 r-omega)))
-          (format t "~%~%normal-vec-save = ~A~%" normal-vec-save)
-          (format t "l-pos-diff          = ~A~%" l-pos-diff)
-          (format t "r-pos-diff          = ~A~%" r-pos-diff)
-          (format t "l-omega = ~A~%" (normalize-vector l-omega))
-          (format t "r-omega = ~A~%" (normalize-vector r-omega))
-          (setq l-theta (abs (asin (/ (norm l-omega) (* (norm normal-vec-save) (norm l-pos-diff)))))) ;;rad
-          (setq r-theta (abs (asin (/ (norm r-omega) (* (norm normal-vec-save) (norm r-pos-diff))))))
-          (format t "r-theta deg      = ~A~%" (rad2deg r-theta))
-          (format t "l-theta deg      = ~A~%" (rad2deg l-theta))
-          (setq l-theta-next (* (/ l-unit l-unit-save) l-theta))
-          (setq r-theta-next (* (/ r-unit r-unit-save) r-theta))
-          (format t "r-theta-next deg = ~A~%" (rad2deg r-theta-next))
-          (format t "l-theta-next deg = ~A~%" (rad2deg l-theta-next))
-          (setq l-rot-mat (rotation-matrix l-theta-next l-omega))
-          (setq r-rot-mat (rotation-matrix r-theta-next r-omega))
-          (setq l-move-dir (transform l-rot-mat normal-vec))
-          (setq r-move-dir (transform r-rot-mat normal-vec))
+          (setq move-dir (decide-move-dir normal-vec-save normal-vec l-pos-diff r-pos-diff))
+          (setq l-move-dir (elt move-dir 0)
+                r-move-dir (elt move-dir 1)
+                l-rot (elt move-dir 2)
+                r-rot (elt move-dir 3))
           ))
-    (format t "r-move-dir = ~A~%" r-move-dir)
-    (format t "l-move-dir = ~A~%~%" l-move-dir)
 
     (setq lnum-pre (send (one-shot-subscribe "/larm/num" std_msgs::Int32 :timeout 5000) :data)
           rnum-pre (send (one-shot-subscribe "/rarm/num" std_msgs::Int32 :timeout 5000) :data))
     (print "ok")
 
-    (setq larm-coords (make-coords :pos (v+ (send *robot* :larm :end-coords :worldpos) (scale l-unit l-move-dir)) :rot (m* (send *robot* :larm :end-coords :worldrot) (rotation-matrix (*  0.5 l-theta-next) l-omega ))))
-    (setq rarm-coords (make-coords :pos (v+ (send *robot* :rarm :end-coords :worldpos) (scale r-unit r-move-dir)) :rot (m* (send *robot* :rarm :end-coords :worldrot) (rotation-matrix (*  0.5 r-theta-next) r-omega ))))
+    (setq larm-coords (make-coords :pos (v+ (send *robot* :larm :end-coords :worldpos) (scale l-unit l-move-dir)) :rot (m* (send *robot* :larm :end-coords :worldrot) l-rot)))
+    (setq rarm-coords (make-coords :pos (v+ (send *robot* :rarm :end-coords :worldpos) (scale r-unit r-move-dir)) :rot (m* (send *robot* :rarm :end-coords :worldrot) r-lot)))
 
     (format t "larm-coords     = ~A~%" (send *robot* :larm :end-coords :copy-worldcoords))
     (format t "rarm-coords     = ~A~%" (send *robot* :rarm :end-coords :copy-worldcoords))
@@ -2672,22 +2679,26 @@
       (send *robot-env* :dissoc-root-virtual)
       (send *coords* :set-rleg-new-coords (send *robot* :rleg :end-coords :copy-worldcoords))
       (send *coords* :set-lleg-new-coords (send *robot* :lleg :end-coords :copy-worldcoords))
-      (send-pose-and-move-on-foot :time 5000 :send? send? :fix-contact? 2 :look-at-object? t :wait? t)
-      
+      (send-pose-and-move-on-foot :time 5000 :send? send? :fix-contact? 2 :look-at-object? t :wait? (not check?))
+      (if check?
+          (check-func :working? t :focus-arm "larm"))
       (send *ri* :move-gripper :rarm 1 :wait t)
       
       (setq ret (ik-opt (send (send *robot* :rarm :end-coords :copy-worldcoords) :translate #f(-110 0 -240) :world) (send *robot* :larm :end-coords :copy-worldcoords)  :fix-contact? 2  :apply-external-force? t :wait? t   :kin-task-value-thre 0.15 :eom-trans-task-value-thre 0.15 :reset? t))
       (send *robot-env* :dissoc-root-virtual)
       (send *coords* :set-rleg-new-coords (send *robot* :rleg :end-coords :copy-worldcoords))
       (send *coords* :set-lleg-new-coords (send *robot* :lleg :end-coords :copy-worldcoords))
-      (send-pose-and-move-on-foot :time 5000 :send? send? :fix-contact? 2 :look-at-object? t :wait? t)
-
+      (send-pose-and-move-on-foot :time 5000 :send? send? :fix-contact? 2 :look-at-object? t :wait? (not check?))
+      (if check?
+          (check-func :working? t :focus-arm "larm"))
+      
       (setq ret (ik-opt (send (send (send rarm-coords :translate #f(70 50 -220) :world) :copy-worldcoords) :rotate (deg2rad -12) :z :local) (send *robot* :larm :end-coords :copy-worldcoords)  :fix-contact? 2  :apply-external-force? t :wait? t   :kin-task-value-thre 0.15 :eom-trans-task-value-thre 0.15 :reset? t))
       (send *robot-env* :dissoc-root-virtual)
       (send *coords* :set-rleg-new-coords (send *robot* :rleg :end-coords :copy-worldcoords))
       (send *coords* :set-lleg-new-coords (send *robot* :lleg :end-coords :copy-worldcoords))
-      (send-pose-and-move-on-foot :time 5000 :send? send? :fix-contact? 2 :look-at-object? t :wait? t)
-
+      (send-pose-and-move-on-foot :time 5000 :send? send? :fix-contact? 2 :look-at-object? t :wait? (not check?))
+      (if check?
+          (check-func :working? t :focus-arm "larm"))
 
 
       (send *ri* :move-gripper :larm 0 :wait t)
@@ -2696,21 +2707,26 @@
       (send *robot-env* :dissoc-root-virtual)
       (send *coords* :set-rleg-new-coords (send *robot* :rleg :end-coords :copy-worldcoords))
       (send *coords* :set-lleg-new-coords (send *robot* :lleg :end-coords :copy-worldcoords))
-      (send-pose-and-move-on-foot :time 5000 :send? send? :fix-contact? 2 :look-at-object? t :wait? t)
-      
+      (send-pose-and-move-on-foot :time 5000 :send? send? :fix-contact? 2 :look-at-object? t :wait? (not check?))
+      (if check?
+          (check-func :working? t :focus-arm "rarm"))
       (send *ri* :move-gripper :larm 1 :wait t)
       
       (setq ret (ik-opt (send *robot* :rarm :end-coords :copy-worldcoords) (send (send *robot* :larm :end-coords :copy-worldcoords) :translate #f(-120 0 -240) :world)  :fix-contact? 2  :apply-external-force? t :wait? t   :kin-task-value-thre 0.15 :eom-trans-task-value-thre 0.15 :reset? t))
       (send *robot-env* :dissoc-root-virtual)
       (send *coords* :set-rleg-new-coords (send *robot* :rleg :end-coords :copy-worldcoords))
       (send *coords* :set-lleg-new-coords (send *robot* :lleg :end-coords :copy-worldcoords))
-      (send-pose-and-move-on-foot :time 5000 :send? send? :fix-contact? 2 :look-at-object? t :wait? t)
-
+      (send-pose-and-move-on-foot :time 5000 :send? send? :fix-contact? 2 :look-at-object? t :wait? (not check?))
+      (if check?
+          (check-func :working? t :focus-arm "rarm"))
+      
       (setq ret (ik-opt (send *robot* :rarm :end-coords :copy-worldcoords) (send (send (send larm-coords :translate #f(70 -30 -200) :world) :copy-worldcoords) :rotate (deg2rad 12) :z :local)  :fix-contact? 2  :apply-external-force? t :wait? t   :kin-task-value-thre 0.15 :eom-trans-task-value-thre 0.15 :reset? t))
       (send *robot-env* :dissoc-root-virtual)
       (send *coords* :set-rleg-new-coords (send *robot* :rleg :end-coords :copy-worldcoords))
       (send *coords* :set-lleg-new-coords (send *robot* :lleg :end-coords :copy-worldcoords))
-      (send-pose-and-move-on-foot :time 5000 :send? send? :fix-contact? 2 :look-at-object? t :wait? t)
+      (send-pose-and-move-on-foot :time 5000 :send? send? :fix-contact? 2 :look-at-object? t :wait? (not check?))
+      (if check?
+          (check-func :working? t :focus-arm "rarm"))      
       )
     )
   )

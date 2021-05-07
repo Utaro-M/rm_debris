@@ -7,7 +7,7 @@
 (defun set-inhand-thre(thre-list &key (thre-cover-list '(3000 3000)))
   (let ((req (instance rm_debris_vision::CPthreRequest :init)))
     (send req :rarm :data (elt thre-list 0))
-    (send req :larm :data (elt thre-list 1))    
+    (send req :larm :data (elt thre-list 1))
     (send req :rarm_cover :data (elt thre-cover-list 0))
     (send req :larm_cover :data (elt thre-cover-list 1))    
     (setq res (ros::service-call "count_points_threshould" req t))
